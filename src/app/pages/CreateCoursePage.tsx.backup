@@ -1,0 +1,2429 @@
+import { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import { Upload, ArrowLeft, ArrowRight, Info, Check, Music2, Save, Download, Eye, ChevronLeft, ChevronRight, X, CheckCircle2, FileDown, FileCheck, Play, Pause, Volume2, Maximize, SkipBack, SkipForward, RotateCcw, Menu as MenuIcon, HelpCircle, LogOut, ChevronDown, AlertCircle, Settings, Navigation, BarChart3, RotateCw, FileText, Video, GripVertical, Trash2, Edit2, Sparkles, List, Captions, FileAudio, FileUp, ChevronsDown, ChevronsUp } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router';
+import { Breadcrumb } from '../components/Breadcrumb';
+import { useCourseContext } from '../context/CourseContext';
+import { toast } from 'sonner';
+
+export function CreateCoursePage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { canPublish, publishCourse, republishCourse, downloadCourse, createDraft, updateCourse, getCourse } = useCourseContext();
+  
+  // Check if we're editing an existing course
+  const editingCourseId = location.state?.courseId;
+  const editingCourse = editingCourseId ? getCourse(editingCourseId) : undefined;
+  const isEditMode = !!editingCourse;
+  const isPublishedAndEdited = isEditMode && editingCourse.status === 'published';
+  const [contentType, setContentType] = useState<'ppt-pdf' | 'multi-format' | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [courseName, setCourseName] = useState(editingCourse?.name || 'Information Security Management System 2');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [currentCourseId, setCurrentCourseId] = useState<number | null>(editingCourseId || null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  
+  // Audio files - BOTH background music AND slide audio
+  const [backgroundMusicFile, setBackgroundMusicFile] = useState<File | null>(null);
+  const [enableBackgroundMusic, setEnableBackgroundMusic] = useState(false);
+  const [slideAudioFiles, setSlideAudioFiles] = useState<{ [key: number]: File }>({});
+  
+  // Slide management
+  type SlideData = {
+    id: number;
+    name: string;
+    transition: string;
+    transcript: string;
+    enableTranscript: boolean;
+    voiceGender: 'male' | 'female';
+  };
+  const [slides, setSlides] = useState<SlideData[]>([
+    { id: 1, name: 'Introduction', transition: 'none', transcript: '', enableTranscript: false, voiceGender: 'female' },
+    { id: 2, name: 'Overview', transition: 'none', transcript: '', enableTranscript: false, voiceGender: 'female' },
+    { id: 3, name: 'Key Concepts', transition: 'none', transcript: '', enableTranscript: false, voiceGender: 'female' },
+    { id: 4, name: 'Implementation', transition: 'none', transcript: '', enableTranscript: false, voiceGender: 'female' },
+    { id: 5, name: 'Best Practices', transition: 'none', transcript: '', enableTranscript: false, voiceGender: 'female' },
+    { id: 6, name: 'Case Studies', transition: 'none', transcript: '', enableTranscript: false, voiceGender: 'female' },
+    { id: 7, name: 'Summary', transition: 'none', transcript: '', enableTranscript: false, voiceGender: 'female' },
+    { id: 8, name: 'Conclusion', transition: 'none', transcript: '', enableTranscript: false, voiceGender: 'female' },
+  ]);
+  const [editingSlideId, setEditingSlideId] = useState<number | null>(null);
+  const [editingSlideName, setEditingSlideName] = useState('');
+  
+  // Text-to-speech state
+  const [playingTranscriptId, setPlayingTranscriptId] = useState<number | null>(null);
+  
+  // Player element controls
+  const [showPrevNextButtons, setShowPrevNextButtons] = useState(true);
+  const [showCaptions, setShowCaptions] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [showMenu, setShowMenu] = useState(true);
+  
+  const [showPreview, setShowPreview] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(180);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date>(new Date());
+  const [isSaving, setIsSaving] = useState(false);
+  const totalSlides = slides.length;
+  
+  // Preview Modal States
+  const [showMenuModal, setShowMenuModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showTranscriptModal, setShowTranscriptModal] = useState(false);
+  const [showCCOverlay, setShowCCOverlay] = useState(false);
+  
+  // Course Progress State - for Resume/Restart functionality
+  const [hasExitedCourse, setHasExitedCourse] = useState(false);
+  const [lastSlidePosition, setLastSlidePosition] = useState(1);
+  const [showResumeScreen, setShowResumeScreen] = useState(false);
+
+  // SCORM Behaviour Controls
+  const [navigationMode, setNavigationMode] = useState<'free' | 'linear'>('free');
+  const [seekBarControl, setSeekBarControl] = useState<'enable' | 'hide'>('enable');
+  const [seekBarOption, setSeekBarOption] = useState<'allowDrag' | 'afterCompletion' | 'readOnly'>('allowDrag');
+  const [resumeOption, setResumeOption] = useState<'trackLocation' | 'trackSlide' | 'disable'>('trackLocation');
+  const [scormExportVersion, setScormExportVersion] = useState('SCORM 1.2');
+  const [showScormDropdown, setShowScormDropdown] = useState(false);
+  const [showSeekBarDropdown, setShowSeekBarDropdown] = useState(false);
+
+  // Collapsible sections state
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const [isSeekBarOpen, setIsSeekBarOpen] = useState(false);
+  const [isResumeOpen, setIsResumeOpen] = useState(false);
+  const [isPlayerControlsOpen, setIsPlayerControlsOpen] = useState(false);
+
+  // Global Settings (Step 2)
+  const [enableBookmarking, setEnableBookmarking] = useState(true);
+  const [globalSlideTransition, setGlobalSlideTransition] = useState('none');
+  const [slideDuration, setSlideDuration] = useState('');
+
+  // Step 3: Per-slide editor state
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [isAudioSettingsOpen, setIsAudioSettingsOpen] = useState(false);
+  const [isSlideSettingsOpen, setIsSlideSettingsOpen] = useState(false);
+  const [isSeekbarSettingsOpen, setIsSeekbarSettingsOpen] = useState(false);
+
+  // Toggle all player behaviour sections
+  const allSectionsExpanded = isNavigationOpen && isSeekBarOpen && isResumeOpen && isPlayerControlsOpen;
+  
+  const toggleAllSections = () => {
+    const newState = !allSectionsExpanded;
+    setIsNavigationOpen(newState);
+    setIsSeekBarOpen(newState);
+    setIsResumeOpen(newState);
+    setIsPlayerControlsOpen(newState);
+  };
+
+  const steps = [
+    { id: 1, label: 'Course Detail' },
+    { id: 2, label: 'Global Settings' },
+    { id: 3, label: 'Generate Course' }
+  ];
+
+  // Auto-save functionality
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      setIsSaving(true);
+      // Simulate auto-save
+      setTimeout(() => {
+        setLastSaved(new Date());
+        setIsSaving(false);
+      }, 500);
+    }, 30000); // Auto-save every 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, []);
+
+  // Load voices for text-to-speech
+  useEffect(() => {
+    // Load voices when they become available
+    const loadVoices = () => {
+      window.speechSynthesis.getVoices();
+    };
+    
+    // Some browsers load voices async
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    
+    loadVoices();
+  }, []);
+
+  // Cleanup speech synthesis on unmount or step change
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+      setPlayingTranscriptId(null);
+    };
+  }, [currentStep]);
+
+  const getTimeSinceLastSaved = () => {
+    const seconds = Math.floor((new Date().getTime() - lastSaved.getTime()) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes === 1) return '1 minute ago';
+    return `${minutes} minutes ago`;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setUploadedFile(e.target.files[0]);
+    }
+  };
+
+  const handleBackgroundMusicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setBackgroundMusicFile(e.target.files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      if (currentStep === 1) {
+        setUploadedFile(e.dataTransfer.files[0]);
+      }
+    }
+  };
+
+  const handleContinue = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      if (!currentCourseId) {
+        // Create new draft
+        const newId = createDraft(courseName);
+        setCurrentCourseId(newId);
+      } else {
+        // Update existing draft
+        updateCourse(currentCourseId, { name: courseName, modules: slides.length });
+      }
+      setShowDraftModal(true);
+    } catch (error) {
+      toast.error('Failed to save draft. Please try again.');
+    }
+  };
+
+  const handlePublishOrRepublish = async () => {
+    try {
+      // Validation
+      if (!courseName.trim()) {
+        toast.error('Course name required', { description: 'Please enter a course name before publishing.' });
+        return;
+      }
+
+      if (!uploadedFile && !isEditMode) {
+        toast.error('File required', { description: 'Please upload a PPT/PDF file before publishing.' });
+        return;
+      }
+
+      setIsPublishing(true);
+      
+      // Check license before publishing new course
+      if (!isEditMode && !canPublish()) {
+        toast.error('License limit reached', { description: 'Please contact your Administrator to increase your license allocation.' });
+        setIsPublishing(false);
+        return;
+      }
+
+      // Create course if it doesn't exist
+      let courseId = currentCourseId;
+      if (!courseId) {
+        courseId = createDraft(courseName);
+        setCurrentCourseId(courseId);
+      }
+
+      // Update course details
+      updateCourse(courseId, { name: courseName, modules: slides.length });
+
+      // Publish or Republish
+      let success;
+      if (isPublishedAndEdited) {
+        success = await republishCourse(courseId);
+      } else {
+        success = await publishCourse(courseId);
+      }
+
+      if (success) {
+        setShowSuccessModal(true);
+      }
+    } catch (error) {
+      toast.error('Publishing failed', { description: 'An unexpected error occurred. Please try again.' });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (currentCourseId) {
+      await downloadCourse(currentCourseId);
+    }
+  };
+
+  const handleSlideAudioChange = (slideNum: number, file: File | null) => {
+    if (file) {
+      setSlideAudioFiles(prev => ({ ...prev, [slideNum]: file }));
+    } else {
+      setSlideAudioFiles(prev => {
+        const updated = { ...prev };
+        delete updated[slideNum];
+        return updated;
+      });
+    }
+  };
+
+  const handleDeleteSlide = (slideId: number) => {
+    if (slides.length > 1) {
+      setSlides(slides.filter(s => s.id !== slideId));
+      // Remove associated audio
+      const updated = { ...slideAudioFiles };
+      delete updated[slideId];
+      setSlideAudioFiles(updated);
+    }
+  };
+
+  const handleRenameSlide = (slideId: number, newName: string) => {
+    setSlides(slides.map(s => s.id === slideId ? { ...s, name: newName } : s));
+    setEditingSlideId(null);
+  };
+
+  const handleTransitionChange = (slideId: number, transition: string) => {
+    setSlides(slides.map(s => s.id === slideId ? { ...s, transition } : s));
+  };
+
+  // Text-to-speech function
+  const handlePlayTranscript = (slideId: number) => {
+    const slide = slides.find(s => s.id === slideId);
+    if (!slide || !slide.transcript.trim()) return;
+
+    // Stop any currently playing speech
+    window.speechSynthesis.cancel();
+
+    if (playingTranscriptId === slideId) {
+      // If this transcript is playing, stop it
+      setPlayingTranscriptId(null);
+      return;
+    }
+
+    // Create speech synthesis utterance
+    const utterance = new SpeechSynthesisUtterance(slide.transcript);
+    
+    // Get available voices
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Filter voices by gender preference
+    const preferredVoices = voices.filter(voice => {
+      const voiceName = voice.name.toLowerCase();
+      if (slide.voiceGender === 'male') {
+        return voiceName.includes('male') || voiceName.includes('man') || voiceName.includes('david') || voiceName.includes('james');
+      } else {
+        return voiceName.includes('female') || voiceName.includes('woman') || voiceName.includes('samantha') || voiceName.includes('karen');
+      }
+    });
+
+    // Set voice (use preferred or fallback to first available)
+    if (preferredVoices.length > 0) {
+      utterance.voice = preferredVoices[0];
+    } else if (voices.length > 0) {
+      utterance.voice = voices[0];
+    }
+
+    // Set speech parameters
+    utterance.rate = 1.0;
+    utterance.pitch = slide.voiceGender === 'male' ? 0.9 : 1.1;
+    utterance.volume = 1.0;
+
+    // Event handlers
+    utterance.onstart = () => {
+      setPlayingTranscriptId(slideId);
+    };
+
+    utterance.onend = () => {
+      setPlayingTranscriptId(null);
+    };
+
+    utterance.onerror = () => {
+      setPlayingTranscriptId(null);
+    };
+
+    // Start speaking
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleReorderSlides = (fromIndex: number, toIndex: number) => {
+    const newSlides = [...slides];
+    const [moved] = newSlides.splice(fromIndex, 1);
+    newSlides.splice(toIndex, 0, moved);
+    setSlides(newSlides);
+  };
+
+  const transitionOptions = [
+    { value: 'none', label: 'None' },
+    { value: 'fade', label: 'Fade' },
+    { value: 'push-up', label: 'Push Up' },
+    { value: 'push-down', label: 'Push Down' },
+    { value: 'push-left', label: 'Push Left' },
+    { value: 'push-right', label: 'Push Right' },
+    { value: 'wipe-left', label: 'Wipe Left' },
+    { value: 'wipe-right', label: 'Wipe Right' },
+    { value: 'split', label: 'Split' },
+    { value: 'reveal', label: 'Reveal' },
+    { value: 'cover-left', label: 'Cover Left' },
+    { value: 'cover-right', label: 'Cover Right' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">Create New Course</h1>
+                <Breadcrumb
+                  items={[
+                    { label: 'Home', href: '/' },
+                    { label: 'Courses', href: '/courses' },
+                    { label: 'Create New Course' }
+                  ]}
+                />
+              </div>
+            </div>
+            
+            {/* Auto-save indicator */}
+            <div className="flex items-center gap-3">
+              {isSaving ? (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <RotateCw className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <span>Saved {getTimeSinceLastSaved()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          {/* Step Progress Indicator */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              {steps.map((step, index) => (
+                <div key={step.id} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                      currentStep === step.id
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
+                        : currentStep > step.id
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {currentStep > step.id ? (
+                        <Check className="w-5 h-5" />
+                      ) : (
+                        step.id
+                      )}
+                    </div>
+                    <span className={`mt-2 text-sm font-medium ${
+                      currentStep === step.id ? 'text-orange-600' : 'text-gray-500'
+                    }`}>
+                      {step.label}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`h-1 flex-1 mx-4 -mt-8 transition-all ${
+                      currentStep > step.id ? 'bg-green-500' : 'bg-gray-200'
+                    }`} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step 1: Course Details */}
+          {currentStep === 1 && (
+            <>
+              <h2 className="text-xl font-semibold text-gray-700 mb-8">
+                Course Details
+              </h2>
+
+              {/* Content Type Selection */}
+              <div className="mb-8">
+                <label className="block text-sm font-medium text-gray-700 mb-4">
+                  Select Content Type<span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* PPT/PDF to SCORM Option */}
+                  <button
+                    onClick={() => setContentType('ppt-pdf')}
+                    className={`p-6 rounded-xl border-2 transition-all text-left ${
+                      contentType === 'ppt-pdf'
+                        ? 'border-blue-500 bg-blue-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/30'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 rounded-lg ${
+                        contentType === 'ppt-pdf' ? 'bg-blue-600' : 'bg-gray-100'
+                      }`}>
+                        <FileText className={`w-6 h-6 ${
+                          contentType === 'ppt-pdf' ? 'text-white' : 'text-gray-600'
+                        }`} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                          PPT/PDF to SCORM
+                          {contentType === 'ppt-pdf' && (
+                            <Check className="w-5 h-5 text-blue-600" />
+                          )}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Convert PowerPoint or PDF files into interactive SCORM courses with audio and navigation controls
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Multi-format Learning Content Option */}
+                  <button
+                    onClick={() => setContentType('multi-format')}
+                    className={`p-6 rounded-xl border-2 transition-all text-left ${
+                      contentType === 'multi-format'
+                        ? 'border-purple-500 bg-purple-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/30'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 rounded-lg ${
+                        contentType === 'multi-format' ? 'bg-purple-600' : 'bg-gray-100'
+                      }`}>
+                        <Video className={`w-6 h-6 ${
+                          contentType === 'multi-format' ? 'text-white' : 'text-gray-600'
+                        }`} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                          Multi-format Learning Content
+                          {contentType === 'multi-format' && (
+                            <Check className="w-5 h-5 text-purple-600" />
+                          )}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Create courses from videos, images, documents, and other multimedia content
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Show rest of the form only if content type is selected */}
+              {contentType === 'ppt-pdf' && (
+                <>
+                  {/* Course Name Input */}
+                  <div className="mb-8">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Course Title<span className="text-red-500">*</span>
+                    </label>
+                <input
+                  type="text"
+                  value={courseName}
+                  onChange={(e) => setCourseName(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
+                  placeholder="Enter course name"
+                />
+              </div>
+
+              {/* File Upload Area */}
+              <div className="mb-8">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Reference File Upload (PDF / PPT)<span className="text-red-500">*</span>
+                </label>
+                <div
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-cyan-400 transition-colors cursor-pointer bg-gray-50/50"
+                >
+                  <input
+                    type="file"
+                    id="file-upload"
+                    accept=".pdf,.ppt,.pptx"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <div className="flex flex-col items-center">
+                      {/* Upload Icon */}
+                      <div className="mb-4">
+                        <svg
+                          className="w-16 h-16 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                          />
+                        </svg>
+                      </div>
+
+                      {uploadedFile ? (
+                        <div className="text-center">
+                          <p className="text-gray-700 font-medium mb-2">
+                            {uploadedFile.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setUploadedFile(null);
+                            }}
+                            className="mt-3 text-sm text-red-600 hover:text-red-700"
+                          >
+                            Remove file
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-gray-700 font-medium mb-2">
+                            Select a file or drag and drop here
+                          </p>
+                          <p className="text-sm text-gray-500 mb-4">
+                            PowerPoint or PDF, file size no more than 100MB
+                          </p>
+                          <button className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium">
+                            SELECT FILE
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </label>
+                </div>
+              </div>
+                </>
+              )}
+
+              {/* Multi-format content message */}
+              {contentType === 'multi-format' && (
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-8 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600 rounded-full mb-4">
+                    <Video className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Multi-format Learning Content
+                  </h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    This feature is coming soon! You'll be able to create courses from videos, images, documents, and other multimedia content.
+                  </p>
+                  <button
+                    onClick={() => setContentType('ppt-pdf')}
+                    className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all font-medium"
+                  >
+                    Try PPT/PDF to SCORM Instead
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Step 2: Global Settings */}
+          {currentStep === 2 && (
+            <>
+              <h2 className="text-xl font-semibold text-gray-700 mb-8">
+                Global Settings
+              </h2>
+              <p className="text-sm text-gray-600 mb-8">
+                Configure global settings that will apply to the entire course
+              </p>
+
+              {/* 1. Background Music Section */}
+              <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
+                <div className="flex items-start gap-3">
+                  <Music2 className="w-6 h-6 text-blue-600 mt-1" />
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">
+                      Background Music <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Add background music that will play throughout the entire course
+                    </p>
+
+                    <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={enableBackgroundMusic}
+                        onChange={(e) => setEnableBackgroundMusic(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Enable Background Music</span>
+                    </label>
+
+                    {enableBackgroundMusic && (
+                      <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 bg-white">
+                        <input
+                          type="file"
+                          id="background-music-upload"
+                          accept=".mp3"
+                          onChange={handleBackgroundMusicChange}
+                          className="hidden"
+                        />
+                        <label htmlFor="background-music-upload" className="cursor-pointer">
+                          <div className="flex flex-col items-center">
+                            {backgroundMusicFile ? (
+                              <div className="text-center">
+                                <Music2 className="w-12 h-12 text-blue-600 mx-auto mb-2" />
+                                <p className="text-gray-700 font-medium mb-1">
+                                  {backgroundMusicFile.name}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {(backgroundMusicFile.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setBackgroundMusicFile(null);
+                                  }}
+                                  className="mt-3 text-sm text-red-600 hover:text-red-700"
+                                >
+                                  Remove file
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <Music2 className="w-12 h-12 text-gray-400 mb-2" />
+                                <p className="text-gray-700 font-medium mb-1">
+                                  Upload Background Music
+                                </p>
+                                <p className="text-sm text-gray-500 mb-3">
+                                  MP3 format supported
+                                </p>
+                                <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                                  SELECT MP3 FILE
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Navigation Mode Section */}
+              <div className="mb-6 border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <Navigation className="w-6 h-6 text-blue-600" />
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900">Navigation Mode</h3>
+                      <p className="text-sm text-gray-600">Control how learners can navigate through the course</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 bg-white">
+                  <div className="space-y-3">
+                    <label className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      navigationMode === 'free'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="navigationMode"
+                        checked={navigationMode === 'free'}
+                        onChange={() => setNavigationMode('free')}
+                        className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-900">Free Navigation</span>
+                        <p className="text-sm text-gray-600 mt-1">Learners can move forward and backward without restriction (Default)</p>
+                      </div>
+                    </label>
+                    <label className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      navigationMode === 'linear'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="navigationMode"
+                        checked={navigationMode === 'linear'}
+                        onChange={() => setNavigationMode('linear')}
+                        className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-900">Linear (Restricted Forward Navigation, Backward Only)</span>
+                        <p className="text-sm text-gray-600 mt-1">Learners cannot skip ahead and must complete each slide before progressing</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Bookmarking Section */}
+              <div className="mb-6 p-6 bg-white border border-gray-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900">Bookmarking</h3>
+                      <p className="text-sm text-gray-600">Save learner progress for resuming later</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEnableBookmarking(!enableBookmarking)}
+                    className={`relative w-14 h-7 rounded-full transition-all duration-300 ${
+                      enableBookmarking ? 'bg-green-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 ${
+                        enableBookmarking ? 'translate-x-7' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Slide Transition Section */}
+              <div className="mb-6 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <Sparkles className="w-6 h-6 text-purple-600" />
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900">Slide Transition</h3>
+                    <p className="text-sm text-gray-600">Set the transition effect for all slides in the course</p>
+                  </div>
+                </div>
+                <select
+                  value={globalSlideTransition}
+                  onChange={(e) => {
+                    setGlobalSlideTransition(e.target.value);
+                    // Also update all slides
+                    setSlides(slides.map(s => ({ ...s, transition: e.target.value })));
+                  }}
+                  className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
+                >
+                  {transitionOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 5. Seek Bar Control Section */}
+              <div className="mb-6 border border-gray-200 rounded-xl overflow-hidden">
+                <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <BarChart3 className="w-6 h-6 text-green-600" />
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900">Seek Bar Control</h3>
+                      <p className="text-sm text-gray-600">Control seek bar visibility and interaction</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 bg-white">
+                  <div className="space-y-3">
+                    <label className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      seekBarControl === 'enable'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="seekBarControl"
+                        checked={seekBarControl === 'enable'}
+                        onChange={() => setSeekBarControl('enable')}
+                        className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-900">Enable Seek Bar</span>
+                        <p className="text-sm text-gray-600 mt-1">Show seek bar with configurable interaction options</p>
+
+                        {seekBarControl === 'enable' && (
+                          <div className="mt-3 relative">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setShowSeekBarDropdown(!showSeekBarDropdown);
+                              }}
+                              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-left flex items-center justify-between hover:border-blue-500 transition-colors"
+                            >
+                              <span className="text-sm text-gray-700">
+                                {seekBarOption === 'allowDrag' && 'Allow user to drag Seek Bar'}
+                                {seekBarOption === 'afterCompletion' && 'Allow drag after completion'}
+                                {seekBarOption === 'readOnly' && 'Seek bar is read only'}
+                              </span>
+                              <ChevronDown className="w-4 h-4 text-gray-500" />
+                            </button>
+
+                            {showSeekBarDropdown && (
+                              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setSeekBarOption('allowDrag');
+                                    setShowSeekBarDropdown(false);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 first:rounded-t-lg"
+                                >
+                                  Allow user to drag Seek Bar
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setSeekBarOption('afterCompletion');
+                                    setShowSeekBarDropdown(false);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50"
+                                >
+                                  Allow drag after completion
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setSeekBarOption('readOnly');
+                                    setShowSeekBarDropdown(false);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 last:rounded-b-lg"
+                                >
+                                  Seek bar is read only
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Conflict Warning */}
+                        {navigationMode === 'linear' && seekBarControl === 'enable' && seekBarOption === 'allowDrag' && (
+                          <div className="flex items-start gap-2 mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                            <span><strong>Conflict:</strong> Linear Navigation restricts forward progression. Even though "Allow user to drag" is selected, forward dragging will be restricted to maintain proper linear progression.</span>
+                          </div>
+                        )}
+                      </div>
+                    </label>
+
+                    <label className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      seekBarControl === 'hide'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="seekBarControl"
+                        checked={seekBarControl === 'hide'}
+                        onChange={() => setSeekBarControl('hide')}
+                        className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-900">Hide Seek Bar</span>
+                        <p className="text-sm text-gray-600 mt-1">Seek bar will be completely hidden from learners</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* 6. Slide Duration Section */}
+              <div className="mb-6 p-6 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200">
+                <div className="flex items-center gap-3 mb-4">
+                  <Settings className="w-6 h-6 text-orange-600" />
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900">Slide Duration</h3>
+                    <p className="text-sm text-gray-600">Set default duration for each slide (optional)</p>
+                  </div>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={slideDuration}
+                    onChange={(e) => setSlideDuration(e.target.value)}
+                    placeholder="Enter duration in seconds (optional)"
+                    min="1"
+                    className="w-full px-4 py-3 bg-white border-2 border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-600">
+                    seconds
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Leave empty for auto-advance based on audio duration
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* Step 3: Generate Course */}
+          {currentStep === 3 && (
+            <>
+              <h2 className="text-xl font-semibold text-gray-700 mb-8">
+                Generate Course
+              </h2>
+              <p className="text-sm text-gray-600 mb-6">
+                Configure each slide individually with audio, settings, and content
+              </p>
+
+              {/* Slide Viewer with Navigation */}
+              <div className="mb-6 bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
+                {/* Slide Header with Navigation */}
+                <div className="bg-gradient-to-r from-gray-50 to-white px-5 py-3 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {/* Left Arrow */}
+                      <button
+                        onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
+                        disabled={currentSlideIndex === 0}
+                        className={`p-2 rounded-lg transition-colors ${
+                          currentSlideIndex === 0
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                        title="Previous slide"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+
+                      {/* Slide Number Badge */}
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                        <span className="text-sm font-bold text-white">{currentSlideIndex + 1}</span>
+                      </div>
+
+                      {/* Slide Name - Editable */}
+                      {editingSlideId === slides[currentSlideIndex].id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editingSlideName}
+                            onChange={(e) => setEditingSlideName(e.target.value)}
+                            className="px-3 py-1.5 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-medium"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleRenameSlide(slides[currentSlideIndex].id, editingSlideName);
+                              } else if (e.key === 'Escape') {
+                                setEditingSlideId(null);
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={() => handleRenameSlide(slides[currentSlideIndex].id, editingSlideName)}
+                            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                            title="Save"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setEditingSlideId(null)}
+                            className="p-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900">{slides[currentSlideIndex].name}</span>
+                          <button
+                            onClick={() => {
+                              setEditingSlideId(slides[currentSlideIndex].id);
+                              setEditingSlideName(slides[currentSlideIndex].name);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Rename slide"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Right Arrow */}
+                      <button
+                        onClick={() => setCurrentSlideIndex(Math.min(slides.length - 1, currentSlideIndex + 1))}
+                        disabled={currentSlideIndex === slides.length - 1}
+                        className={`p-2 rounded-lg transition-colors ${
+                          currentSlideIndex === slides.length - 1
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                        title="Next slide"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Delete Slide Button */}
+                    <button
+                      onClick={() => handleDeleteSlide(slides[currentSlideIndex].id)}
+                      disabled={slides.length === 1}
+                      className={`p-2 rounded-lg transition-colors ${
+                        slides.length === 1
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                      }`}
+                      title={slides.length === 1 ? 'Cannot delete the last slide' : 'Delete slide'}
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Slide Image Placeholder */}
+                <div className="bg-gray-100 aspect-video flex items-center justify-center border-b border-gray-200">
+                  <div className="text-center">
+                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500 text-sm">Slide {currentSlideIndex + 1} Preview</p>
+                    <p className="text-gray-400 text-xs mt-1">Uploaded file preview will appear here</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Accordion Section 1: Audio Settings */}
+              <div className="mb-4 border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setIsAudioSettingsOpen(!isAudioSettingsOpen)}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-gray-50 to-white hover:bg-gray-100 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <Music2 className="w-5 h-5 text-blue-600" />
+                    <div className="text-left">
+                      <span className="font-semibold text-gray-900">Audio Settings</span>
+                      <p className="text-xs text-gray-600">Upload slide audio or enable text-to-speech</p>
+                    </div>
+                  </div>
+                  <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isAudioSettingsOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isAudioSettingsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-6 bg-white border-t border-gray-200"
+                  >
+                    {/* Upload Slide Audio */}
+                    <div className="mb-6">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                        Slide Audio <span className="text-gray-400 normal-case">(Optional - MP3)</span>
+                      </label>
+                      {slideAudioFiles[slides[currentSlideIndex].id] ? (
+                        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Music2 className="w-4 h-4 text-green-600" />
+                            <span className="text-sm text-gray-700 font-medium">
+                              {slideAudioFiles[slides[currentSlideIndex].id].name}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleSlideAudioChange(slides[currentSlideIndex].id, null)}
+                            className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                            title="Remove audio"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <input
+                            type="file"
+                            id={`slide-audio-${slides[currentSlideIndex].id}`}
+                            accept=".mp3"
+                            onChange={(e) => handleSlideAudioChange(slides[currentSlideIndex].id, e.target.files ? e.target.files[0] : null)}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor={`slide-audio-${slides[currentSlideIndex].id}`}
+                            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 cursor-pointer transition-all"
+                          >
+                            <Upload className="w-4 h-4" />
+                            Upload Audio
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Text to Speech */}
+                    <div className="pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-purple-600" />
+                          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                            Text to Speech <span className="text-gray-400 normal-case">(Optional)</span>
+                          </label>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSlides(slides.map((s, idx) =>
+                              idx === currentSlideIndex
+                                ? { ...s, enableTranscript: !s.enableTranscript }
+                                : s
+                            ));
+                          }}
+                          className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                            slides[currentSlideIndex].enableTranscript ? 'bg-purple-600' : 'bg-gray-300'
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${
+                              slides[currentSlideIndex].enableTranscript ? 'translate-x-6' : ''
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {slides[currentSlideIndex].enableTranscript && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex-1">
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Voice Type
+                              </label>
+                              <select
+                                value={slides[currentSlideIndex].voiceGender}
+                                onChange={(e) => {
+                                  setSlides(slides.map((s, idx) =>
+                                    idx === currentSlideIndex
+                                      ? { ...s, voiceGender: e.target.value as 'male' | 'female' }
+                                      : s
+                                  ));
+                                }}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-sm bg-white"
+                              >
+                                <option value="female">Female Voice</option>
+                                <option value="male">Male Voice</option>
+                              </select>
+                            </div>
+                            <button
+                              onClick={() => handlePlayTranscript(slides[currentSlideIndex].id)}
+                              disabled={!slides[currentSlideIndex].transcript.trim()}
+                              className={`mt-5 px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ${
+                                !slides[currentSlideIndex].transcript.trim()
+                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                  : playingTranscriptId === slides[currentSlideIndex].id
+                                    ? 'bg-red-600 text-white hover:bg-red-700'
+                                    : 'bg-purple-600 text-white hover:bg-purple-700'
+                              }`}
+                            >
+                              {playingTranscriptId === slides[currentSlideIndex].id ? (
+                                <>
+                                  <Pause className="w-4 h-4" />
+                                  Stop
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-4 h-4" />
+                                  Preview
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          <textarea
+                            value={slides[currentSlideIndex].transcript}
+                            onChange={(e) => {
+                              setSlides(slides.map((s, idx) =>
+                                idx === currentSlideIndex
+                                  ? { ...s, transcript: e.target.value }
+                                  : s
+                              ));
+                            }}
+                            placeholder={`Enter transcript text for ${slides[currentSlideIndex].name}...\n\nExample:\nWelcome to the ${slides[currentSlideIndex].name} section. In this part of the course, we'll explore...`}
+                            className="w-full h-32 px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 resize-y text-sm"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            {slides[currentSlideIndex].transcript.length} characters
+                          </p>
+                        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Accordion Section 2: Slide Settings */}
+              <div className="mb-4 border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setIsSlideSettingsOpen(!isSlideSettingsOpen)}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-gray-50 to-white hover:bg-gray-100 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    <div className="text-left">
+                      <span className="font-semibold text-gray-900">Slide Settings</span>
+                      <p className="text-xs text-gray-600">Configure transition and duration for this slide</p>
+                    </div>
+                  </div>
+                  <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isSlideSettingsOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isSlideSettingsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-6 bg-white border-t border-gray-200"
+                  >
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Slide Transition */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                          Transition Effect
+                        </label>
+                        <select
+                          value={slides[currentSlideIndex].transition}
+                          onChange={(e) => handleTransitionChange(slides[currentSlideIndex].id, e.target.value)}
+                          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm bg-white"
+                        >
+                          {transitionOptions.map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Global setting: {globalSlideTransition ? transitionOptions.find(opt => opt.value === globalSlideTransition)?.label : 'None'}
+                        </p>
+                      </div>
+
+                      {/* Slide Duration */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                          Slide Duration
+                        </label>
+                        {slideAudioFiles[slides[currentSlideIndex].id] ? (
+                          <div className="px-3 py-2.5 bg-green-50 border border-green-300 rounded-lg">
+                            <p className="text-sm text-gray-700 font-medium">Auto (from audio)</p>
+                            <p className="text-xs text-gray-500 mt-1">Duration will be set from uploaded audio file</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                placeholder="Enter seconds"
+                                min="1"
+                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm bg-white"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                                sec
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {slideDuration ? `Global: ${slideDuration}s` : 'Set manual duration'}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Accordion Section 3: Seekbar Settings */}
+              <div className="mb-6 border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setIsSeekbarSettingsOpen(!isSeekbarSettingsOpen)}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-gray-50 to-white hover:bg-gray-100 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <BarChart3 className="w-5 h-5 text-green-600" />
+                    <div className="text-left">
+                      <span className="font-semibold text-gray-900">Seekbar Settings</span>
+                      <p className="text-xs text-gray-600">
+                        {!slideAudioFiles[slides[currentSlideIndex].id]
+                          ? 'No audio - Seekbar will be hidden'
+                          : seekBarControl === 'hide' ? 'Hidden' : (
+                            seekBarOption === 'allowDrag' ? 'Allow user to drag' :
+                            seekBarOption === 'afterCompletion' ? 'Allow drag after completion' :
+                            'Read only'
+                          )
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isSeekbarSettingsOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isSeekbarSettingsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-6 bg-white border-t border-gray-200"
+                  >
+                    {!slideAudioFiles[slides[currentSlideIndex].id] ? (
+                      <div className="flex items-start gap-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-900">No audio uploaded</p>
+                          <p className="text-sm text-amber-700 mt-1">
+                            Seekbar will be automatically hidden for this slide since no audio file is uploaded. Upload slide audio in the Audio Settings section to enable seekbar controls.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-600 mb-3">
+                          Global seekbar setting from Global Settings (Step 2) applies to this slide
+                        </p>
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-sm font-medium text-blue-900">Current Setting:</p>
+                          <p className="text-sm text-blue-700 mt-1">
+                            {seekBarControl === 'hide'
+                              ? 'Seekbar is hidden'
+                              : `Seekbar enabled - ${
+                                  seekBarOption === 'allowDrag' ? 'Allow user to drag' :
+                                  seekBarOption === 'afterCompletion' ? 'Allow drag after completion' :
+                                  'Read only'
+                                }`
+                            }
+                          </p>
+                          <p className="text-xs text-blue-600 mt-2">
+                            To change this setting, go to Step 2: Global Settings
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Action Buttons for Step 3 */}
+              <div className="flex justify-between items-center gap-3">
+                <button
+                  onClick={() => {
+                    if (hasExitedCourse) {
+                      setShowResumeScreen(true);
+                    } else {
+                      setShowPreview(true);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <Eye className="w-4 h-4" />
+                  Preview
+                </button>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSaveDraft}
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    <Save className="w-4 h-4 inline mr-2" />
+                    Save
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleSaveDraft();
+                      if (currentSlideIndex < slides.length - 1) {
+                        setCurrentSlideIndex(currentSlideIndex + 1);
+                        toast.success('Saved! Moving to next slide');
+                      } else {
+                        toast.success('Saved! This is the last slide');
+                      }
+                    }}
+                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg transition-all font-medium flex items-center gap-2"
+                  >
+                    Save & Next
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+                  
+                  {isNavigationOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="p-4 bg-white border-t border-gray-200"
+                    >
+                      <div className="space-y-2">
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          navigationMode === 'free'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="navigationMode"
+                            checked={navigationMode === 'free'}
+                            onChange={() => setNavigationMode('free')}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Free Navigation</span>
+                            <p className="text-sm text-gray-600 mt-1">Learners can move forward and backward without restriction (Default)</p>
+                          </div>
+                        </label>
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          navigationMode === 'linear'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="navigationMode"
+                            checked={navigationMode === 'linear'}
+                            onChange={() => setNavigationMode('linear')}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Linear (Restricted Forward Navigation, Backward Only)</span>
+                            <p className="text-sm text-gray-600 mt-1">Learners cannot skip ahead and must complete each slide before progressing</p>
+                          </div>
+                        </label>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Collapsible Section 2: Seek Bar Control */}
+                <div className="mb-3 border border-gray-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setIsSeekBarOpen(!isSeekBarOpen)}
+                    className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <BarChart3 className="w-5 h-5 text-green-600" />
+                      <div className="text-left">
+                        <span className="font-medium text-gray-900">Seek Bar Control</span>
+                        <p className="text-xs text-gray-600">
+                          {seekBarControl === 'hide' ? 'Hidden' : (
+                            seekBarOption === 'allowDrag' ? 'Allow user to drag' :
+                            seekBarOption === 'afterCompletion' ? 'Allow drag after completion' :
+                            'Read only'
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isSeekBarOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {isSeekBarOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="p-4 bg-white border-t border-gray-200"
+                    >
+                      <div className="space-y-2">
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          seekBarControl === 'enable'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="seekBarControl"
+                            checked={seekBarControl === 'enable'}
+                            onChange={() => setSeekBarControl('enable')}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <span className="font-medium text-gray-900">Enable Seek Bar</span>
+                            <p className="text-sm text-gray-600 mt-1">Show seek bar with configurable interaction options</p>
+                            
+                            {seekBarControl === 'enable' && (
+                              <div className="mt-3 relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setShowSeekBarDropdown(!showSeekBarDropdown);
+                                  }}
+                                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-left flex items-center justify-between hover:border-blue-500 transition-colors"
+                                >
+                                  <span className="text-sm text-gray-700">
+                                    {seekBarOption === 'allowDrag' && 'Allow user to drag Seek Bar'}
+                                    {seekBarOption === 'afterCompletion' && 'Allow drag after completion'}
+                                    {seekBarOption === 'readOnly' && 'Seek bar is read only'}
+                                  </span>
+                                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                                </button>
+                                
+                                {showSeekBarDropdown && (
+                                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        setSeekBarOption('allowDrag');
+                                        setShowSeekBarDropdown(false);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 first:rounded-t-lg"
+                                    >
+                                      Allow user to drag Seek Bar
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        setSeekBarOption('afterCompletion');
+                                        setShowSeekBarDropdown(false);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50"
+                                    >
+                                      Allow drag after completion
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        setSeekBarOption('readOnly');
+                                        setShowSeekBarDropdown(false);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 last:rounded-b-lg"
+                                    >
+                                      Seek bar is read only
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Conflict Warning */}
+                            {navigationMode === 'linear' && seekBarControl === 'enable' && seekBarOption === 'allowDrag' && (
+                              <div className="flex items-start gap-2 mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                <span><strong>Conflict:</strong> Linear Navigation restricts forward progression. Even though "Allow user to drag" is selected, forward dragging will be restricted to maintain proper linear progression.</span>
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                        
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          seekBarControl === 'hide'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="seekBarControl"
+                            checked={seekBarControl === 'hide'}
+                            onChange={() => setSeekBarControl('hide')}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Hide Seek Bar Completely</span>
+                            <p className="text-sm text-gray-600 mt-1">Seek bar will not be displayed in the player interface</p>
+                          </div>
+                        </label>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Collapsible Section 3: Resume from Last Location */}
+                <div className="mb-3 border border-gray-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setIsResumeOpen(!isResumeOpen)}
+                    className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <RotateCw className="w-5 h-5 text-purple-600" />
+                      <div className="text-left">
+                        <span className="font-medium text-gray-900">Resume from Last Location</span>
+                        <p className="text-xs text-gray-600">
+                          {resumeOption === 'trackLocation' && 'Enable Bookmarking - Track slide location'}
+                          {resumeOption === 'trackSlide' && 'Enable Bookmarking - Track slide last location'}
+                          {resumeOption === 'disable' && 'Disable bookmarking'}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isResumeOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {isResumeOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="p-4 bg-white border-t border-gray-200"
+                    >
+                      <div className="space-y-2">
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          resumeOption === 'trackLocation'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="resumeOption"
+                            checked={resumeOption === 'trackLocation'}
+                            onChange={() => setResumeOption('trackLocation')}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Enable Bookmarking - Track slide location</span>
+                            <p className="text-sm text-gray-600 mt-1">Save learner's exact position within the slide, including timeline location. Upon relaunch, learner will be prompted to resume from the exact point (Default)</p>
+                          </div>
+                        </label>
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          resumeOption === 'trackSlide'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="resumeOption"
+                            checked={resumeOption === 'trackSlide'}
+                            onChange={() => setResumeOption('trackSlide')}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Enable Bookmarking - Track slide last location</span>
+                            <p className="text-sm text-gray-600 mt-1">Save only the last accessed slide. Upon relaunch, course opens at the beginning of that slide without restoring exact timeline position</p>
+                          </div>
+                        </label>
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          resumeOption === 'disable'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="resumeOption"
+                            checked={resumeOption === 'disable'}
+                            onChange={() => setResumeOption('disable')}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Disable bookmarking</span>
+                            <p className="text-sm text-gray-600 mt-1">Do not store learner progress. Course will start from the first slide each time, previously viewed progress will not be restored</p>
+                          </div>
+                        </label>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* NEW: Collapsible Section 4: Player Controls Configuration */}
+                <div className="mb-3 border border-gray-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setIsPlayerControlsOpen(!isPlayerControlsOpen)}
+                    className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="w-5 h-5 text-indigo-600" />
+                      <div className="text-left">
+                        <span className="font-medium text-gray-900">Player Element Controls</span>
+                        <p className="text-xs text-gray-600">
+                          Configure optional player interface elements
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isPlayerControlsOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {isPlayerControlsOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="p-4 bg-white border-t border-gray-200"
+                    >
+                      <p className="text-sm text-gray-600 mb-3">
+                        Default elements (always enabled): Play/Pause, Resume, Restart, Volume, Full Screen, Playback Speed, Course Title, Slide Number
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          showPrevNextButtons ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showPrevNextButtons}
+                            onChange={(e) => setShowPrevNextButtons(e.target.checked)}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Previous / Next Buttons</span>
+                            <p className="text-sm text-gray-600 mt-1">Show navigation buttons to move between slides (Default: ON)</p>
+                          </div>
+                        </label>
+
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          showMenu ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showMenu}
+                            onChange={(e) => setShowMenu(e.target.checked)}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Menu (Slide Names)</span>
+                            <p className="text-sm text-gray-600 mt-1">Display course menu with editable slide names for easy navigation (Default: ON)</p>
+                          </div>
+                        </label>
+
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          showCaptions ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showCaptions}
+                            onChange={(e) => setShowCaptions(e.target.checked)}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Captions</span>
+                            <p className="text-sm text-gray-600 mt-1">Enable closed captions for accessibility (Default: OFF)</p>
+                          </div>
+                        </label>
+
+                        <label className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          showTranscript ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showTranscript}
+                            onChange={(e) => setShowTranscript(e.target.checked)}
+                            className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Transcript (Text-to-Speech)</span>
+                            <p className="text-sm text-gray-600 mt-1">Show text transcript with text-to-speech capability (Default: OFF)</p>
+                          </div>
+                        </label>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3">
+            {currentStep > 1 && (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleBack}
+                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+              >
+                Back
+              </motion.button>
+            )}
+            
+            {currentStep === 3 ? (
+              <>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleSaveDraft}
+                  disabled={isPublishing}
+                  className="px-6 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  Save as Draft
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handlePublishOrRepublish}
+                  disabled={isPublishing || (!isEditMode && !canPublish())}
+                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg transition-all font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed relative group"
+                  title={!canPublish() && !isEditMode ? 'License limit reached' : ''}
+                >
+                  <FileUp className="w-4 h-4" />
+                  {isPublishing ? 'Publishing...' : (isPublishedAndEdited ? 'Republish Course' : 'Publish Course')}
+                  {!canPublish() && !isEditMode && (
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-56 px-3 py-2 bg-red-600 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal pointer-events-none z-10">
+                      License limit reached. Please contact your Administrator.
+                    </div>
+                  )}
+                </motion.button>
+              </>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleContinue}
+                disabled={currentStep === 1 && (!contentType || (contentType === 'ppt-pdf' && !uploadedFile))}
+                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg transition-all font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Continue
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl"
+          >
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Course {isPublishedAndEdited ? 'Republished' : 'Published'} Successfully!
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Your course has been {isPublishedAndEdited ? 'republished' : 'published'}. You can now download the SCORM package and deploy it to your LMS.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    navigate('/courses');
+                  }}
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  View Courses
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleDownload();
+                    setShowSuccessModal(false);
+                    navigate('/courses');
+                  }}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg transition-all font-medium flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Draft Modal */}
+      {showDraftModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl"
+          >
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                <Save className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Course Saved as Draft!
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Your course has been saved successfully. You can continue editing it later or publish it when ready.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDraftModal(false);
+                    navigate('/courses');
+                  }}
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  View Courses
+                </button>
+                <button
+                  onClick={() => setShowDraftModal(false)}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Continue Editing
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-xl w-full max-w-5xl h-[90vh] flex flex-col relative">
+            {/* Preview Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                  <Play className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">{courseName}</h3>
+                  <p className="text-xs text-gray-400">SCORM Player Preview</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setShowMenuModal(!showMenuModal);
+                    setShowHelpModal(false);
+                    setShowTranscriptModal(false);
+                  }}
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                  title="Menu"
+                >
+                  <MenuIcon className="w-5 h-5 text-white" />
+                </button>
+                <button
+                  onClick={() => {
+                    setShowHelpModal(!showHelpModal);
+                    setShowMenuModal(false);
+                    setShowTranscriptModal(false);
+                  }}
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                  title="Help"
+                >
+                  <HelpCircle className="w-5 h-5 text-white" />
+                </button>
+                <button
+                  onClick={() => {
+                    // Save current position and mark as exited
+                    setLastSlidePosition(currentSlide);
+                    setHasExitedCourse(true);
+                    setShowPreview(false);
+                    // Close all modals
+                    setShowMenuModal(false);
+                    setShowHelpModal(false);
+                    setShowTranscriptModal(false);
+                    setShowCCOverlay(false);
+                  }}
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                  title="Exit"
+                >
+                  <LogOut className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Preview Content Area with Modals */}
+            <div className="flex-1 relative overflow-hidden">
+              {/* Main Content */}
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 p-8">
+                <div className="absolute top-4 left-4 bg-black/60 px-4 py-2 rounded-lg text-sm text-white">
+                  {scormExportVersion}
+                </div>
+                
+                {/* Info Banner - Shows available features */}
+                {!showMenuModal && !showHelpModal && !showTranscriptModal && !showCCOverlay && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute top-4 right-4 bg-orange-500/90 backdrop-blur-sm px-4 py-2 rounded-lg text-sm text-white max-w-xs shadow-lg"
+                  >
+                    <p className="font-medium mb-1">💡 Preview Features</p>
+                    <p className="text-xs opacity-90">Click <strong>Menu</strong>, <strong>Help</strong>, <strong>CC</strong>, or <strong>Transcript</strong> to test features</p>
+                  </motion.div>
+                )}
+                
+                <div className="text-center">
+                  <div className="mb-4 text-6xl font-bold text-white">
+                    {currentSlide} / {totalSlides}
+                  </div>
+                  <h4 className="text-2xl text-white mb-2">{slides[currentSlide - 1]?.name || 'Slide'}</h4>
+                  <p className="text-gray-400">Slide content preview</p>
+                </div>
+                
+                {/* CC Overlay */}
+                {showCCOverlay && (
+                  <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-black/90 px-6 py-3 rounded-lg max-w-2xl">
+                    <p className="text-white text-center text-sm leading-relaxed">
+                      Hi, am here to discuss about a more popular buzzword in the past decade – emotional intelligence.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Menu Modal */}
+              {showMenuModal && (
+                <motion.div
+                  initial={{ x: -300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  className="absolute top-0 left-0 bottom-0 w-[500px] bg-gray-800/95 backdrop-blur-sm border-r border-orange-500/30 shadow-2xl z-10"
+                >
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between p-4 border-b border-orange-500/30">
+                      <div className="flex items-center gap-2 text-orange-500">
+                        <MenuIcon className="w-5 h-5" />
+                        <h3 className="text-lg font-semibold text-white">Menu</h3>
+                      </div>
+                      <button
+                        onClick={() => setShowMenuModal(false)}
+                        className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        <X className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4">
+                      <div className="space-y-2">
+                        {slides.map((slide, index) => (
+                          <button
+                            key={slide.id}
+                            onClick={() => setCurrentSlide(index + 1)}
+                            className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                              currentSlide === index + 1
+                                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                                : 'text-gray-300 hover:bg-gray-700/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                currentSlide === index + 1 ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-400'
+                              }`}>
+                                {index === 0 ? '🎯' : '🔵'}
+                              </div>
+                              <span className="font-medium">{slide.name}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Help Modal */}
+              {showHelpModal && (
+                <motion.div
+                  initial={{ x: -300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  className="absolute top-0 left-0 bottom-0 w-[600px] bg-gray-800/95 backdrop-blur-sm border-r border-orange-500/30 shadow-2xl z-10"
+                >
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between p-4 border-b border-orange-500/30">
+                      <div className="flex items-center gap-2 text-orange-500">
+                        <HelpCircle className="w-5 h-5" />
+                        <h3 className="text-lg font-semibold text-white">Help</h3>
+                      </div>
+                      <button
+                        onClick={() => setShowHelpModal(false)}
+                        className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        <X className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-6">
+                      <div className="space-y-6 text-white">
+                        <div>
+                          <h4 className="font-semibold text-lg mb-2">Screen title:</h4>
+                          <p className="text-gray-300">The 'Screen title' is displayed on the top left corner of the screen</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-lg mb-2">Menu:</h4>
+                          <p className="text-gray-300">Here you can see all the available topics in this course</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-lg mb-2">Help:</h4>
+                          <p className="text-gray-300">Here you can see the 'Help' page</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-lg mb-2">Page no.:</h4>
+                          <p className="text-gray-300">Here you can see the page that you are in right now</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-lg mb-2">Previous:</h4>
+                          <p className="text-gray-300">Course navigation – You can go to the previous screen</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-lg mb-2">Next:</h4>
+                          <p className="text-gray-300">Course navigation – You can go to the next screen</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-lg mb-2">Transcript:</h4>
+                          <p className="text-gray-300">Here you can see the voice-over transcript</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-lg mb-2">Exit:</h4>
+                          <p className="text-gray-300">Here you can 'Exit' the course</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Transcript Modal */}
+              {showTranscriptModal && (
+                <motion.div
+                  initial={{ y: 300, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 300, opacity: 0 }}
+                  className="absolute bottom-0 left-0 right-0 h-[300px] bg-gray-800/95 backdrop-blur-sm border-t border-orange-500/30 shadow-2xl z-10"
+                >
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between p-4 border-b border-orange-500/30">
+                      <div className="flex items-center gap-2 text-orange-500">
+                        <FileText className="w-5 h-5" />
+                        <h3 className="text-lg font-semibold text-white">Transcript</h3>
+                      </div>
+                      <button
+                        onClick={() => setShowTranscriptModal(false)}
+                        className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        <X className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-6">
+                      {slides[currentSlideIndex]?.enableTranscript && slides[currentSlideIndex]?.transcript ? (
+                        <div>
+                          <div className="mb-4 pb-3 border-b border-orange-500/30">
+                            <div className="flex items-center gap-2 text-orange-500 text-sm">
+                              <span className="font-semibold">Slide {currentSlideIndex + 1}:</span>
+                              <span className="text-white">{slides[currentSlideIndex].name}</span>
+                            </div>
+                          </div>
+                          <p className="text-white leading-relaxed whitespace-pre-wrap">
+                            {slides[currentSlideIndex].transcript}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-gray-400 leading-relaxed italic text-center">
+                          No transcript added for this slide. Enable and add transcript text for "{slides[currentSlideIndex]?.name}" in Step 2: Audio & Slide Management.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Preview Player Controls */}
+            <div className="bg-gray-800 p-4 border-t border-gray-700">
+              <div className="max-w-3xl mx-auto">
+                {/* Progress Bar */}
+                {seekBarControl === 'enable' && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-1">
+                      <span>{Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}</span>
+                      <div className="flex-1 h-1 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
+                          style={{ width: `${(currentTime / duration) * 100}%` }}
+                        />
+                      </div>
+                      <span>{Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Control Buttons */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                    >
+                      {isPlaying ? (
+                        <Pause className="w-5 h-5 text-white" />
+                      ) : (
+                        <Play className="w-5 h-5 text-white" />
+                      )}
+                    </button>
+                    
+                    <button className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+                      <RotateCcw className="w-5 h-5 text-white" />
+                    </button>
+
+                    {showPrevNextButtons && (
+                      <>
+                        <button
+                          onClick={() => setCurrentSlide(Math.max(1, currentSlide - 1))}
+                          disabled={currentSlide === 1}
+                          className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-30"
+                        >
+                          <SkipBack className="w-5 h-5 text-white" />
+                        </button>
+                        <button
+                          onClick={() => setCurrentSlide(Math.min(totalSlides, currentSlide + 1))}
+                          disabled={currentSlide === totalSlides}
+                          className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-30"
+                        >
+                          <SkipForward className="w-5 h-5 text-white" />
+                        </button>
+                      </>
+                    )}
+
+                    <button className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+                      <Volume2 className="w-5 h-5 text-white" />
+                    </button>
+
+                    <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-white text-sm font-medium">
+                      1x
+                    </button>
+
+                    {/* CC Button - Always visible in preview */}
+                    <button
+                      onClick={() => setShowCCOverlay(!showCCOverlay)}
+                      className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                        showCCOverlay ? 'bg-orange-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                      title="Toggle Closed Captions"
+                    >
+                      CC
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg">
+                      <button
+                        onClick={() => setCurrentSlide(Math.max(1, currentSlide - 1))}
+                        disabled={currentSlide === 1}
+                        className="disabled:opacity-30"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-white" />
+                      </button>
+                      <span className="text-white font-semibold text-sm min-w-[60px] text-center">
+                        {String(currentSlide).padStart(2, '0')} / {totalSlides}
+                      </span>
+                      <button
+                        onClick={() => setCurrentSlide(Math.min(totalSlides, currentSlide + 1))}
+                        disabled={currentSlide === totalSlides}
+                        className="disabled:opacity-30"
+                      >
+                        <ChevronRight className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+                    <button className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
+                      <Maximize className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Bottom Row with Transcript - Always visible in preview */}
+                <div className="mt-3 flex items-center justify-center gap-4">
+                  <button
+                    onClick={() => {
+                      setShowTranscriptModal(!showTranscriptModal);
+                      setShowMenuModal(false);
+                      setShowHelpModal(false);
+                    }}
+                    className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                      showTranscriptModal ? 'text-orange-400' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4" />
+                    Transcript
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resume/Restart Modal */}
+      {showResumeScreen && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="w-full h-full flex flex-col items-center justify-center relative">
+            {/* Course Title */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-24 text-center"
+            >
+              <h2 className="text-2xl text-white font-medium">{courseName}</h2>
+            </motion.div>
+
+            {/* Center Content - Resume Button */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              className="flex flex-col items-center gap-8"
+            >
+              <button
+                onClick={() => {
+                  // Resume from last position
+                  setCurrentSlide(lastSlidePosition);
+                  setShowResumeScreen(false);
+                  setShowPreview(true);
+                }}
+                className="flex items-center gap-3 px-8 py-4 bg-white hover:bg-gray-100 rounded-full transition-all shadow-lg hover:shadow-xl group"
+              >
+                <Play className="w-5 h-5 text-gray-700 group-hover:text-gray-900" />
+                <span className="text-gray-700 font-medium group-hover:text-gray-900">Resume</span>
+              </button>
+            </motion.div>
+
+            {/* Bottom - Restart Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="absolute bottom-24"
+            >
+              <button
+                onClick={() => {
+                  // Restart from beginning
+                  setCurrentSlide(1);
+                  setLastSlidePosition(1);
+                  setShowResumeScreen(false);
+                  setShowPreview(true);
+                }}
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span className="text-sm font-medium">Restart</span>
+              </button>
+            </motion.div>
+
+            {/* Close Button - Top Right */}
+            <button
+              onClick={() => setShowResumeScreen(false)}
+              className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-lg transition-colors"
+              title="Close"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

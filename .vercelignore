@@ -1,0 +1,9 @@
+node_modules
+artifacts
+test-results
+tests
+playwright-report
+overview-desktop.png
+.env
+.env.*
+.git

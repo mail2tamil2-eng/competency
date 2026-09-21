@@ -1,0 +1,242 @@
+import { useState, useEffect } from "react";
+import { Plus, Search, Pencil, Trash2, Download } from "lucide-react";
+import { Data, RecordItem, used, download } from "./model";
+import { Editor } from "./Editor";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../components/ui/dialog";
+export function LibrarySettings({
+  data,
+  initialSection,
+  commit,
+}: {
+  data: Data;
+  initialSection: "categories" | "levels";
+  commit: (data: Data, message: string) => boolean;
+}) {
+  const [section, setSection] = useState(initialSection),
+    [query, setQuery] = useState(""),
+    [status, setStatus] = useState(""),
+    [editing, setEditing] = useState<{ item?: RecordItem } | null>(null),
+    [deleting, setDeleting] = useState<RecordItem | null>(null);
+  useEffect(() => {
+    setSection(initialSection);
+    setQuery("");
+  }, [initialSection]);
+  const records = data[section].filter(
+    (x) =>
+      (x.name + " " + x.description)
+        .toLowerCase()
+        .includes(query.toLowerCase()) &&
+      (!status || x.status === status),
+  );
+  return (
+    <section className="cm-card">
+      <div className="cm-section-head">
+        <div>
+          <h2>Library settings</h2>
+          <p>
+            Manage the categories and proficiency levels used across your
+            competencies and skills.
+          </p>
+        </div>
+      </div>
+      <div
+        className="cm-settings-tabs"
+        role="group"
+        aria-label="Library settings sections"
+      >
+        {(["categories", "levels"] as const).map((s) => (
+          <button
+            className={section === s ? "active" : ""}
+            aria-pressed={section === s}
+            key={s}
+            onClick={() => {
+              setSection(s);
+              setQuery("");
+              setStatus("");
+            }}
+          >
+            {s === "categories" ? "Categories" : "Proficiency levels"}
+          </button>
+        ))}
+      </div>
+      <div className="cm-section-head">
+        <div>
+          <h3>
+            {section === "categories" ? "Categories" : "Proficiency levels"}{" "}
+            <span className="cm-count">{data[section].length}</span>
+          </h3>
+          <p>
+            {section === "categories"
+              ? "Group related competencies, for example Foundation or Technical."
+              : "Levels progress from top to bottom. Each skill describes these levels in its own context."}
+          </p>
+        </div>
+        <button className="cm-button primary" onClick={() => setEditing({})}>
+          <Plus size={16} />
+          Add {section === "categories" ? "category" : "level"}
+        </button>
+      </div>
+      <div className="cm-toolbar">
+        <label className="cm-search">
+          <Search size={17} />
+          <input
+            aria-label="Search library settings"
+            placeholder={"Search " + section + "…"}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        <select
+          aria-label="Filter settings status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">All statuses</option>
+          <option>Active</option>
+          <option>Inactive</option>
+        </select>
+        <button
+          className="cm-button"
+          onClick={() =>
+            download(section + ".csv", [
+              ["Name", "Description", "Status"],
+              ...records.map((r) => [r.name, r.description, r.status]),
+            ])
+          }
+        >
+          <Download size={16} />
+          Export CSV
+        </button>
+      </div>
+      <div className="cm-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+              <th className="cm-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {records.map((r) => (
+              <tr key={r.id}>
+                <td>
+                  <strong>{r.name}</strong>
+                  <small>{r.description || "No description added"}</small>
+                </td>
+                <td>
+                  <span className={"cm-badge " + r.status.toLowerCase()}>
+                    {r.status}
+                  </span>
+                </td>
+                <td>
+                  <div className="cm-row-actions">
+                    <button
+                      className="cm-icon-button"
+                      aria-label={"Edit " + r.name}
+                      onClick={() => setEditing({ item: r })}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      className="cm-icon-button danger"
+                      disabled={used(data, section, r.id)}
+                      title={
+                        used(data, section, r.id)
+                          ? "In use; remove mappings before deleting"
+                          : "Delete"
+                      }
+                      aria-label={"Delete " + r.name}
+                      onClick={() => setDeleting(r)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!records.length && (
+        <p className="cm-empty">
+          No matching {section}. Try another search or add an item.
+        </p>
+      )}
+      <p className="cm-hint">
+        Items already used by skills, competencies or learners cannot be deleted
+        or deactivated.
+      </p>
+      {editing && (
+        <Editor
+          kind={section}
+          data={data}
+          item={editing.item}
+          onClose={() => setEditing(null)}
+          onSave={(item) => {
+            if (
+              commit(
+                {
+                  ...data,
+                  [section]: editing.item
+                    ? data[section].map((x) => (x.id === item.id ? item : x))
+                    : [...data[section], item],
+                },
+                "Saved successfully",
+              )
+            )
+              setEditing(null);
+          }}
+        />
+      )}
+      {deleting && (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setDeleting(null);
+          }}
+        >
+          <DialogContent className="cm-dialog">
+            <DialogHeader>
+              <DialogTitle>Delete {deleting.name}?</DialogTitle>
+              <DialogDescription>
+                This removes the unused item. This cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="cm-dialog-actions">
+              <button className="cm-button" onClick={() => setDeleting(null)}>
+                Keep item
+              </button>
+              <button
+                className="cm-button destructive"
+                onClick={() => {
+                  if (used(data, section, deleting.id)) return;
+                  if (
+                    commit(
+                      {
+                        ...data,
+                        [section]: data[section].filter(
+                          (x) => x.id !== deleting.id,
+                        ),
+                      },
+                      "Item deleted",
+                    )
+                  )
+                    setDeleting(null);
+                }}
+              >
+                Delete item
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </section>
+  );
+}
