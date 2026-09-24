@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { AssignmentConfiguration } from "./AssignmentConfiguration";
+export { Reports } from "./AdminReports";
+import { AssignmentSkills } from "./AssignmentSkills";
+import { useEffect, useRef, useState } from "react";
 import {
   Plus,
   BookOpen,
@@ -292,15 +295,20 @@ export function CourseMapping({ data, work, save }: Props) {
   );
 }
 export function RoleMapping({ data, work, save }: Props) {
+  const bodyRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<Plan | null>(null),
     [step, setStep] = useState(1),
-    [error, setError] = useState(""),
-    [competencies, setCompetencies] = useState<string[]>([]);
+    [error, setError] = useState("");
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0 });
+  }, [step, error]);
   const today = new Date().toLocaleDateString("en-CA");
   const started = (p: Plan) =>
     data.assignments.some(
       (a) =>
-        p.assignedNames.includes(a.name) &&
+        (p.assignedEmployeeIds && a.employeeId
+          ? p.assignedEmployeeIds.includes(a.employeeId)
+          : p.assignedNames.includes(a.name)) &&
         p.skills.some((s) => s.skillId === a.skillId) &&
         !!a.current,
     );
@@ -309,12 +317,19 @@ export function RoleMapping({ data, work, save }: Props) {
     setError("");
     setDraft(
       p
-        ? structuredClone(p)
+        ? {
+            ...structuredClone(p),
+            hasEndDate: !!p.end,
+            location: "",
+            type: p.method === "Manual" ? "Static" : p.type,
+          }
         : {
             id: uid(),
             name: "",
             start: today,
-            end: today.slice(0, 4) + "-12-31",
+            end: "",
+            hasEndDate: false,
+            cohort: "",
             method: "Auto",
             type: "Static",
             department: "",
@@ -326,19 +341,6 @@ export function RoleMapping({ data, work, save }: Props) {
             assignedNames: [],
           },
     );
-    setCompetencies(
-      p
-        ? [
-            ...new Set(
-              p.skills.map(
-                (s) =>
-                  data.skills.find((x) => x.id === s.skillId)?.competencyId ||
-                  "",
-              ),
-            ),
-          ]
-        : [],
-    );
   }
   const audience = draft ? matching(work, draft) : [];
   function validate() {
@@ -348,14 +350,14 @@ export function RoleMapping({ data, work, save }: Props) {
       !draft.skills.length ||
       draft.skills.some((s) => !s.expected) ||
       !draft.start ||
-      !draft.end
+      (draft.hasEndDate && !draft.end)
     ) {
       setError(
         "Enter a name, select skills and their expected levels, and choose dates.",
       );
       return false;
     }
-    if (draft.end < draft.start) {
+    if (draft.end && draft.end < draft.start) {
       setError("End date must be on or after start date.");
       return false;
     }
@@ -367,7 +369,7 @@ export function RoleMapping({ data, work, save }: Props) {
       draft.method === "Auto" &&
       !draft.department &&
       !draft.role &&
-      !draft.location
+      !draft.cohort
     ) {
       setError("Choose at least one audience criterion.");
       return false;
@@ -397,16 +399,21 @@ export function RoleMapping({ data, work, save }: Props) {
     const plan = {
       ...draft,
       name: draft.name.trim(),
+      assignedEmployeeIds: audience.map((e) => e.id),
       assignedNames: [
         ...new Set([...draft.assignedNames, ...audience.map((e) => e.name)]),
       ],
     };
     let assignments = [...data.assignments];
-    if (plan.start <= today && plan.end >= today)
+    if (plan.start <= today && (!plan.end || plan.end >= today))
       for (const e of audience)
         for (const s of plan.skills) {
           const existing = assignments.find(
-            (a) => a.name === e.name && a.skillId === s.skillId,
+            (a) =>
+              (a.employeeId
+                ? a.employeeId === e.id
+                : a.name === e.name && a.department === e.department) &&
+              a.skillId === s.skillId,
           );
           if (existing) {
             if (
@@ -416,10 +423,13 @@ export function RoleMapping({ data, work, save }: Props) {
               assignments[assignments.indexOf(existing)] = {
                 ...existing,
                 expected: s.expected,
+                completedDate: undefined,
               };
           } else
             assignments.push({
               id: uid(),
+              employeeId: e.id,
+              assignedDate: new Date().toISOString(),
               name: e.name,
               department: e.department,
               skillId: s.skillId,
@@ -457,9 +467,8 @@ export function RoleMapping({ data, work, save }: Props) {
         </button>
       </div>
       <p className="cm-hint">
-        Static assignments keep the selected audience. Dynamic assignments
-        include matching demo employees when this workspace is opened. Live HR
-        synchronization requires backend integration.
+        Assign skills to selected learners, or use profile rules to enrol
+        existing and new users.
       </p>
       {!work.plans.length ? (
         <div className="cm-empty">
@@ -568,7 +577,7 @@ export function RoleMapping({ data, work, save }: Props) {
             if (!open) setDraft(null);
           }}
         >
-          <DialogContent className="cm-dialog cm-wide">
+          <DialogContent className="cm-dialog cm-wide cm-config-dialog">
             <DialogHeader>
               <DialogTitle>
                 {step === 1 ? "Configure assignment" : "Review assignment"}
@@ -579,249 +588,64 @@ export function RoleMapping({ data, work, save }: Props) {
                   : "Check the learner count, skill requirements, and dates."}
               </DialogDescription>
             </DialogHeader>
-            {error && (
-              <div className="cm-error" role="alert">
-                {error}
-              </div>
-            )}
-            {step === 1 ? (
-              <>
-                <label>
-                  Assignment name *
-                  <input
-                    value={draft.name}
-                    onChange={(e) =>
-                      setDraft({ ...draft, name: e.target.value })
-                    }
+            <div className="cm-config-body" ref={bodyRef}>
+              {error && (
+                <div className="cm-error" role="alert">
+                  {error}
+                </div>
+              )}
+              {step === 1 ? (
+                <>
+                  <AssignmentConfiguration
+                    data={data}
+                    work={work}
+                    draft={draft}
+                    onChange={setDraft}
                   />
-                </label>
-                <h3>1. Competencies & skills</h3>
-                <div className="cm-checks">
-                  {data.competencies
-                    .filter((c) => c.status === "Active")
-                    .map((c) => (
-                      <label key={c.id}>
-                        <input
-                          type="checkbox"
-                          checked={competencies.includes(c.id)}
-                          onChange={(e) => {
-                            setCompetencies(
-                              e.target.checked
-                                ? [...competencies, c.id]
-                                : competencies.filter((x) => x !== c.id),
-                            );
-                            if (!e.target.checked)
-                              setDraft({
-                                ...draft,
-                                skills: draft.skills.filter(
-                                  (s) =>
-                                    data.skills.find((x) => x.id === s.skillId)
-                                      ?.competencyId !== c.id,
-                                ),
-                              });
-                          }}
-                        />
-                        {c.name}
-                      </label>
-                    ))}
-                </div>
-                {data.skills
-                  .filter(
-                    (s) =>
-                      s.status === "Active" &&
-                      competencies.includes(s.competencyId || ""),
-                  )
-                  .map((s) => (
-                    <div className="cm-mapping-row" key={s.id}>
-                      <label className="cm-inline-check">
-                        <input
-                          type="checkbox"
-                          checked={draft.skills.some((x) => x.skillId === s.id)}
-                          onChange={(e) =>
-                            setDraft({
-                              ...draft,
-                              skills: e.target.checked
-                                ? [
-                                    ...draft.skills,
-                                    { skillId: s.id, expected: "" },
-                                  ]
-                                : draft.skills.filter(
-                                    (x) => x.skillId !== s.id,
-                                  ),
-                            })
-                          }
-                        />
-                        {s.name}
-                      </label>
-                      {draft.skills.some((x) => x.skillId === s.id) && (
-                        <select
-                          aria-label={"Expected level for " + s.name}
-                          value={
-                            draft.skills.find((x) => x.skillId === s.id)
-                              ?.expected || ""
-                          }
-                          onChange={(e) =>
-                            setDraft({
-                              ...draft,
-                              skills: draft.skills.map((x) =>
-                                x.skillId === s.id
-                                  ? { ...x, expected: e.target.value }
-                                  : x,
-                              ),
-                            })
-                          }
-                        >
-                          <option value="">Expected level</option>
-                          {data.levels
-                            .filter((l) => l.status === "Active")
-                            .map((l) => (
-                              <option key={l.id} value={l.id}>
-                                {l.name}
-                              </option>
-                            ))}
-                        </select>
-                      )}
-                    </div>
-                  ))}
-                <h3>2. Enrolment & audience</h3>
-                <div className="cm-mapping-row">
-                  <label>
-                    Enrolment method
-                    <select
-                      value={draft.method}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          method: e.target.value as Plan["method"],
-                        })
-                      }
-                    >
-                      <option>Auto</option>
-                      <option>Manual</option>
-                    </select>
-                  </label>
-                  <label>
-                    Enrolment type
-                    <select
-                      value={draft.type}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          type: e.target.value as Plan["type"],
-                        })
-                      }
-                    >
-                      <option>Static</option>
-                      <option>Dynamic</option>
-                    </select>
-                  </label>
-                </div>
-                {draft.method === "Manual" ? (
-                  <div className="cm-checks">
-                    {work.employees.map((e) => (
-                      <label key={e.id}>
-                        <input
-                          type="checkbox"
-                          checked={draft.employeeIds.includes(e.id)}
-                          onChange={(event) =>
-                            setDraft({
-                              ...draft,
-                              employeeIds: event.target.checked
-                                ? [...draft.employeeIds, e.id]
-                                : draft.employeeIds.filter((x) => x !== e.id),
-                            })
-                          }
-                        />
-                        {e.name} · {e.department}
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="cm-mapping-row">
-                    {(["department", "role", "location"] as const).map(
-                      (field) => (
-                        <label key={field}>
-                          {field[0].toUpperCase() + field.slice(1)}
-                          <select
-                            aria-label={field[0].toUpperCase() + field.slice(1)}
-                            value={draft[field]}
-                            onChange={(e) =>
-                              setDraft({ ...draft, [field]: e.target.value })
-                            }
-                          >
-                            <option value="">Any {field}</option>
-                            {[
-                              ...new Set(work.employees.map((e) => e[field])),
-                            ].map((v) => (
-                              <option key={v}>{v}</option>
-                            ))}
-                          </select>
-                        </label>
-                      ),
-                    )}
-                  </div>
-                )}
-                <div className="cm-mapping-row">
-                  <label>
-                    Start date *
-                    <input
-                      type="date"
-                      value={draft.start}
-                      onChange={(e) =>
-                        setDraft({ ...draft, start: e.target.value })
-                      }
-                    />
-                  </label>
-                  <label>
-                    End date *
-                    <input
-                      type="date"
-                      value={draft.end}
-                      onChange={(e) =>
-                        setDraft({ ...draft, end: e.target.value })
-                      }
-                    />
-                  </label>
-                </div>
-                <p className="cm-hint">
-                  {audience.length} matching learners · {draft.skills.length}{" "}
-                  selected skills
-                </p>
-              </>
-            ) : (
-              <>
-                <h3>{draft.name}</h3>
-                <div className="cm-summary">
-                  <p>
-                    <strong>{audience.length}</strong> learners ·{" "}
-                    <strong>{draft.skills.length}</strong> skills
-                  </p>
-                  <p>
-                    {draft.method} enrolment · {draft.type} audience
-                  </p>
-                  <p>
-                    {draft.start} to {draft.end}
-                  </p>
-                  <p>
-                    {audience.map((e) => e.name).join(", ") ||
-                      "No current matching learners"}
-                  </p>
-                </div>
-                {draft.skills.map((s) => (
-                  <p key={s.skillId}>
-                    {data.skills.find((x) => x.id === s.skillId)?.name} →{" "}
-                    {data.levels.find((l) => l.id === s.expected)?.name}
-                  </p>
-                ))}
-                {!audience.length && (
                   <p className="cm-hint">
-                    No learners currently match. A static assignment will remain
-                    empty; a dynamic assignment can include future matching
-                    employees.
+                    {audience.length} matching learners · {draft.skills.length}{" "}
+                    selected skills
                   </p>
-                )}
-              </>
-            )}
+                </>
+              ) : (
+                <>
+                  <h3>{draft.name}</h3>
+                  <div className="cm-summary">
+                    <p>
+                      <strong>{audience.length}</strong> learners ·{" "}
+                      <strong>{draft.skills.length}</strong> skills
+                    </p>
+                    <p>
+                      {draft.method} enrolment · {draft.type} audience
+                    </p>
+                    <p>
+                      {draft.start} to {draft.end || "No end date"}
+                    </p>
+                    <p>
+                      {audience
+                        .slice(0, 20)
+                        .map((e) => e.name)
+                        .join(", ") || "No current matching learners"}
+                      {audience.length > 20 &&
+                        ` and ${audience.length - 20} more learners`}
+                    </p>
+                  </div>
+                  <AssignmentSkills
+                    data={data}
+                    selected={draft.skills}
+                    onChange={() => {}}
+                    readOnly
+                  />
+                  {!audience.length && (
+                    <p className="cm-hint">
+                      No learners currently match. A static assignment will
+                      remain empty; a dynamic assignment can include future
+                      matching employees.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
             <div className="cm-dialog-actions">
               <button
                 className="cm-button"
@@ -887,6 +711,14 @@ export function Learning({
       const proof: Proof = {
         id: uid(),
         ...submission,
+        levelId: work.courses
+          .find((c) => c.id === submission.courseId)
+          ?.mappings.find(
+            (m) =>
+              m.skillId ===
+              data.assignments.find((a) => a.id === submission.assignmentId)
+                ?.skillId,
+          )?.levelId,
         fileName: file.name,
         document,
         status: "Under Review",
@@ -1259,146 +1091,6 @@ export function Learning({
           </DialogContent>
         </Dialog>
       )}
-    </section>
-  );
-}
-export function Reports({ data, work }: Props) {
-  const [mode, setMode] = useState("competency"),
-    [skillId, setSkillId] = useState("");
-  const headers =
-    mode === "competency"
-      ? ["Competency", "Mapped skills", "Mapped courses"]
-      : mode === "skill"
-        ? ["Skill", "Competency", "Enrolled learners", "Proficiency"]
-        : [
-            "Learner",
-            "Department",
-            "Skill",
-            "Current level",
-            "Expected level",
-            "Status",
-          ];
-  const rows =
-    mode === "competency"
-      ? data.competencies.map((c) => {
-          const skills = data.skills.filter((s) => s.competencyId === c.id);
-          return [
-            c.name,
-            skills.map((s) => s.name).join(", "),
-            String(
-              work.courses.filter((course) =>
-                course.mappings.some((m) =>
-                  skills.some((s) => s.id === m.skillId),
-                ),
-              ).length,
-            ),
-          ];
-        })
-      : mode === "skill"
-        ? data.skills.map((s) => {
-            const a = data.assignments.filter((a) => a.skillId === s.id);
-            return [
-              s.name,
-              data.competencies.find((c) => c.id === s.competencyId)?.name ||
-                "",
-              String(a.length),
-              (a.length
-                ? Math.round(
-                    (a.filter((x) => progress(data, x) === "Completed").length /
-                      a.length) *
-                      100,
-                  )
-                : 0) + "%",
-            ];
-          })
-        : data.assignments
-            .filter((a) => !skillId || a.skillId === skillId)
-            .map((a) => [
-              a.name,
-              a.department,
-              data.skills.find((s) => s.id === a.skillId)?.name || "",
-              data.levels.find((l) => l.id === a.current)?.name ||
-                "Not recorded",
-              data.levels.find((l) => l.id === a.expected)?.name || "",
-              progress(data, a),
-            ]);
-  return (
-    <section className="cm-card">
-      <div className="cm-section-head">
-        <div>
-          <h2>Competency reports</h2>
-          <p>
-            Explore your library and learner progress, then export the current
-            view.
-          </p>
-        </div>
-        <button
-          className="cm-button"
-          onClick={() => download(mode + "-report.csv", [headers, ...rows])}
-        >
-          <Download size={16} />
-          Export CSV
-        </button>
-      </div>
-      <div className="cm-toolbar">
-        <select
-          aria-label="Report type"
-          value={mode}
-          onChange={(e) => setMode(e.target.value)}
-        >
-          <option value="competency">Competency report</option>
-          <option value="skill">Skill-wise learner progress</option>
-          <option value="learner">Learner detail</option>
-        </select>
-        {mode === "learner" && (
-          <select
-            aria-label="Report skill filter"
-            value={skillId}
-            onChange={(e) => setSkillId(e.target.value)}
-          >
-            <option value="">All skills</option>
-            {data.skills.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-      <div className="cm-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              {headers.map((h) => (
-                <th key={h}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={i}>
-                {r.map((v, j) => (
-                  <td key={j}>
-                    {mode === "skill" && j === 2 ? (
-                      <button
-                        className="cm-link"
-                        onClick={() => {
-                          setSkillId(data.skills[i].id);
-                          setMode("learner");
-                        }}
-                      >
-                        {v} learners
-                      </button>
-                    ) : (
-                      v
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </section>
   );
 }

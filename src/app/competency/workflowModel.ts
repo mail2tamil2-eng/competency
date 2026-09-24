@@ -7,6 +7,9 @@ export type Course = {
 };
 export type Employee = {
   id: string;
+  cohort?: string;
+  email?: string;
+  managerId?: string;
   name: string;
   department: string;
   role: string;
@@ -17,6 +20,9 @@ export type Plan = {
   name: string;
   start: string;
   end: string;
+  hasEndDate?: boolean;
+  cohort?: string;
+  assignedEmployeeIds?: string[];
   method: "Manual" | "Auto";
   type: "Static" | "Dynamic";
   department: string;
@@ -36,6 +42,9 @@ export type Proof = {
   status: "Under Review" | "Approved" | "Rejected";
   remarks: string;
   submitted: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  levelId?: string;
 };
 export type WorkflowData = {
   courses: Course[];
@@ -88,6 +97,7 @@ export const workflowSeed: WorkflowData = {
   employees: [
     {
       id: "e1",
+      email: "ananya.r@example.com",
       name: "Ananya R.",
       department: "Sales",
       role: "Executive",
@@ -95,6 +105,7 @@ export const workflowSeed: WorkflowData = {
     },
     {
       id: "e2",
+      email: "rahul.k@example.com",
       name: "Rahul K.",
       department: "Support",
       role: "Team Lead",
@@ -102,6 +113,7 @@ export const workflowSeed: WorkflowData = {
     },
     {
       id: "e3",
+      email: "meera.s@example.com",
       name: "Meera S.",
       department: "Sales",
       role: "Manager",
@@ -145,25 +157,36 @@ export function requiredCourses(data: Data, work: WorkflowData, a: Assignment) {
     );
 }
 export function matching(work: WorkflowData, p: Plan) {
+  const selected = new Set(p.employeeIds);
   return work.employees.filter((e) =>
     p.method === "Manual"
-      ? p.employeeIds.includes(e.id)
+      ? selected.has(e.id)
       : (!p.department || p.department === e.department) &&
         (!p.role || p.role === e.role) &&
-        (!p.location || p.location === e.location),
+        (!p.location || p.location === e.location) &&
+        (!p.cohort || p.cohort === e.cohort),
   );
 }
 export function applyPlans(data: Data, work: WorkflowData, today: string) {
   const assignments = [...data.assignments];
   const plans = work.plans.map((p) => {
-    if (p.status !== "Active" || p.start > today || p.end < today) return p;
+    if (p.status !== "Active" || p.start > today || (p.end && p.end < today))
+      return p;
     const learners = matching(work, p).filter(
-      (e) => p.type === "Dynamic" || p.assignedNames.includes(e.name),
+      (e) =>
+        p.type === "Dynamic" ||
+        (p.assignedEmployeeIds
+          ? p.assignedEmployeeIds.includes(e.id)
+          : p.assignedNames.includes(e.name)),
     );
     for (const e of learners)
       for (const s of p.skills) {
         const existing = assignments.find(
-          (a) => a.name === e.name && a.skillId === s.skillId,
+          (a) =>
+            (a.employeeId
+              ? a.employeeId === e.id
+              : a.name === e.name && a.department === e.department) &&
+            a.skillId === s.skillId,
         );
         if (existing) {
           if (
@@ -173,10 +196,13 @@ export function applyPlans(data: Data, work: WorkflowData, today: string) {
             assignments[assignments.indexOf(existing)] = {
               ...existing,
               expected: s.expected,
+              completedDate: undefined,
             };
         } else
           assignments.push({
             id: uid(),
+            employeeId: e.id,
+            assignedDate: today,
             name: e.name,
             department: e.department,
             skillId: s.skillId,
@@ -223,7 +249,16 @@ export function completeCourse(
     data: {
       ...data,
       assignments: data.assignments.map((x) =>
-        x.id === a.id ? { ...x, current: data.levels[current]?.id || "" } : x,
+        x.id === a.id
+          ? {
+              ...x,
+              current: data.levels[current]?.id || "",
+              completedDate:
+                current >= expected
+                  ? x.completedDate || new Date().toISOString()
+                  : undefined,
+            }
+          : x,
       ),
     },
     work: { ...work, completed },
@@ -251,7 +286,17 @@ export function updateCurrent(
     data: {
       ...data,
       assignments: data.assignments.map((x) =>
-        x.id === a.id ? { ...x, current: levelId, updatedBy: by } : x,
+        x.id === a.id
+          ? {
+              ...x,
+              current: levelId,
+              updatedBy: by,
+              completedDate:
+                rank >= data.levels.findIndex((l) => l.id === a.expected)
+                  ? x.completedDate || new Date().toISOString()
+                  : undefined,
+            }
+          : x,
       ),
     },
     work: {

@@ -1,0 +1,684 @@
+/* Existing Axle platform typography and primary color. */
+:root {
+  --font-sans: "Nunito Sans", sans-serif;
+}
+/* Readability scale: supporting 14, table 15, body/control 16, headings 20/24/28. */
+.cm,
+.cm-dialog {
+  font-size: 16px;
+  line-height: 1.5;
+  --cm-action: #2463d6;
+}
+.cm h1 {
+  font-size: 28px;
+  line-height: 1.25;
+}
+.cm h2,
+.cm-dialog h2 {
+  font-size: 24px;
+  line-height: 1.3;
+}
+.cm h3,
+.cm-dialog h3 {
+  font-size: 20px;
+  line-height: 1.4;
+}
+body {
+  font-family: "Nunito Sans", sans-serif;
+}
+.cm,
+.cm-dialog {
+  --cm-primary: #2d74fa;
+  --cm-primary-hover: #2463d6;
+  --cm-tint: #edf4ff;
+  --cm-border: #d9dfe7;
+  --cm-muted: #526176;
+  --cm-text: #111827;
+  font-family: "Nunito Sans", sans-serif;
+}
+.cm .cm-heading-icon {
+  background: #2d74fa;
+}
+.cm .cm-tabs button.active {
+  color: #2d74fa;
+}
+.cm input:focus,
+.cm select:focus,
+.cm textarea:focus,
+.cm-dialog input:focus,
+.cm-dialog select:focus,
+.cm-dialog textarea:focus {
+  border-color: #2d74fa;
+  box-shadow: 0 0 0 3px #2d74fa20;
+}
+.cm .cm-manager-navigation {
+  background: #f3f6f8;
+  border: 0;
+  border-radius: 12px;
+  gap: 12px;
+  padding: 0 8px;
+}
+.cm .cm-manager-navigation a {
+  color: #526176;
+  font-size: 14px;
+  font-weight: 400;
+  border-bottom-width: 3px;
+  border-radius: 0;
+}
+.cm .cm-manager-navigation a.active {
+  color: #111827;
+  background: transparent;
+  border-bottom-color: #2d74fa;
+  font-weight: 700;
+}
+.cm .cm-manager-navigation a:focus-visible {
+  outline-color: #2d74fa;
+}
+.cm .cm-manager-breadcrumb button,
+.cm .cm-manager-link,
+.cm .cm-text-button {
+  color: #2d74fa;
+}
+.cm .cm-manager-count {
+  background: #edf4ff;
+  color: #2d74fa;
+}
+.cm .cm-manager-stats article svg {
+  color: #2d74fa;
+}
+.cm .cm-manager-completion progress {
+  accent-color: #2d74fa;
+}
+.cm .cm-manager-completion progress::-webkit-progress-bar {
+  background: #e4e9ef;
+}
+.cm .cm-manager-completion progress::-webkit-progress-value {
+  background: #2d74fa;
+}
+.cm .cm-manager-completion progress::-moz-progress-bar {
+  background: #2d74fa;
+}
+.cm-dialog .cm-manager-history > div {
+  border-left-color: #bed5ff;
+}
+.cm-dialog .cm-hint {
+  background: #edf4ff;
+  color: #48617d;
+}
+.cm .cm-manager {
+  background: #fff;
+}
+.cm:has(.cm-manager) {
+  background: #fff;
+}
+.cm .cm-manager .cm-card {
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.cm .cm-manager .cm-table-wrap {
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+  border-top: 1px solid #d9dfe7;
+  border-bottom: 1px solid #d9dfe7;
+}
+.cm .cm-manager-table th {
+  background: #fff;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: #526176;
+  padding: 10px 12px;
+}
+.cm .cm-manager-table td {
+  font-size: 14px;
+  padding: 12px;
+  border-color: #d9dfe7;
+}
+.cm .cm-manager-table td strong {
+  font-weight: 600;
+}
+.cm .cm-manager-table td small {
+  font-size: 14px;
+}
+.cm .cm-manager .cm-button {
+  font-weight: 400;
+}
+.cm .cm-manager-status {
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 400;
+}
+.cm .cm-manager-status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.cm .cm-table-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 16px 0 10px;
+}
+.cm .cm-entry-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 16px;
+  font-weight: 400;
+  color: #111827;
+  white-space: nowrap;
+}
+.cm .cm-entry-count select {
+  min-height: 34px;
+  padding: 4px 7px;
+  width: auto;
+  border-radius: 3px;
+  border-color: #a9a9a9;
+  font-size: 16px;
+}
+.cm .cm-table-controls .cm-manager-caption {
+  margin: 0;
+}
+.cm .cm-platform-pagination {
+  font-size: 16px;
+  font-weight: 400;
+  color: #111827;
+  margin-top: 8px;
+  gap: 16px;
+}
+.cm .cm-platform-pagination nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-left: auto;
+}
+.cm .cm-platform-pagination .cm-button {
+  font-family: "Nunito Sans", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  min-height: 42px;
+  min-width: 42px;
+  padding: 8px 14px;
+  font-weight: 400;
+  border: 1px solid #939393;
+  border-radius: 10px;
+  color: #111827;
+  background: #fff;
+}
+.cm .cm-platform-pagination .cm-button.is-current {
+  color: #fff;
+  background: #2d74fa;
+  border-color: #2d74fa;
+}
+.cm .cm-platform-pagination .cm-button:disabled {
+  opacity: 0.5;
+}
+.cm .cm-platform-pagination .cm-page-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.cm-page-ellipsis {
+  color: #2d74fa;
+}
+@media (max-width: 700px) {
+  .cm .cm-platform-pagination nav {
+    margin-left: 0;
+    gap: 6px;
+  }
+  .cm .cm-platform-pagination .cm-page-slot {
+    gap: 6px;
+  }
+  .cm .cm-platform-pagination .cm-button {
+    padding: 6px 10px;
+    min-width: 36px;
+  }
+}
+
+/* Shared readable controls and accessible color roles. Brand blue remains the accent. */
+.cm .cm-button,
+.cm-dialog .cm-button,
+.cm .cm-pagination .cm-button,
+.cm .cm-manager .cm-button {
+  min-height: 44px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  border-color: #7a8799;
+  color: #263447;
+}
+.cm .cm-button.primary,
+.cm-dialog .cm-button.primary {
+  color: #fff;
+  background: var(--cm-action);
+  border-color: var(--cm-action);
+}
+.cm .cm-button.primary:enabled:hover,
+.cm-dialog .cm-button.primary:enabled:hover {
+  background: #1e52b3;
+  border-color: #1e52b3;
+}
+.cm .cm-button.destructive,
+.cm-dialog .cm-button.destructive {
+  color: #fff;
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+.cm .cm-button:disabled,
+.cm-dialog .cm-button:disabled,
+.cm .cm-button:disabled:hover,
+.cm-dialog .cm-button:disabled:hover,
+.cm .cm-platform-pagination .cm-button:disabled {
+  opacity: 1;
+  color: #526176;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+}
+.cm input:not([type="checkbox"]):not([type="radio"]),
+.cm select,
+.cm textarea,
+.cm-dialog input:not([type="checkbox"]):not([type="radio"]),
+.cm-dialog select,
+.cm-dialog textarea {
+  font-size: 16px;
+  line-height: 24px;
+  min-height: 44px;
+  border-color: #7a8799;
+  color: #263447;
+}
+.cm input::placeholder,
+.cm textarea::placeholder,
+.cm-dialog input::placeholder,
+.cm-dialog textarea::placeholder,
+.app-header input::placeholder {
+  color: #526176;
+  opacity: 1;
+}
+.cm-dialog label {
+  font-size: 16px;
+  font-weight: 600;
+}
+.cm .cm-tabs button,
+.cm .cm-manager-navigation a,
+.cm .cm-settings-tabs button {
+  font-size: 16px;
+  font-weight: 600;
+}
+.cm .cm-text-button,
+.cm .cm-link,
+.cm .cm-manager-link,
+.cm .cm-manager-breadcrumb button,
+.cm .cm-tabs button.active,
+.cm .cm-manager-count,
+.cm-dialog .cm-text-button,
+.cm .cm-category,
+.cm .cm-count,
+.cm-dialog .cm-count {
+  color: var(--cm-action);
+}
+.cm .cm-text-button,
+.cm-dialog .cm-text-button {
+  font-size: 16px;
+  min-height: 44px;
+}
+.cm .cm-manager-table td,
+.cm td,
+.cm-dialog td {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.cm th,
+.cm-dialog th,
+.cm .cm-manager-table th {
+  font-size: 14px;
+  font-weight: 700;
+  color: #526176;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.cm small,
+.cm-dialog small {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.cm .cm-manager-table td small,
+.cm td small {
+  font-size: 14px;
+}
+.cm .cm-section-head p,
+.cm .cm-welcome p,
+.cm .cm-library-explainer p {
+  font-size: 16px;
+}
+.cm .cm-heading p,
+.cm .cm-manager-caption,
+.cm .cm-manager-stats small {
+  font-size: 14px;
+}
+.cm .cm-manager-status,
+.cm .cm-badge {
+  font-size: 14px;
+  font-weight: 600;
+}
+.cm .cm-badge.active,
+.cm .cm-manager-status.success {
+  color: #166534;
+  background: #dcfce7;
+}
+.cm .cm-badge.draft,
+.cm .cm-manager-status.pending {
+  color: #854d0e;
+  background: #fef9c3;
+}
+.cm .cm-pagination {
+  font-size: 16px;
+}
+.cm .cm-platform-pagination .cm-button.is-current {
+  background: var(--cm-action);
+  border-color: var(--cm-action);
+  color: white;
+}
+.cm .cm-icon-button,
+.cm-dialog .cm-icon-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.cm .cm-welcome {
+  background: #edf4ff;
+  border-color: #bed5ff;
+}
+.cm .cm-growth,
+.cm .cm-stats article > svg {
+  color: #2d74fa;
+}
+.cm .cm-tabs button:hover {
+  color: var(--cm-action);
+}
+.cm .cm-entry-count select {
+  min-height: 44px;
+}
+.app-header .text-xs,
+.app-sidebar .text-xs {
+  font-size: 14px;
+  line-height: 21px;
+  color: #526176;
+}
+.app-header input {
+  font-size: 16px;
+}
+.app-header input:focus {
+  border-color: #2d74fa;
+  outline: 2px solid #2d74fa;
+  outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .cm h1 {
+    font-size: 24px;
+  }
+  .cm h2,
+  .cm-dialog h2 {
+    font-size: 22px;
+  }
+}
+.cm .cm-eyebrow,
+.cm .cm-growth,
+.cm .cm-setup > span,
+.cm .cm-create-skill-number,
+.cm .cm-steps .active,
+.cm-dialog .cm-create-skill-number,
+.cm-dialog .cm-steps .active,
+.cm-dialog .cm-assignment-count strong,
+.cm-dialog .cm-assignment-group-toggle small,
+.cm-dialog .cm-person-competency summary small {
+  color: var(--cm-action);
+}
+
+/* Assignment setup: numbered sections, aligned controls, persistent footer. */
+.cm-dialog.cm-config-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1120px, calc(100vw - 32px));
+  max-width: 1120px;
+  max-height: 90dvh;
+  overflow: hidden;
+}
+.cm-config-dialog > [data-slot="dialog-header"],
+.cm-config-dialog > .cm-dialog-actions {
+  flex-shrink: 0;
+}
+.cm-config-body {
+  overflow-y: auto;
+  min-height: 0;
+  padding: 0 4px;
+}
+.cm-config-dialog > .cm-dialog-actions {
+  margin-top: 0;
+  position: static;
+  padding: 16px 0 0;
+  background: white;
+}
+.cm-config-section {
+  padding: 20px;
+  margin: 16px 0;
+  border: 1px solid #d9dfe7;
+  border-radius: 12px;
+  background: #fff;
+}
+.cm-config-section > h3 {
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #d9dfe7;
+}
+.cm-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.cm-config-grid > *,
+.cm-config-section label {
+  min-width: 0;
+}
+.cm-config-section input:not([type="checkbox"]),
+.cm-config-section select {
+  width: 100%;
+}
+.cm-config-section label {
+  margin: 8px 0;
+}
+.cm-config-section label small {
+  font-weight: 400;
+  color: #526176;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+.cm-dialog .cm-inline-check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.cm-dialog .cm-inline-check input {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex-shrink: 0;
+  accent-color: #2d74fa;
+}
+.cm-dialog select:disabled {
+  background: #f1f5f9;
+  color: #526176;
+  opacity: 1;
+  cursor: not-allowed;
+}
+.cm-config-section h4 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 20px 0 4px;
+}
+.cm-config-section p {
+  font-size: 14px;
+  color: #526176;
+  margin: 8px 0 16px;
+}
+.cm-dialog .cm-selection-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px;
+  margin: 12px 0;
+  background: #edf4ff;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.cm-dialog .cm-selection-summary strong {
+  color: #2463d6;
+}
+.cm-dialog .cm-selection-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.cm-manual-audience .cm-table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+.cm-manual-audience table {
+  min-width: 690px;
+}
+.cm-manual-audience td small {
+  display: block;
+  color: #526176;
+}
+.cm-manual-audience input[type="checkbox"] {
+  accent-color: #2d74fa;
+  width: 18px;
+  height: 18px;
+}
+.cm-dialog .cm-platform-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+.cm-dialog .cm-platform-pagination nav,
+.cm-dialog .cm-page-slot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cm-dialog .cm-platform-pagination .cm-button {
+  padding: 8px 12px;
+  min-width: 42px;
+}
+.cm-dialog .cm-platform-pagination .is-current {
+  background: #2463d6;
+  color: white;
+  border-color: #2463d6;
+}
+.cm-dialog .cm-entry-count {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.cm-dialog .cm-entry-count select {
+  width: auto;
+}
+.cm-config-section .cm-assignment-help {
+  margin-top: 0;
+}
+.cm-config-section .cm-assignment-search {
+  align-items: center;
+}
+.cm-config-section .cm-assignment-search .cm-search {
+  flex: 1;
+}
+.cm-config-section .cm-assignment-columns {
+  font-weight: 700;
+}
+.cm-config-section .cm-assignment-skill {
+  grid-template-columns: minmax(0, 1fr) 240px;
+}
+.cm-config-section .cm-assignment-columns {
+  grid-template-columns: minmax(0, 1fr) 240px;
+}
+@media (max-width: 700px) {
+  .cm-config-section {
+    padding: 14px;
+  }
+  .cm-config-grid {
+    grid-template-columns: 1fr;
+  }
+  .cm-config-section .cm-assignment-skill {
+    grid-template-columns: 1fr;
+  }
+  .cm-config-dialog > .cm-dialog-actions {
+    justify-content: space-between;
+  }
+}
+.cm-dialog.cm-wide.cm-config-dialog {
+  max-width: 1120px !important;
+}
+.cm .cm-report-toolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(240px, 1.4fr) minmax(
+      180px,
+      1fr
+    );
+  align-items: end;
+  gap: 16px;
+}
+.cm .cm-report-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.cm .cm-report-toolbar input,
+.cm .cm-report-toolbar select {
+  width: 100%;
+}
+.cm .cm-report-toolbar + .cm-table-controls {
+  margin-top: 16px;
+}
+.cm-dialog .cm-text-button:disabled {
+  color: #526176;
+  opacity: 1;
+}
+@media (max-width: 700px) {
+  .cm .cm-report-toolbar {
+    grid-template-columns: 1fr;
+  }
+}
+.cm-config-section .cm-assignment-bulk select {
+  width: 240px;
+  margin-left: auto;
+}
+@media (max-width: 700px) {
+  .cm-config-section .cm-assignment-bulk select {
+    width: 100%;
+    margin-left: 0;
+  }
+}

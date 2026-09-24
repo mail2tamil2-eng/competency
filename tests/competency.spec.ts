@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 async function library(page: Page) {
   await page
     .getByRole("navigation", { name: "Competency sections" })
-    .getByRole("button", { name: /^Competencies & Skills/ })
+    .getByRole("button", { name: "Competency framework", exact: true })
     .click();
 }
 async function settings(page: Page) {
@@ -164,12 +164,16 @@ test("create competency and two skills together, preserving existing assignments
     .selectOption({ label: "Customer Experience" });
   await page.getByRole("button", { name: "Continue to skills" }).click();
   await page.getByLabel("Skill 1 name").fill("Customer Empathy");
+  await page.getByRole("button", { name: "Done with this skill" }).click();
+  await expect(page.getByRole("alert")).toContainText("describe Beginner");
+  await proficiency(page, ["Customer Empathy"]);
+  await page.getByRole("button", { name: "Done with this skill" }).click();
   await page.getByRole("button", { name: "Add another skill" }).click();
   await page.getByLabel("Skill 2 name").fill("Service Recovery");
-  await page.getByRole("button", { name: "Define proficiency" }).click();
-  await page.getByRole("button", { name: "Save to library" }).click();
+  await page.getByRole("button", { name: "Review competency" }).click();
   await expect(page.getByRole("alert")).toContainText("describe Beginner");
-  await proficiency(page, ["Customer Empathy", "Service Recovery"]);
+  await proficiency(page, ["Service Recovery"]);
+  await page.getByRole("button", { name: "Review competency" }).click();
   await page.getByRole("button", { name: "Save to library" }).click();
   const group = page.getByRole("article", {
     name: "Customer Focus competency",
@@ -393,8 +397,8 @@ test("role mapping previews exact audience and saves skill assignments", async (
     .click();
   await page.getByLabel("Assignment name").fill("Sales Communication");
   await page
-    .getByRole("checkbox", { name: "Communication", exact: true })
-    .check();
+    .getByRole("button", { name: "Communication", exact: true })
+    .click();
   await page
     .getByRole("checkbox", { name: "Active Listening", exact: true })
     .check();
@@ -434,6 +438,8 @@ test("course sequence, proof rejection, resubmission and approval update progres
   });
   await page.getByRole("button", { name: "Submit for review" }).click();
   await page.getByLabel("Workspace view").selectOption("manager");
+  await page.getByRole("link", { name: "Proof submissions", exact: true }).click();
+  await page.getByRole("button", { name: "Review proof for Ananya R. Listening with Intent" }).click();
   await page.getByRole("button", { name: "Reject with feedback" }).click();
   await expect(
     page.getByText("Add a reason so the learner knows what to do next."),
@@ -442,6 +448,7 @@ test("course sequence, proof rejection, resubmission and approval update progres
     .getByPlaceholder("Required when rejecting evidence")
     .fill("Please include your name on the certificate.");
   await page.getByRole("button", { name: "Reject with feedback" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).first().click();
   await page.getByLabel("Workspace view").selectOption("learner");
   await expect(
     page.getByText("Rejected · Please include your name on the certificate."),
@@ -457,7 +464,10 @@ test("course sequence, proof rejection, resubmission and approval update progres
   });
   await page.getByRole("button", { name: "Submit for review" }).click();
   await page.getByLabel("Workspace view").selectOption("manager");
+  await page.getByRole("link", { name: "Proof submissions", exact: true }).click();
+  await page.getByRole("button", { name: "Review proof for Ananya R. Listening with Intent" }).click();
   await page.getByRole("button", { name: "Approve proof" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).first().click();
   await page.getByLabel("Workspace view").selectOption("learner");
   await expect(
     listening.getByText("Intermediate → Expert", { exact: true }),
@@ -498,7 +508,7 @@ test("mobile layout and dialog remain within viewport", async ({ page }) => {
     ),
   ).toBe(true);
   await page
-    .getByRole("button", { name: "Create a competency", exact: true })
+    .getByRole("button", { name: "Create competency", exact: true })
     .click();
   const rect = await page.getByRole("dialog").boundingBox();
   expect(rect!.x).toBeGreaterThanOrEqual(0);
@@ -506,10 +516,17 @@ test("mobile layout and dialog remain within viewport", async ({ page }) => {
   await page.screenshot({ path: "artifacts/mobile-form.png", fullPage: true });
 });
 
-test("bulk current-level update changes selected learners only", async ({
+test("bulk current-level update changes selected learners only after confirmation", async ({
   page,
 }) => {
   await page.getByRole("button", { name: "Progress", exact: true }).click();
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  await page.getByRole("button", { name: "Bulk update", exact: true }).click();
+  const reviewButton = page.getByRole("button", { name: "Review updates", exact: true });
+  await reviewButton.hover({ force: true });
+  await expect(reviewButton).toBeDisabled();
+  await expect(reviewButton).toHaveCSS("background-color", "rgb(241, 245, 249)");
+  await expect(reviewButton).toHaveCSS("color", "rgb(82, 97, 118)");
   await page
     .getByRole("checkbox", {
       name: "Select Ananya R. Active Listening",
@@ -523,21 +540,107 @@ test("bulk current-level update changes selected learners only", async ({
     })
     .check();
   await page.getByLabel("Bulk current level").selectOption("l1");
-  await page.getByRole("button", { name: "Update selected" }).click();
-  await expect(
-    page.getByLabel("Current level for Ananya R. Active Listening"),
-  ).toHaveValue("l1");
-  await expect(
-    page.getByLabel("Current level for Ananya R. Public Speaking"),
-  ).toHaveValue("l1");
-  await expect(
-    page.getByLabel("Current level for Rahul K. Excel Reporting"),
-  ).toHaveValue("l2");
+  const before = await page.evaluate(() =>
+    localStorage.getItem("axle-competency-v1"),
+  );
+  await page
+    .getByRole("button", { name: "Review updates", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "2 skill records across 1 learners",
+  );
+  expect(
+    await page.evaluate(() => localStorage.getItem("axle-competency-v1")),
+  ).toBe(before);
+  await page.getByRole("button", { name: "Back to selection" }).click();
+  await page
+    .getByRole("button", { name: "Review updates", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Confirm updates", exact: true })
+    .click();
+  await page.reload();
+  const stored = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("axle-competency-v1")!),
+  );
+  expect(
+    stored.assignments
+      .filter((a: any) => a.name === "Ananya R.")
+      .every((a: any) => a.current === "l1"),
+  ).toBe(true);
+  expect(
+    stored.assignments.find((a: any) => a.name === "Rahul K.").current,
+  ).toBe("l2");
+});
+test("individual progress update is scoped to one learner and skill and requires saving", async ({
+  page,
+}) => {
+  await page.evaluate(initial => localStorage.setItem("axle-competency-v1", JSON.stringify(initial)), seed);
   await page.reload();
   await page.getByRole("button", { name: "Progress", exact: true }).click();
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
   await expect(
-    page.getByLabel("Current level for Ananya R. Public Speaking"),
-  ).toHaveValue("l1");
+    page.getByRole("button", {
+      name: "View skills for Ananya R.",
+      exact: true,
+    }),
+  ).toHaveCount(1);
+  await page.screenshot({ path: "artifacts/learner-progress.png" });
+  await page
+    .getByRole("button", { name: "View skills for Ananya R.", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toContainText("Communication");
+  await page
+    .getByRole("dialog")
+    .screenshot({ path: "artifacts/learner-skills.png" });
+  await page
+    .getByRole("button", {
+      name: "Update level for Ananya R. Active Listening",
+      exact: true,
+    })
+    .click();
+  await page.getByLabel("New current level").selectOption("l3");
+  const before = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("axle-competency-v1")!).assignments,
+  );
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  expect(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem("axle-competency-v1")!).assignments,
+    ),
+  ).toEqual(before);
+  await page
+    .getByRole("button", {
+      name: "Update level for Ananya R. Active Listening",
+      exact: true,
+    })
+    .click();
+  await page.getByLabel("New current level").selectOption("l3");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page
+      .getByRole("dialog")
+      .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+  ).toBe(true);
+  await page.getByRole("button", { name: "Save level", exact: true }).click();
+  await page.reload();
+  const stored = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("axle-competency-v1")!),
+  );
+  const targetSkill = stored.skills.find(
+    (s: any) => s.name === "Active Listening",
+  ).id;
+  const changed = stored.assignments.filter(
+    (a: any) =>
+      JSON.stringify(a) !==
+      JSON.stringify(before.find((b: any) => b.id === a.id)),
+  );
+  expect(changed).toHaveLength(1);
+  expect(changed[0]).toMatchObject({
+    name: "Ananya R.",
+    skillId: targetSkill,
+    current: "l3",
+  });
 });
 test("static assignments preserve audience and dynamic assignments include matching learners", () => {
   const data = structuredClone(seed),
@@ -606,4 +709,215 @@ test("expanded merged library fits mobile and exposes proficiency descriptions",
     path: "artifacts/merged-library-mobile.png",
     fullPage: true,
   });
+});
+
+test("six skill cards keep proficiency attached through review and editing", async ({
+  page,
+}) => {
+  await library(page);
+  await page
+    .getByRole("button", { name: "Create competency", exact: true })
+    .click();
+  await page
+    .getByLabel("Competency name", { exact: true })
+    .fill("Service Excellence");
+  await page
+    .getByRole("dialog")
+    .getByLabel("Category", { exact: true })
+    .selectOption("foundation");
+  await page.getByRole("button", { name: "Continue to skills" }).click();
+  for (let i = 1; i <= 6; i++) {
+    if (i > 1)
+      await page.getByRole("button", { name: "Add another skill" }).click();
+    await page
+      .getByLabel(`Skill ${i} name`, { exact: true })
+      .fill(`Service skill ${i}`);
+    await proficiency(page, [`Service skill ${i}`]);
+    await expect(page.locator(".cm-create-skill-body")).toHaveCount(1);
+    await page.getByRole("button", { name: "Done with this skill" }).click();
+  }
+  await expect(
+    page.getByRole("status").filter({ hasText: "6 skills" }),
+  ).toContainText("6 complete");
+  await page.getByRole("button", { name: "Review competency" }).click();
+  await page
+    .locator(".cm-create-review summary")
+    .filter({ hasText: "Service skill 3" })
+    .click();
+  await page
+    .getByRole("button", { name: "Edit Service skill 3", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Beginner for Service skill 3", { exact: true }),
+  ).toHaveValue("Beginner ability in Service skill 3");
+  await page
+    .getByLabel("Beginner for Service skill 3", { exact: true })
+    .fill("Unique revised description");
+  await page.getByRole("button", { name: "Review competency" }).click();
+  await page.getByRole("button", { name: "Save to library" }).click();
+  const stored = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("axle-competency-v1")!),
+  );
+  const parent = stored.competencies.find(
+    (c: any) => c.name === "Service Excellence",
+  );
+  const children = stored.skills.filter(
+    (s: any) => s.competencyId === parent.id,
+  );
+  expect(children).toHaveLength(6);
+  const beginner = stored.levels.find((l: any) => l.name === "Beginner").id;
+  for (let i = 1; i <= 6; i++)
+    expect(
+      children.find((s: any) => s.name === `Service skill ${i}`).levels[
+        beginner
+      ],
+    ).toBe(
+      i === 3
+        ? "Unique revised description"
+        : `Beginner ability in Service skill ${i}`,
+    );
+});
+
+test("partial proficiency is preserved when saving a skill as draft", async ({
+  page,
+}) => {
+  await library(page);
+  await page
+    .getByRole("button", { name: "Create competency", exact: true })
+    .click();
+  await page
+    .getByLabel("Competency name", { exact: true })
+    .fill("Draft capability");
+  await page
+    .getByRole("dialog")
+    .getByLabel("Category", { exact: true })
+    .selectOption("foundation");
+  await page.getByRole("button", { name: "Continue to skills" }).click();
+  await page.getByLabel("Skill 1 name").fill("Draft ability");
+  await page
+    .getByLabel("Beginner for Draft ability", { exact: true })
+    .fill("Initial ability");
+  await page
+    .getByRole("button", { name: "Save as draft", exact: true })
+    .click();
+  const stored = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("axle-competency-v1")!),
+  );
+  const skill = stored.skills.find((s: any) => s.name === "Draft ability");
+  expect(skill.status).toBe("Draft");
+  expect(Object.values(skill.levels)).toContain("Initial ability");
+  expect(
+    stored.competencies.find((c: any) => c.id === skill.competencyId).status,
+  ).toBe("Draft");
+});
+
+test("assignment groups paginate skills and preserve selections across search", async ({
+  page,
+}) => {
+  await page.evaluate((initial) => {
+    const next = structuredClone(initial);
+    for (let i = 1; i <= 20; i++)
+      next.skills.push({
+        id: `extra-${i}`,
+        name: `Communication skill ${i}`,
+        description: "Observable skill",
+        status: "Active",
+        competencyId: next.competencies.find((c) => c.name === "Communication")!
+          .id,
+        categoryId: "foundation",
+        levels: {},
+      });
+    localStorage.setItem("axle-competency-v1", JSON.stringify(next));
+  }, seed);
+  await page.reload();
+  await page.getByRole("button", { name: "Role mapping", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Create assignment", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Communication", exact: true })
+    .click();
+  const group = page.getByRole("region", {
+    name: "Communication competency",
+    exact: true,
+  });
+  await expect(group.locator(".cm-assignment-skill")).toHaveCount(8);
+  await group.getByRole("button", { name: "Select this page (8)" }).click();
+  await page
+    .getByLabel("Set level for selected skills in Communication")
+    .selectOption("l2");
+  await page.getByLabel("Next skills in Communication").click();
+  await expect(group.getByRole("checkbox", { checked: true })).toHaveCount(0);
+  await page
+    .getByLabel("Search assignment competencies and skills")
+    .fill("Communication skill 20");
+  await page
+    .getByRole("checkbox", { name: "Communication skill 20", exact: true })
+    .check();
+  await page
+    .getByLabel("Expected level for Communication skill 20", { exact: true })
+    .selectOption("l3");
+  await page.getByLabel("Search assignment competencies and skills").fill("");
+  await page.getByLabel("Selected only", { exact: true }).check();
+  await expect(
+    page.getByRole("status").filter({ hasText: "9 skills selected" }),
+  ).toContainText("All selected levels set");
+  await page.getByLabel("Assignment name").fill("Large skill assignment");
+  await page.getByLabel("Department", { exact: true }).selectOption("Sales");
+  await page
+    .getByRole("button", { name: "Review assignment", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Communication competency", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Next skills in Communication").click();
+  await expect(
+    page.getByText("Communication skill 20", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Save & assign", exact: true })
+    .click();
+  const plan = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("axle-competency-v1")!).workflow.plans.find(
+      (p: any) => p.name === "Large skill assignment",
+    ),
+  );
+  expect(plan.skills).toHaveLength(9);
+  expect(plan.skills.find((s: any) => s.skillId === "extra-20").expected).toBe(
+    "l3",
+  );
+  expect(plan.skills.filter((s: any) => s.expected === "l2")).toHaveLength(8);
+});
+
+test("assignment hierarchy fits desktop and mobile", async ({ page }) => {
+  await page.getByRole("button", { name: "Role mapping", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Create assignment", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Communication", exact: true })
+    .click();
+  await page
+    .getByRole("checkbox", { name: "Active Listening", exact: true })
+    .check();
+  await page
+    .getByLabel("Expected level for Active Listening")
+    .selectOption("l2");
+  await page
+    .getByRole("region", { name: "Communication competency", exact: true })
+    .screenshot({ path: "artifacts/assignment-hierarchy.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const dialog = page.getByRole("dialog");
+  expect(
+    await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+  ).toBe(true);
+  await page
+    .getByRole("checkbox", { name: "Public Speaking", exact: true })
+    .check();
+  await page
+    .getByLabel("Expected level for Public Speaking")
+    .selectOption("l3");
+  await page
+    .getByRole("region", { name: "Communication competency", exact: true })
+    .screenshot({ path: "artifacts/assignment-hierarchy-mobile.png" });
 });

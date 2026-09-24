@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, ArrowRight } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  ArrowRight,
+  ChevronDown,
+  CheckCircle2,
+} from "lucide-react";
 import { Data, RecordItem, uid, validate } from "./model";
 import {
   Dialog,
@@ -35,10 +41,40 @@ export function LibraryCreate({
     [skills, setSkills] = useState<RecordItem[]>([blankSkill()]),
     [errors, setErrors] = useState<string[]>([]);
   const errorRef = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState<string | null>(skills[0].id);
   useEffect(() => {
     if (errors.length) errorRef.current?.focus();
   }, [errors]);
   const levels = data.levels.filter((l) => l.status === "Active");
+  const completedLevels = (s: RecordItem) =>
+    levels.filter((l) => s.levels?.[l.id]?.trim()).length;
+  const skillIssues = (s: RecordItem, i: number, proficiency = true) => {
+    const issues: string[] = [];
+    const name = s.name.trim();
+    const label = name || `Skill ${i + 1}`;
+    if (!name) issues.push(`Skill ${i + 1}: enter a name.`);
+    if (name.length > 120)
+      issues.push(`${label}: use 120 characters or fewer.`);
+    if (
+      name &&
+      (skills.some(
+        (x) =>
+          x.id !== s.id && x.name.trim().toLowerCase() === name.toLowerCase(),
+      ) ||
+        data.skills.some(
+          (x) => x.name.trim().toLowerCase() === name.toLowerCase(),
+        ))
+    )
+      issues.push(`${label}: this skill name already exists.`);
+    if (proficiency)
+      for (const l of levels)
+        if (!s.levels?.[l.id]?.trim())
+          issues.push(`${label}: describe ${l.name}.`);
+    return issues;
+  };
+  const completeCount = skills.filter(
+    (s, i) => !skillIssues(s, i).length,
+  ).length;
   const linked = skills.map((s) => ({
     ...s,
     name: s.name.trim(),
@@ -58,23 +94,8 @@ export function LibraryCreate({
         issues.push(
           "Add at least one skill, or save an empty competency as a draft.",
         );
-      const seen = new Set<string>();
       for (const [i, s] of linked.entries()) {
-        if (!s.name) issues.push("Skill " + (i + 1) + ": enter a name.");
-        if (s.name.length > 120)
-          issues.push("Skill " + (i + 1) + ": use 120 characters or fewer.");
-        if (
-          seen.has(s.name.toLowerCase()) ||
-          data.skills.some((x) => x.name.toLowerCase() === s.name.toLowerCase())
-        )
-          issues.push("Skill " + (i + 1) + ": this skill name already exists.");
-        seen.add(s.name.toLowerCase());
-        if (stage === 3)
-          for (const l of levels)
-            if (!s.levels?.[l.id]?.trim())
-              issues.push(
-                (s.name || "Skill " + (i + 1)) + ": describe " + l.name + ".",
-              );
+        issues.push(...skillIssues(s, i));
       }
     }
     return [...new Set(issues)];
@@ -83,6 +104,8 @@ export function LibraryCreate({
     const issues = issuesFor(step);
     setErrors(issues);
     if (!issues.length) setStep(step + 1);
+    else if (step === 2)
+      setExpanded(skills.find((s, i) => skillIssues(s, i).length)?.id || null);
   }
   function updateSkill(id: string, patch: Partial<RecordItem>) {
     setSkills((current) =>
@@ -96,16 +119,16 @@ export function LibraryCreate({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="cm-dialog cm-wide">
+      <DialogContent className="cm-dialog cm-wide cm-create-dialog">
         <DialogHeader>
           <DialogTitle>Create competency & skills</DialogTitle>
           <DialogDescription>
-            A competency groups related skills. Define them together, then
-            describe what each skill looks like at different levels.
+            Add each skill together with its proficiency descriptions, then
+            review before saving.
           </DialogDescription>
         </DialogHeader>
         <div className="cm-steps">
-          {["Competency", "Skills", "Proficiency"].map((label, i) => (
+          {["Competency", "Skills & proficiency", "Review"].map((label, i) => (
             <span key={label} className={step >= i + 1 ? "active" : ""}>
               {i + 1} · {label}
             </span>
@@ -190,62 +213,165 @@ export function LibraryCreate({
             <>
               <h3>Which skills belong in {competency.name}?</h3>
               <p className="cm-hint">
-                Each skill is a specific ability that can be learned and
-                assessed. Category and competency are already linked for you.
+                Complete one skill at a time. Describe what someone can do at
+                each proficiency level before adding the next skill.
+              </p>
+              <p className="cm-skill-progress" role="status">
+                {skills.length} skills · {completeCount} complete ·{" "}
+                {skills.length - completeCount} need attention
               </p>
               {skills.map((s, i) => (
-                <fieldset className="cm-skill-editor" key={s.id}>
-                  <legend>Skill {i + 1}</legend>
-                  <label>
-                    Skill name *
-                    <input
-                      aria-label={"Skill " + (i + 1) + " name"}
-                      value={s.name}
-                      maxLength={120}
-                      onChange={(e) =>
-                        updateSkill(s.id, { name: e.target.value })
-                      }
-                      placeholder="e.g. Active Listening"
-                    />
-                  </label>
-                  <label>
-                    Description
-                    <textarea
-                      aria-label={"Skill " + (i + 1) + " description"}
-                      rows={2}
-                      value={s.description}
-                      onChange={(e) =>
-                        updateSkill(s.id, { description: e.target.value })
-                      }
-                      placeholder="What will the learner be able to do?"
-                    />
-                  </label>
+                <section className="cm-create-skill" key={s.id}>
                   <button
                     type="button"
-                    className="cm-text-button"
-                    aria-label={"Remove skill " + (i + 1)}
-                    onClick={() =>
-                      setSkills((current) =>
-                        current.filter((x) => x.id !== s.id),
-                      )
-                    }
+                    className="cm-create-skill-toggle"
+                    aria-expanded={expanded === s.id}
+                    aria-controls={`skill-panel-${s.id}`}
+                    onClick={() => {
+                      setExpanded(expanded === s.id ? null : s.id);
+                      setErrors([]);
+                    }}
                   >
-                    <Trash2 size={14} />
-                    Remove skill
+                    <span className="cm-create-skill-number">
+                      {!skillIssues(s, i).length ? (
+                        <CheckCircle2 size={18} />
+                      ) : (
+                        i + 1
+                      )}
+                    </span>
+                    <span>
+                      <strong>{s.name.trim() || `Skill ${i + 1}`}</strong>
+                      <small>
+                        {completedLevels(s)}/{levels.length} levels completed
+                        {skillIssues(s, i).length
+                          ? " · Needs attention"
+                          : " · Complete"}
+                      </small>
+                    </span>
+                    <ChevronDown
+                      size={18}
+                      className={expanded === s.id ? "cm-rotated" : ""}
+                    />
                   </button>
-                </fieldset>
+                  {expanded === s.id && (
+                    <div
+                      id={`skill-panel-${s.id}`}
+                      className="cm-create-skill-body"
+                    >
+                      <label>
+                        Skill name *
+                        <input
+                          aria-label={"Skill " + (i + 1) + " name"}
+                          value={s.name}
+                          maxLength={120}
+                          onChange={(e) =>
+                            updateSkill(s.id, { name: e.target.value })
+                          }
+                          placeholder="e.g. Active Listening"
+                        />
+                      </label>
+                      <label>
+                        Description
+                        <textarea
+                          aria-label={"Skill " + (i + 1) + " description"}
+                          rows={2}
+                          value={s.description}
+                          onChange={(e) =>
+                            updateSkill(s.id, { description: e.target.value })
+                          }
+                          placeholder="What will the learner be able to do?"
+                        />
+                      </label>
+                      <div className="cm-proficiency-heading">
+                        <h3>
+                          Proficiency for {s.name.trim() || `Skill ${i + 1}`}
+                        </h3>
+                        <p>Use observable actions to make each level clear.</p>
+                      </div>
+                      <div className="cm-proficiency-fields">
+                        {levels.map((l) => (
+                          <label key={l.id}>
+                            {l.name} *
+                            <textarea
+                              aria-label={
+                                l.name +
+                                " for " +
+                                (s.name.trim() || `Skill ${i + 1}`)
+                              }
+                              rows={2}
+                              value={s.levels?.[l.id] || ""}
+                              onChange={(e) =>
+                                updateSkill(s.id, {
+                                  levels: {
+                                    ...s.levels,
+                                    [l.id]: e.target.value,
+                                  },
+                                })
+                              }
+                              placeholder={`What can someone at ${l.name.toLowerCase()} level do?`}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      {!levels.length && (
+                        <p className="cm-hint">
+                          No active proficiency levels. You can manage levels in
+                          Library settings.
+                        </p>
+                      )}
+                      <div className="cm-create-skill-actions">
+                        <button
+                          type="button"
+                          className="cm-text-button"
+                          aria-label={"Remove skill " + (i + 1)}
+                          onClick={() => {
+                            setSkills((current) =>
+                              current.filter((x) => x.id !== s.id),
+                            );
+                            setExpanded(
+                              skills[i + 1]?.id || skills[i - 1]?.id || null,
+                            );
+                            setErrors([]);
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          Remove skill
+                        </button>
+                        <button
+                          type="button"
+                          className="cm-button primary"
+                          onClick={() => {
+                            const issues = skillIssues(s, i);
+                            setErrors(issues);
+                            if (!issues.length) setExpanded(null);
+                          }}
+                        >
+                          Done with this skill <CheckCircle2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
               ))}
               <button
                 type="button"
                 className="cm-button"
-                onClick={() =>
-                  setSkills((current) => [...current, blankSkill()])
-                }
+                onClick={() => {
+                  const next = blankSkill();
+                  setSkills((current) => [...current, next]);
+                  setExpanded(next.id);
+                  setErrors([]);
+                }}
               >
                 <Plus size={15} />
                 Add another skill
               </button>
-              {skills.every((s) => !s.name.trim() && !s.description.trim()) && (
+              {skills.every(
+                (s) =>
+                  !s.name.trim() &&
+                  !s.description.trim() &&
+                  !Object.values(s.levels || {}).some((v) => v.trim()),
+              ) && (
                 <button
                   type="button"
                   className="cm-text-button cm-save-draft"
@@ -263,35 +389,42 @@ export function LibraryCreate({
           )}
           {step === 3 && (
             <>
-              <h3>Define proficiency for each skill</h3>
+              <h3>Review {competency.name}</h3>
               <p className="cm-hint">
-                Describe an observable ability at each level. These descriptions
-                guide learners, managers, and assessments.
+                {
+                  data.categories.find((c) => c.id === competency.categoryId)
+                    ?.name
+                }{" "}
+                · {skills.length} skills ready to save. Expand a skill to check
+                its descriptions.
               </p>
               {linked.map((s) => (
-                <fieldset className="cm-skill-editor" key={s.id}>
-                  <legend>{s.name}</legend>
+                <details className="cm-create-review" key={s.id}>
+                  <summary>
+                    {s.name}
+                    <span>
+                      {completedLevels(s)}/{levels.length} levels completed
+                    </span>
+                  </summary>
+                  {s.description && <p>{s.description}</p>}
                   {levels.map((l) => (
-                    <label key={l.id}>
-                      {l.name} *
-                      <textarea
-                        aria-label={l.name + " for " + s.name}
-                        rows={2}
-                        value={s.levels?.[l.id] || ""}
-                        onChange={(e) =>
-                          updateSkill(s.id, {
-                            levels: { ...s.levels, [l.id]: e.target.value },
-                          })
-                        }
-                        placeholder={
-                          "What can someone at " +
-                          l.name.toLowerCase() +
-                          " level do?"
-                        }
-                      />
-                    </label>
+                    <div className="cm-review-level" key={l.id}>
+                      <strong>{l.name}</strong>
+                      <p>{s.levels?.[l.id]}</p>
+                    </div>
                   ))}
-                </fieldset>
+                  <button
+                    type="button"
+                    className="cm-text-button"
+                    onClick={() => {
+                      setStep(2);
+                      setExpanded(s.id);
+                      setErrors([]);
+                    }}
+                  >
+                    Edit {s.name}
+                  </button>
+                </details>
               ))}
               <p className="cm-hint">
                 You’re adding 1 competency and {skills.length}{" "}
@@ -301,6 +434,44 @@ export function LibraryCreate({
             </>
           )}
           <div className="cm-dialog-actions">
+            {skills.some(
+              (s) =>
+                s.name.trim() ||
+                s.description.trim() ||
+                Object.values(s.levels || {}).some((v) => v.trim()),
+            ) &&
+              step > 1 && (
+                <button
+                  type="button"
+                  className="cm-button"
+                  onClick={() => {
+                    const kept = linked.filter(
+                      (s) =>
+                        s.name ||
+                        s.description ||
+                        Object.values(s.levels || {}).some((v) => v.trim()),
+                    );
+                    const issues = [
+                      ...issuesFor(1),
+                      ...kept.flatMap((s) =>
+                        skillIssues(
+                          s,
+                          skills.findIndex((x) => x.id === s.id),
+                          false,
+                        ),
+                      ),
+                    ];
+                    setErrors(issues);
+                    if (!issues.length)
+                      onSave(
+                        { ...clean, status: "Draft" },
+                        kept.map((s) => ({ ...s, status: "Draft" })),
+                      );
+                  }}
+                >
+                  Save as draft
+                </button>
+              )}
             <button
               type="button"
               className="cm-button"
@@ -314,7 +485,7 @@ export function LibraryCreate({
               {step === 1
                 ? "Continue to skills"
                 : step === 2
-                  ? "Define proficiency"
+                  ? "Review competency"
                   : "Save to library"}
               {step < 3 && <ArrowRight size={15} />}
             </button>

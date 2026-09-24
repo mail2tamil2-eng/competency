@@ -1,11 +1,11 @@
-import { createBrowserRouter, Navigate } from 'react-router';
-import { Layout } from './components/Layout';
-import { CompetencyManagementPage } from './pages/CompetencyManagementPage';
-import { ProfilePage } from './pages/ProfilePage';
+import { createBrowserRouter, Navigate } from "react-router";
+import { Layout } from "./components/Layout";
+import { CompetencyManagementPage } from "./pages/CompetencyManagementPage";
+import { ProfilePage } from "./pages/ProfilePage";
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <Layout />,
     children: [
       {
@@ -13,11 +13,11 @@ export const router = createBrowserRouter([
         element: <Navigate to="/competency-management" replace />,
       },
       {
-        path: 'competency-management',
+        path: "competency-management/*",
         element: <CompetencyManagementPage />,
       },
       {
-        path: 'profile',
+        path: "profile",
         element: <ProfilePage />,
       },
     ],

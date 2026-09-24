@@ -17,6 +17,16 @@ export type Assignment = {
   current: string;
   department: string;
   updatedBy?: "Admin" | "Manager";
+  employeeId?: string;
+  assignedDate?: string;
+  completedDate?: string;
+  levelHistory?: {
+    from: string;
+    to: string;
+    at: string;
+    by: string;
+    reason: string;
+  }[];
 };
 export type Data = Record<Kind, RecordItem[]> & {
   assignments: Assignment[];

@@ -40,7 +40,7 @@ Columns: Competency, Competency Description, Category, Skill, Skill Description,
 
 ## Other workflows
 
-Progress supports individual and bulk current-level updates. Course mapping connects multiple skills to courses. Role mapping provides manual/automatic enrolment, static/dynamic audiences, dates and an assignment preview. Learner preview shows sequential learning plans and proof submission. Manager preview supports proficiency updates and proof reviews. Reports include competency totals, skill-wise proficiency, learner drilldown and CSV downloads.
+Progress supports individual and bulk current-level updates. Course mapping connects skills to courses. Role mapping supports manual/automatic enrolment, cohort filters, optional end dates and assignment review. Manual user selection supports search, pagination and bulk selection; automatic enrolment offers static/dynamic audiences. Learner preview provides learning plans and proof submission. Manager preview supports higher-level proficiency updates, history, proof reviews and CSV/XLSX exports. Admin reports contain Skill-wise learner progress and Learner-wise skill report with profile details, skill gaps and dates.
 
 Changes are saved in this browser under the existing versioned key `axle-competency-v1`. Initial records are demo data. Other tabs and browsers do not synchronize.
 
@@ -60,6 +60,8 @@ Tests use installed Google Chrome and cover combined creation, inherited skill l
 
 This is a local interactive design prototype, not a production LMS backend. Employee data is seeded; role previews are not authorization. Course completion is simulated. Dynamic/scheduled assignments reconcile when the workspace opens rather than through a server job. Certificates are stored locally (PDF/PNG/JPEG, 1 MB each), subject to browser storage limits.
 
-Remaining production and BRD work includes authenticated role access, employee/cohort integration, LMS delivery, server-side enrolment and notifications, durable file/database storage, module access configuration, audit history and XLSX export. ILT remains out of scope as specified in the BRD.
+Remaining production work includes authenticated role access, employee/cohort integration, LMS delivery, server-side enrolment and notifications, durable file/database storage and module access configuration. Manager level history and XLSX exports are implemented in the prototype. ILT remains out of scope as specified in the BRD.
+
+For continuing development in Claude Code or another coding agent, start with [CLAUDE.md](CLAUDE.md). Administrator now lands on Competency framework; the Overview page has been removed.
 
 Screenshots are in `artifacts/`.

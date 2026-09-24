@@ -106,7 +106,6 @@ export function CompetencyLibrary({
     <section className="cm-card cm-unified-library">
       <div className="cm-section-head">
         <div>
-          <div className="cm-eyebrow">ONE CONNECTED LIBRARY</div>
           <h2>Competencies & Skills</h2>
           <p>
             Competencies group related skills. Open one to see the abilities
@@ -126,24 +125,6 @@ export function CompetencyLibrary({
             Create competency
           </button>
         </div>
-      </div>
-      <div className="cm-library-explainer">
-        <span className="cm-mini-icon">
-          <Layers size={21} />
-        </span>
-        <div>
-          <strong>
-            Example: Communication{" "}
-            <span className="cm-definition-tag">Competency</span>
-          </strong>
-          <p>
-            Active Listening · Public Speaking · Business Writing{" "}
-            <span className="cm-definition-tag">Skills</span>
-          </p>
-        </div>
-        <span className="cm-library-totals">
-          {data.competencies.length} competencies · {data.skills.length} skills
-        </span>
       </div>
       <div className="cm-toolbar">
         <label className="cm-search">
