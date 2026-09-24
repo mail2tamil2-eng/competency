@@ -1,5 +1,6 @@
 import { LearnerProgress } from "../competency/LearnerProgress";
 import { ManagerProgress } from "../competency/ManagerProgress";
+import { LearnerSkillReport } from "../competency/LearnerSkillReport";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Layers, Users, ListChecks, BookOpen } from "lucide-react";
@@ -39,6 +40,7 @@ const tabs = [
   ["courses", "Course mapping", BookOpen],
   ["reports", "Reports", ListChecks],
   ["learner", "My learning", BookOpen],
+  ["learner-report", "Skill progress report", ListChecks],
   ["manager", "Team progress", Users],
 ] as const;
 type Tab = (typeof tabs)[number][0];
@@ -48,7 +50,15 @@ export function CompetencyManagementPage() {
   const [data, setData] = useState<Data>(readData),
     [activeTab, setTab] = useState<Tab>("library"),
     [query, setQuery] = useState("");
-  const tab = location.pathname.includes("/manager") ? "manager" : activeTab;
+  const tab = location.pathname.includes("/manager")
+    ? "manager"
+    : location.pathname.endsWith("/learner/report")
+      ? "learner-report"
+      : location.pathname.endsWith("/learner")
+        ? "learner"
+        : activeTab;
+  const isLearner = tab === "learner" || tab === "learner-report";
+  const [learnerKey, setLearnerKey] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [libraryIntent, setLibraryIntent] = useState<LibraryIntent>(null);
   const [settingsSection, setSettingsSection] = useState<
@@ -117,7 +127,11 @@ export function CompetencyManagementPage() {
     routeNavigate(
       next === "manager"
         ? "/competency-management/manager"
-        : "/competency-management",
+        : next === "learner-report"
+          ? "/competency-management/learner/report"
+          : next === "learner"
+            ? "/competency-management/learner"
+            : "/competency-management",
     );
     setQuery("");
   };
@@ -135,11 +149,7 @@ export function CompetencyManagementPage() {
           <select
             aria-label="Workspace view"
             value={
-              tab === "learner"
-                ? "learner"
-                : tab === "manager"
-                  ? "manager"
-                  : "admin"
+              isLearner ? "learner" : tab === "manager" ? "manager" : "admin"
             }
             onChange={(e) =>
               navigate(
@@ -155,15 +165,15 @@ export function CompetencyManagementPage() {
           </select>
         </div>
       </div>
-      {!/\/manager\/reportees?\/?$/.test(location.pathname) && (
+      {tab !== "manager" && (
         <nav className="cm-tabs" aria-label="Competency sections">
           {tabs
             .filter(([id]) =>
-              tab === "learner"
-                ? id === "learner"
-                : tab === "manager"
-                  ? id === "manager"
-                  : id !== "learner" && id !== "manager",
+              isLearner
+                ? id === "learner" || id === "learner-report"
+                : id !== "learner" &&
+                    id !== "learner-report" &&
+                    id !== "manager",
             )
             .map(([id, label, Icon]) => (
               <button
@@ -204,7 +214,20 @@ export function CompetencyManagementPage() {
           <RoleMapping data={data} work={work} save={saveWorkflow} />
         )}
         {tab === "learner" && (
-          <Learning data={data} work={work} save={saveWorkflow} />
+          <Learning
+            data={data}
+            work={work}
+            save={saveWorkflow}
+            learnerKey={learnerKey}
+            onLearnerChange={setLearnerKey}
+          />
+        )}
+        {tab === "learner-report" && (
+          <LearnerSkillReport
+            data={data}
+            learnerKey={learnerKey}
+            onLearnerChange={setLearnerKey}
+          />
         )}
         {tab === "manager" && (
           <ManagerProgress
@@ -214,9 +237,7 @@ export function CompetencyManagementPage() {
             save={saveWorkflow}
           />
         )}
-        {tab === "reports" && (
-          <Reports data={data} work={work} />
-        )}
+        {tab === "reports" && <Reports data={data} work={work} />}
 
         {tab === "assignments" && (
           <LearnerProgress

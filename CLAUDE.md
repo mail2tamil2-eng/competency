@@ -21,7 +21,9 @@ React 18 + TypeScript + Vite interactive LMS competency prototype. The user is i
 - Assignment setup has numbered sections, enrolment explanations, optional end-date checkbox and Cohort replacing Location in the UI.
 - Manual enrolment uses Static; Dynamic is disabled. User selection has ID/name/email search, department/role/cohort filters, pagination, selected-only view, select-page/all-matching and persistent selection. Tested with 1,005 employees.
 - Manager overview, all reportees, reportee skills and proof submissions are separate views. All-reportees and individual-skill views hide the top Team progress menu and overview/proof tabs. Back buttons are at the top.
+- Manager preview hides the top Team progress tab everywhere. Team Skill Progress has no summary statistic cards or filters; Team overview/Proof submissions navigation remains. All-reportees, individual-skill and proof views retain their own filters.
 - Manager level updates allow only higher active levels. Lower/equal options remain visible as Completed but disabled. Optional remarks and history are available. Assigned/completed dates appear in the skill table.
+- Learner preview has My learning and Skill progress report tabs. The report route is `/competency-management/learner/report`, with assigned skill, current/expected levels, numeric gap (Not assessed when unknown), assigned/completed dates and status. Selection is shared across both learner tabs and grouped by employee identity. Report supports search, status filtering and pagination.
 - Proof review supports approve/reject with rejection feedback. Manager detailed reports export CSV and XLSX.
 
 ## Code map

@@ -3,16 +3,7 @@ import { useLocation, useNavigate } from "react-router";
 import { ManagerProofs } from "./ManagerProofs";
 import { ManagerNavigation } from "./ManagerNavigation";
 import { ManagerPagination, ManagerPageSize } from "./ManagerPagination";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Download,
-  Search,
-  Users,
-  CheckCircle2,
-  ClipboardCheck,
-  Target,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Assignment, Data, download, progress } from "./model";
 import { WorkflowData } from "./workflowModel";
@@ -21,7 +12,6 @@ import {
   detailedRows,
   employeeFor,
   exportWorkbook,
-  latestProofs,
   levelName,
   personKey,
   skillGap,
@@ -79,19 +69,6 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
     page,
     Math.max(0, Math.ceil(total / pageSize) - 1),
   );
-  const pending = data.assignments.reduce(
-    (count, a) =>
-      count +
-      latestProofs(work, a.id).filter((p) => p.status === "Under Review")
-        .length,
-    0,
-  );
-  const completed = scoped.filter(
-    (a) => progress(data, a) === "Completed",
-  ).length;
-  const percent = scoped.length
-    ? Math.round((completed / scoped.length) * 100)
-    : 0;
   function go(next: typeof view, id = "") {
     navigate(
       `/competency-management/manager${next === "all" ? "/reportees" : next === "detail" ? `/reportee?person=${encodeURIComponent(id)}` : ""}`,
@@ -153,43 +130,6 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
           )}
         </nav>
       )}
-      {view === "summary" && (
-        <div className="cm-manager-stats">
-          {[
-            ["Reportees", groups.size, Users, "Across all competencies"],
-            [
-              "Completed skills",
-              completed,
-              CheckCircle2,
-              `${scoped.length} total assigned skills`,
-            ],
-            [
-              "Completion",
-              scoped.length ? `${percent}%` : "—",
-              Target,
-              "Completed ÷ assigned skills",
-            ],
-            [
-              "Proofs awaiting review",
-              pending,
-              ClipboardCheck,
-              "Submissions needing a decision",
-            ],
-          ].map(([label, value, Icon, hint]) => {
-            const Symbol = Icon as typeof Users;
-            return (
-              <article key={String(label)}>
-                <div>
-                  <span>{String(label)}</span>
-                  <Symbol size={18} />
-                </div>
-                <strong>{String(value)}</strong>
-                <small>{String(hint)}</small>
-              </article>
-            );
-          })}
-        </div>
-      )}
       <section className="cm-card">
         <div className="cm-section-head">
           <div>
@@ -231,71 +171,67 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
             </div>
           )}
         </div>
-        <div className="cm-manager-filters">
-          {view !== "summary" && (
-            <label className="cm-search">
-              <Search size={16} />
-              <input
-                aria-label="Search team progress"
-                placeholder={
-                  view === "detail"
-                    ? "Search competency or skill…"
-                    : "Search name, email or skill…"
-                }
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setPage(0);
-                }}
-              />
-            </label>
-          )}
-          <select
-            aria-label="Filter competency"
-            value={competency}
-            onChange={(e) => {
-              setCompetency(e.target.value);
-              setPage(0);
-            }}
-          >
-            <option value="">All competencies</option>
-            {data.competencies.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          {view !== "summary" && (
-            <>
-              <select
-                aria-label="Filter progress status"
-                value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <option value="">All progress statuses</option>
-                {["Completed", "In Progress", "Yet to Start"].map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
-            </>
-          )}
-          {(query || competency || status) && (
-            <button
-              className="cm-text-button"
-              onClick={() => {
-                setQuery("");
-                setCompetency("");
-                setStatus("");
+        {view !== "summary" && (
+          <div className="cm-manager-filters">
+              <label className="cm-search">
+                <Search size={16} />
+                <input
+                  aria-label="Search team progress"
+                  placeholder={
+                    view === "detail"
+                      ? "Search competency or skill…"
+                      : "Search name, email or skill…"
+                  }
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setPage(0);
+                  }}
+                />
+              </label>
+            <select
+              aria-label="Filter competency"
+              value={competency}
+              onChange={(e) => {
+                setCompetency(e.target.value);
                 setPage(0);
               }}
             >
-              Clear filters
-            </button>
-          )}
-        </div>
+              <option value="">All competencies</option>
+              {data.competencies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+                <select
+                  aria-label="Filter progress status"
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  <option value="">All progress statuses</option>
+                  {["Completed", "In Progress", "Yet to Start"].map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+            {(query || competency || status) && (
+              <button
+                className="cm-text-button"
+                onClick={() => {
+                  setQuery("");
+                  setCompetency("");
+                  setStatus("");
+                  setPage(0);
+                }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
         {view !== "summary" && (
           <div className="cm-table-controls">
             <ManagerPageSize
@@ -468,8 +404,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
         </div>
         {view === "summary" ? (
           <p className="cm-manager-caption">
-            Showing {Math.min(total, 5)} of {total} reportees. Counts reflect
-            the selected competency.
+            Showing {Math.min(total, 5)} of {total} reportees.
           </p>
         ) : (
           <ManagerPagination

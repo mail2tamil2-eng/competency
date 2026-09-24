@@ -48,6 +48,12 @@ test("manager summary, all reportees and detailed view retain meaningful context
     page.getByRole("link", { name: "Team overview", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expect(
+    page.getByRole("navigation", { name: "Competency sections" }),
+  ).toHaveCount(0);
+  await expect(
+    page.locator(".cm-manager-stats, .cm-manager-filters"),
+  ).toHaveCount(0);
+  await expect(
     page.getByText("REPORTING MANAGER", { exact: true }),
   ).toHaveCount(0);
   await expect(
@@ -481,8 +487,14 @@ test("manager table pages paginate more than ten records and only offer higher l
   await expect(
     page.getByText(/already at the highest available active level/),
   ).toBeVisible();
-  const disabledSave = page.getByRole("button", { name: "Save level", exact: true });
+  const disabledSave = page.getByRole("button", {
+    name: "Save level",
+    exact: true,
+  });
   await disabledSave.hover({ force: true });
-  await expect(disabledSave).toHaveCSS("background-color", "rgb(241, 245, 249)");
+  await expect(disabledSave).toHaveCSS(
+    "background-color",
+    "rgb(241, 245, 249)",
+  );
   await expect(disabledSave).toHaveCSS("color", "rgb(82, 97, 118)");
 });

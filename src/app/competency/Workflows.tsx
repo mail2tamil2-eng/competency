@@ -1,6 +1,7 @@
 import { AssignmentConfiguration } from "./AssignmentConfiguration";
 export { Reports } from "./AdminReports";
 import { AssignmentSkills } from "./AssignmentSkills";
+import { personKey } from "./managerModel";
 import { useEffect, useRef, useState } from "react";
 import {
   Plus,
@@ -674,9 +675,17 @@ export function Learning({
   work,
   save,
   manager = false,
-}: Props & { manager?: boolean }) {
-  const names = [...new Set(data.assignments.map((a) => a.name))];
-  const [name, setName] = useState(names[0] || ""),
+  learnerKey,
+  onLearnerChange,
+}: Props & {
+  manager?: boolean;
+  learnerKey?: string;
+  onLearnerChange?: (value: string) => void;
+}) {
+  const people = [
+    ...new Map(data.assignments.map((a) => [personKey(a), a])).entries(),
+  ];
+  const [localKey, setLocalKey] = useState(""),
     [submission, setSubmission] = useState<{
       assignmentId: string;
       courseId: string;
@@ -685,7 +694,13 @@ export function Learning({
     [remark, setRemark] = useState<Record<string, string>>({}),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  const assignments = data.assignments.filter((a) => a.name === name);
+  const requestedKey = learnerKey ?? localKey;
+  const selectedKey = people.some(([id]) => id === requestedKey)
+    ? requestedKey
+    : people[0]?.[0] || "";
+  const assignments = data.assignments.filter(
+    (a) => personKey(a) === selectedKey,
+  );
   function finish(assignmentId: string, courseId: string) {
     const next = completeCourse(data, work, assignmentId, courseId);
     save(next.data, next.work, "Course completed. Skill progress updated.");
@@ -784,11 +799,13 @@ export function Learning({
         </div>
         <select
           aria-label={manager ? "Select reportee" : "Preview learner"}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={selectedKey}
+          onChange={(e) => (onLearnerChange || setLocalKey)(e.target.value)}
         >
-          {names.map((n) => (
-            <option key={n}>{n}</option>
+          {people.map(([id, a]) => (
+            <option key={id} value={id}>
+              {a.name} · {a.department}
+            </option>
           ))}
         </select>
       </div>
@@ -984,11 +1001,7 @@ export function Learning({
             </p>
           )}
           {work.proofs
-            .filter(
-              (p) =>
-                data.assignments.find((a) => a.id === p.assignmentId)?.name ===
-                name,
-            )
+            .filter((p) => assignments.some((a) => a.id === p.assignmentId))
             .map((p) => (
               <div key={p.id} className="cm-learning-card">
                 <div className="cm-section-head">
