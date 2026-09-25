@@ -13,9 +13,6 @@ import {
   GraduationCap,
   TrendingUp,
   Map,
-  CheckCircle2,
-  Circle,
-  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Data, Assignment, key, readData, uid } from "../competency/model";
@@ -178,9 +175,7 @@ export function CompetencyManagementPage() {
           </select>
         </div>
       </div>
-      {!isLearner && tab !== "manager" && (
-        <SetupGuide data={data} work={work} activeTab={tab} onNavigate={navigate} />
-      )}
+
       {tab !== "manager" && (
         <nav className="cm-tabs" aria-label="Competency sections">
           {tabs
@@ -279,106 +274,6 @@ export function CompetencyManagementPage() {
               setAssigning(false);
           }}
         />
-      )}
-    </div>
-  );
-}
-function SetupGuide({
-  data,
-  work,
-  activeTab,
-  onNavigate,
-}: {
-  data: Data;
-  work: WorkflowData;
-  activeTab: Tab;
-  onNavigate: (tab: Tab) => void;
-}) {
-  const [open, setOpen] = useState(true);
-  const steps = [
-    {
-      id: "settings" as Tab,
-      label: "Set up categories & levels",
-      detail: "Set up the building blocks every competency needs",
-      done:
-        data.categories.some((c) => c.status === "Active") &&
-        data.levels.some((l) => l.status === "Active"),
-    },
-    {
-      id: "library" as Tab,
-      label: "Build your competency framework",
-      detail: "Create competencies, then add individual skills inside them",
-      done: data.skills.some((s) => s.status === "Active"),
-    },
-    {
-      id: "roles" as Tab,
-      label: "Map roles and assign skills",
-      detail: "Choose skills and assign them to your employees",
-      done: work.plans.some((p) => p.status === "Active"),
-    },
-    {
-      id: "assignments" as Tab,
-      label: "Track learner progress",
-      detail: "See where each employee stands and update their skill level",
-      done: data.assignments.length > 0,
-    },
-  ];
-  const completed = steps.filter((s) => s.done).length;
-  if (completed === steps.length) return null;
-  return (
-    <div className="cm-setup-guide">
-      <button
-        className="cm-setup-guide-header"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
-        <span>
-          <strong>Getting started</strong>
-          <small>
-            {completed} of {steps.length} steps complete
-          </small>
-        </span>
-        <div className="cm-setup-guide-track">
-          {steps.map((s, i) => (
-            <span
-              key={i}
-              className={"cm-setup-pip" + (s.done ? " done" : "")}
-            />
-          ))}
-        </div>
-        <ChevronDown
-          size={16}
-          className={open ? "cm-rotated" : ""}
-          style={{ color: "#526176", flexShrink: 0 }}
-        />
-      </button>
-      {open && (
-        <div className="cm-setup-steps">
-          {steps.map((step, i) => (
-            <button
-              key={step.id}
-              className={
-                "cm-setup-step" +
-                (step.done ? " done" : "") +
-                (activeTab === step.id ? " current" : "")
-              }
-              onClick={() => onNavigate(step.id)}
-            >
-              <span className="cm-step-icon">
-                {step.done ? (
-                  <CheckCircle2 size={18} />
-                ) : (
-                  <Circle size={18} />
-                )}
-              </span>
-              <span className="cm-step-number">{i + 1}</span>
-              <span className="cm-step-text">
-                <strong>{step.label}</strong>
-                <small>{step.detail}</small>
-              </span>
-            </button>
-          ))}
-        </div>
       )}
     </div>
   );
