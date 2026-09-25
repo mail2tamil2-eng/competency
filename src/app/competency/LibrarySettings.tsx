@@ -98,6 +98,7 @@ export function LibrarySettings({
         </select>
         <button
           className="cm-button"
+          style={{ marginLeft: "auto" }}
           onClick={() =>
             download(section + ".csv", [
               ["Name", "Description", "Status"],

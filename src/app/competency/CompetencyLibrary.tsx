@@ -640,8 +640,12 @@ export function CompetencyLibrary({
           <option>Draft</option>
           <option>Inactive</option>
         </select>
+        <button className="cm-text-button" onClick={onSettings}>
+          <Settings2 size={15} /> Library settings
+        </button>
         <button
           className="cm-button"
+          style={{ marginLeft: "auto" }}
           onClick={() =>
             download("competencies-and-skills.csv", [
               libraryHeaders(data),
@@ -650,9 +654,6 @@ export function CompetencyLibrary({
           }
         >
           <Download size={16} /> Export CSV
-        </button>
-        <button className="cm-text-button" onClick={onSettings}>
-          <Settings2 size={15} /> Library settings
         </button>
       </div>
 
