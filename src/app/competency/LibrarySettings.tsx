@@ -144,7 +144,8 @@ export function LibrarySettings({
                 </td>
                 {section === "levels" && (
                   <td>
-                    <div className="cm-row-actions" style={{ justifyContent: "flex-start" }}>
+                    <div className="cm-row-actions" style={{ justifyContent: "flex-start", gap: 10 }}>
+                      <span className="cm-level-num-badge">{globalIdx + 1}</span>
                       <button
                         className="cm-icon-button"
                         aria-label={"Move " + r.name + " up"}
