@@ -3,6 +3,7 @@ import { Search, Plus, ChevronDown, X } from "lucide-react";
 import { Data } from "./model";
 import { Plan, WorkflowData } from "./workflowModel";
 import { AssignmentSkills } from "./AssignmentSkills";
+import { ManualAudience } from "./ManualAudience";
 
 const today = new Date().toLocaleDateString("en-CA");
 
@@ -224,7 +225,13 @@ export function AssignmentConfiguration({
           </label>
         </div>
 
-        {draft.method === "Auto" && (
+        {draft.method === "Manual" ? (
+          <ManualAudience
+            employees={work.employees}
+            selected={draft.employeeIds}
+            onChange={(employeeIds) => onChange({ ...draft, employeeIds })}
+          />
+        ) : (
           <div className="cm-auto-audience">
             <h4>Define user profile</h4>
             <p>
@@ -255,11 +262,6 @@ export function AssignmentConfiguration({
               />
             </div>
           </div>
-        )}
-        {draft.method === "Manual" && (
-          <p className="cm-hint" style={{ marginTop: 14 }}>
-            Save this assignment first. Then go to the <strong>Progress</strong> tab to enrol specific people.
-          </p>
         )}
       </section>
 

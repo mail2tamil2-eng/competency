@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Download, Plus, Search, Users, ArrowRight, UserPlus } from "lucide-react";
-import { Data, Assignment, download, progress, uid } from "./model";
-import { WorkflowData, Plan, updateCurrent } from "./workflowModel";
-import { ManualAudience } from "./ManualAudience";
+import { Download, Plus, Search, Users, ArrowRight } from "lucide-react";
+import { Data, Assignment, download, progress } from "./model";
+import { WorkflowData, updateCurrent } from "./workflowModel";
 import {
   Dialog,
   DialogContent,
@@ -31,8 +30,6 @@ export function LearnerProgress({
   const [person, setPerson] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [review, setReview] = useState(false);
-  const [enrolling, setEnrolling] = useState<Plan | null>(null);
-  const [enrollIds, setEnrollIds] = useState<string[]>([]);
   const skill = (a: Assignment) => data.skills.find((s) => s.id === a.skillId);
   const competency = (a: Assignment) =>
     data.competencies.find((c) => c.id === skill(a)?.competencyId)?.name ||
@@ -84,52 +81,6 @@ export function LearnerProgress({
       setLevel("");
     }
   }
-  function confirmEnrol() {
-    if (!enrolling) return;
-    const today = new Date().toLocaleDateString("en-CA");
-    const employees = work.employees.filter((e) => enrollIds.includes(e.id));
-    let newAssignments = [...data.assignments];
-    if (enrolling.start <= today && (!enrolling.end || enrolling.end >= today)) {
-      for (const e of employees) {
-        for (const s of enrolling.skills) {
-          const exists = newAssignments.find((a) =>
-            (a.employeeId ? a.employeeId === e.id : a.name === e.name && a.department === e.department) &&
-            a.skillId === s.skillId,
-          );
-          if (!exists)
-            newAssignments.push({
-              id: uid(),
-              employeeId: e.id,
-              assignedDate: new Date().toISOString(),
-              name: e.name,
-              department: e.department,
-              skillId: s.skillId,
-              expected: s.expected,
-              current: "",
-            });
-        }
-      }
-    }
-    const updatedPlan: Plan = {
-      ...enrolling,
-      employeeIds: enrollIds,
-      assignedEmployeeIds: enrollIds,
-      assignedNames: [...new Set([...enrolling.assignedNames, ...employees.map((e) => e.name)])],
-    };
-    if (
-      save(
-        { ...data, assignments: newAssignments },
-        { ...work, plans: work.plans.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)) },
-        `Enrolled ${employees.length} learner${employees.length !== 1 ? "s" : ""} in "${enrolling.name}"`,
-      )
-    ) {
-      setEnrolling(null);
-      setEnrollIds([]);
-    }
-  }
-
-  const manualPlans = work.plans.filter((p) => p.method === "Manual" && p.status === "Active");
-
   return (
     <section className="cm-card">
       <div className="cm-section-head">
@@ -174,39 +125,6 @@ export function LearnerProgress({
           </button>
         </div>
       </div>
-      {manualPlans.length > 0 && (
-        <div className="cm-manual-plans">
-          <div className="cm-manual-plans-header">
-            <UserPlus size={15} />
-            <strong>Manual assignments</strong>
-            <small>Enrol specific people into these assignments</small>
-          </div>
-          <div className="cm-manual-plans-list">
-            {manualPlans.map((p) => {
-              const enrolled = p.assignedEmployeeIds?.length ?? p.employeeIds?.length ?? 0;
-              return (
-                <div key={p.id} className="cm-manual-plan-row">
-                  <div className="cm-manual-plan-info">
-                    <strong>{p.name}</strong>
-                    <small>{p.skills.length} skill{p.skills.length !== 1 ? "s" : ""} · {p.start}{p.end ? ` → ${p.end}` : ""}</small>
-                  </div>
-                  <span className={"cm-badge " + (enrolled > 0 ? "active" : "")}>
-                    {enrolled > 0 ? `${enrolled} enrolled` : "No one enrolled"}
-                  </span>
-                  <button
-                    className="cm-button primary"
-                    onClick={() => { setEnrolling(p); setEnrollIds(p.employeeIds ?? []); }}
-                  >
-                    <UserPlus size={14} />
-                    {enrolled > 0 ? "Manage enrollees" : "Enrol people"}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       <div className="cm-toolbar">
         <label className="cm-search">
           <Search size={16} />
@@ -403,30 +321,6 @@ export function LearnerProgress({
           </button>
         </div>
       </div>
-      {enrolling && (
-        <Dialog open onOpenChange={(open) => { if (!open) { setEnrolling(null); setEnrollIds([]); } }}>
-          <DialogContent className="cm-dialog cm-wide">
-            <DialogHeader>
-              <DialogTitle>Enrol people — {enrolling.name}</DialogTitle>
-              <DialogDescription>
-                {enrolling.skills.length} skill{enrolling.skills.length !== 1 ? "s" : ""} will be assigned to each selected person.
-              </DialogDescription>
-            </DialogHeader>
-            <ManualAudience
-              employees={work.employees}
-              selected={enrollIds}
-              onChange={setEnrollIds}
-            />
-            <div className="cm-dialog-actions">
-              <button className="cm-button" onClick={() => { setEnrolling(null); setEnrollIds([]); }}>Cancel</button>
-              <button className="cm-button primary" onClick={confirmEnrol} disabled={!enrollIds.length}>
-                Enrol {enrollIds.length > 0 ? enrollIds.length : ""} {enrollIds.length === 1 ? "person" : "people"}
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
       {(person || review || editing) && (
         <Dialog
           open

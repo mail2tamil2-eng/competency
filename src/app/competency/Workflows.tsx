@@ -365,6 +365,10 @@ export function RoleMapping({ data, work, save }: Props) {
       setError("End date must be on or after start date.");
       return false;
     }
+    if (draft.method === "Manual" && !draft.employeeIds.length) {
+      setError("Select at least one learner.");
+      return false;
+    }
     if (
       draft.method === "Auto" &&
       !draft.department &&
@@ -615,21 +619,23 @@ export function RoleMapping({ data, work, save }: Props) {
                   <h3>{draft.name}</h3>
                   <div className="cm-summary">
                     <p>
-                      <strong>{draft.skills.length}</strong> skills ·{" "}
-                      {draft.method} enrolment · {draft.type}
+                      <strong>{audience.length}</strong> learners ·{" "}
+                      <strong>{draft.skills.length}</strong> skills
+                    </p>
+                    <p>
+                      {draft.method} enrolment · {draft.type} audience
                     </p>
                     <p>
                       {draft.start} to {draft.end || "No end date"}
                     </p>
-                    {draft.method === "Manual" ? (
-                      <p>People will be enrolled from the <strong>Progress</strong> tab after saving.</p>
-                    ) : (
-                      <p>
-                        <strong>{audience.length}</strong> learners currently match ·{" "}
-                        {audience.slice(0, 5).map((e) => e.name).join(", ")}
-                        {audience.length > 5 && ` and ${audience.length - 5} more`}
-                      </p>
-                    )}
+                    <p>
+                      {audience
+                        .slice(0, 20)
+                        .map((e) => e.name)
+                        .join(", ") || "No current matching learners"}
+                      {audience.length > 20 &&
+                        ` and ${audience.length - 20} more learners`}
+                    </p>
                   </div>
                   <AssignmentSkills
                     data={data}
