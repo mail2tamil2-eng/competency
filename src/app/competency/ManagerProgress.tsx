@@ -179,7 +179,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                   aria-label="Search team progress"
                   placeholder={
                     view === "detail"
-                      ? "Search skill group or skill…"
+                      ? "Search competency or skill…"
                       : "Search name, email or skill…"
                   }
                   value={query}

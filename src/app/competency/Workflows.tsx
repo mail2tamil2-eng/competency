@@ -43,9 +43,10 @@ export function CourseMapping({ data, work, save }: Props) {
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Courses</h2>
+          <h2>Skill → course mapping</h2>
           <p>
-            Connect courses to specific skills and levels. Learners see the right course for where they currently are and where they need to get to.
+            Connect each skill level to learning content. Learners follow
+            courses in level order.
           </p>
         </div>
         <button
@@ -455,27 +456,30 @@ export function RoleMapping({ data, work, save }: Props) {
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Learning Plans</h2>
+          <h2>Competency → role mapping</h2>
           <p>
-            A learning plan assigns specific skills to a group of employees and sets the level they need to reach. Think of it as a structured growth target for a team or role.
+            Choose required skills, define expectations, and assign them to the
+            right people.
           </p>
         </div>
         <button className="cm-button primary" onClick={() => begin()}>
           <Plus size={16} />
-          Create learning plan
+          Create assignment
         </button>
       </div>
       <p className="cm-hint">
-        Pick the skills, set the expected level, and choose who needs to develop them — either by selecting employees manually or by job role and department.
+        Assign skills to selected learners, or use profile rules to enrol
+        existing and new users.
       </p>
       {!work.plans.length ? (
         <div className="cm-empty">
-          <h3>No learning plans yet</h3>
+          <h3>Give every role a clear growth path</h3>
           <p>
-            Create a plan to assign skills and target levels to your employees. Once active, learners will see the skills in their growth plan.
+            Start with a competency, then choose skills and your target
+            audience.
           </p>
           <button className="cm-button" onClick={() => begin()}>
-            Create your first learning plan
+            Create your first assignment
           </button>
         </div>
       ) : (

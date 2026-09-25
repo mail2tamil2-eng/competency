@@ -46,15 +46,15 @@ import {
   applyPlans,
 } from "../competency/workflowModel";
 const tabs = [
-  ["settings", "Setup", Settings2],
-  ["library", "Skill Library", Layers],
-  ["roles", "Learning Plans", Map],
-  ["assignments", "Learner Progress", BarChart2],
-  ["courses", "Courses", BookOpen],
+  ["settings", "Library settings", Settings2],
+  ["library", "Competency framework", Layers],
+  ["roles", "Role mapping", Map],
+  ["assignments", "Progress", BarChart2],
+  ["courses", "Course mapping", BookOpen],
   ["reports", "Reports", ListChecks],
-  ["learner", "My Growth Plan", GraduationCap],
-  ["learner-report", "My Progress", TrendingUp],
-  ["manager", "My Team", Users],
+  ["learner", "My learning", GraduationCap],
+  ["learner-report", "Skill progress report", TrendingUp],
+  ["manager", "Team progress", Users],
 ] as const;
 type Tab = (typeof tabs)[number][0];
 export function CompetencyManagementPage() {
@@ -155,7 +155,7 @@ export function CompetencyManagementPage() {
           <Layers size={24} />
         </div>
         <div>
-          <h1>Skills &amp; Growth</h1>
+          <h1>Competency Management</h1>
           <p>Build capabilities. Close skill gaps. Help your people grow.</p>
         </div>
         <div className="cm-view-select">
@@ -297,21 +297,21 @@ function SetupGuide({
   const steps = [
     {
       id: "settings" as Tab,
-      label: "Add categories & skill levels",
-      detail: "Set up the building blocks every skill needs",
+      label: "Set up categories & levels",
+      detail: "Set up the building blocks every competency needs",
       done:
         data.categories.some((c) => c.status === "Active") &&
         data.levels.some((l) => l.status === "Active"),
     },
     {
       id: "library" as Tab,
-      label: "Build your skill library",
-      detail: "Create skill groups, then add individual skills inside them",
+      label: "Build your competency framework",
+      detail: "Create competencies, then add individual skills inside them",
       done: data.skills.some((s) => s.status === "Active"),
     },
     {
       id: "roles" as Tab,
-      label: "Create a learning plan",
+      label: "Map roles and assign skills",
       detail: "Choose skills and assign them to your employees",
       done: work.plans.some((p) => p.status === "Active"),
     },
@@ -411,7 +411,7 @@ function AssignmentForm({
         <DialogHeader>
           <DialogTitle>Assign a skill</DialogTitle>
           <DialogDescription>
-            Choose a learner and the skill level they need to reach.
+            Choose a learner and the proficiency they need to reach.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -476,13 +476,13 @@ function AssignmentForm({
             </select>
           </label>
           <label>
-            Target skill level *
+            Expected level *
             <select
               required
               value={a.expected}
               onChange={(e) => setA({ ...a, expected: e.target.value })}
             >
-              <option value="">Choose target level</option>
+              <option value="">Choose expected level</option>
               {data.levels
                 .filter((l) => l.status === "Active")
                 .map((l) => (
@@ -493,7 +493,8 @@ function AssignmentForm({
             </select>
           </label>
           <p className="cm-hint">
-            The learner's current level starts empty. You can record it later from the Learner Progress table after assessing them.
+            Current level starts empty. Record it from the progress table after
+            assessing the learner.
           </p>
           <div className="cm-dialog-actions">
             <button type="button" className="cm-button" onClick={onClose}>

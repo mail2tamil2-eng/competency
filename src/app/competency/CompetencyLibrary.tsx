@@ -106,9 +106,10 @@ export function CompetencyLibrary({
     <section className="cm-card cm-unified-library">
       <div className="cm-section-head">
         <div>
-          <h2>Skill Groups &amp; Skills</h2>
+          <h2>Competencies &amp; Skills</h2>
           <p>
-            A skill group bundles related skills together — for example, "Leadership" or "Data Analysis". Open one to see the individual skills inside it.
+            Competencies group related skills. Open one to see the abilities
+            your people can develop.
           </p>
         </div>
         <div className="cm-actions">
@@ -121,7 +122,7 @@ export function CompetencyLibrary({
             onClick={() => setCreating(true)}
           >
             <Plus size={16} />
-            Create skill group
+            Create competency
           </button>
         </div>
       </div>
@@ -129,8 +130,8 @@ export function CompetencyLibrary({
         <label className="cm-search">
           <Search size={17} />
           <input
-            aria-label="Search skill groups and skills"
-            placeholder="Search a skill group or skill…"
+            aria-label="Search competencies and skills"
+            placeholder="Search a competency or skill…"
             value={query}
             onChange={(e) => onQuery(e.target.value)}
           />
@@ -189,7 +190,7 @@ export function CompetencyLibrary({
             <article
               className="cm-library-group"
               key={c.id}
-              aria-label={c.name + " skill group"}
+              aria-label={c.name + " competency"}
             >
               <div className="cm-group-header">
                 <button
@@ -241,7 +242,7 @@ export function CompetencyLibrary({
                     title={
                       used(data, "competencies", c.id)
                         ? "Contains skills; remove unused skills first"
-                        : "Delete skill group"
+                        : "Delete competency"
                     }
                     onClick={() =>
                       setDeleting({ kind: "competencies", item: c })
@@ -263,7 +264,7 @@ export function CompetencyLibrary({
                       disabled={c.status !== "Active"}
                       title={
                         c.status !== "Active"
-                          ? "Edit this skill group and set it to Active before adding skills"
+                          ? "Edit this competency and activate it before adding skills"
                           : ""
                       }
                       onClick={() => setEditing({ kind: "skills", parent: c })}
@@ -274,7 +275,8 @@ export function CompetencyLibrary({
                   </div>
                   {c.status !== "Active" && (
                     <p className="cm-hint">
-                      This skill group is not Active yet. Edit it and set the status to Active before adding skills.
+                      Set this competency to Active using Edit before adding
+                      skills.
                     </p>
                   )}
                   {!shown.length && (
@@ -282,7 +284,7 @@ export function CompetencyLibrary({
                       <Target size={24} />
                       <h3>No skills yet</h3>
                       <p>
-                        Skills are the specific things a person can do inside this group. Add the first one to get started.
+                        Add the specific abilities that make up this competency.
                       </p>
                     </div>
                   )}
@@ -330,7 +332,7 @@ export function CompetencyLibrary({
                       </div>
                       <details className="cm-skill-proficiency">
                         <summary>
-                          View skill levels{" "}
+                          View proficiency levels{" "}
                           <span>
                             {data.levels.filter((l) => s.levels?.[l.id]).length}{" "}
                             levels
@@ -358,8 +360,8 @@ export function CompetencyLibrary({
       {!visible.length && (
         <div className="cm-empty">
           <Search size={26} />
-          <h3>No matching skill groups or skills</h3>
-          <p>Try a different search term or clear the filters.</p>
+          <h3>No matching competencies or skills</h3>
+          <p>Try another name or clear the filters.</p>
           <button
             className="cm-button"
             onClick={() => {
@@ -374,8 +376,8 @@ export function CompetencyLibrary({
       )}
       <footer className="cm-pagination">
         <span>
-          {visible.length} skill {visible.length === 1 ? "group" : "groups"} found
-          {term ? " · Matching skills are shown inside each group" : ""}
+          {visible.length} competencies found
+          {term ? " · Matching skills are shown inside each competency" : ""}
         </span>
         <div>
           <button

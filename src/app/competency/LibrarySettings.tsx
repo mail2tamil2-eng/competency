@@ -38,7 +38,7 @@ export function LibrarySettings({
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Setup</h2>
+          <h2>Library settings</h2>
           <p>
             Before building your skill library, set up the two building blocks every skill needs: <strong>categories</strong> (how you group skills) and <strong>skill levels</strong> (how you measure how good someone is).
           </p>
@@ -60,14 +60,14 @@ export function LibrarySettings({
               setStatus("");
             }}
           >
-            {s === "categories" ? "Categories" : "Skill Levels"}
+            {s === "categories" ? "Categories" : "Proficiency levels"}
           </button>
         ))}
       </div>
       <div className="cm-section-head">
         <div>
           <h3>
-            {section === "categories" ? "Categories" : "Skill Levels"}{" "}
+            {section === "categories" ? "Categories" : "Proficiency levels"}{" "}
             <span className="cm-count">{data[section].length}</span>
           </h3>
           <p>
@@ -78,7 +78,7 @@ export function LibrarySettings({
         </div>
         <button className="cm-button primary" onClick={() => setEditing({})}>
           <Plus size={16} />
-          Add {section === "categories" ? "category" : "skill level"}
+          Add {section === "categories" ? "category" : "level"}
         </button>
       </div>
       <div className="cm-toolbar">
@@ -86,7 +86,7 @@ export function LibrarySettings({
           <Search size={17} />
           <input
             aria-label="Search library settings"
-            placeholder={section === "categories" ? "Search categories…" : "Search skill levels…"}
+            placeholder={"Search " + section + "…"}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
