@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Pencil, Trash2, Download, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Download } from "lucide-react";
 import { Data, RecordItem, used, download } from "./model";
 import { Editor } from "./Editor";
 import {
@@ -24,11 +24,12 @@ export function LibrarySettings({
     [editing, setEditing] = useState<{ item?: RecordItem } | null>(null),
     [deleting, setDeleting] = useState<RecordItem | null>(null);
 
-  function reorderLevel(idx: number, dir: -1 | 1) {
+  function reorderLevel(fromIdx: number, toPos: number) {
     const list = [...data.levels];
-    const swap = idx + dir;
-    if (swap < 0 || swap >= list.length) return;
-    [list[idx], list[swap]] = [list[swap], list[idx]];
+    const toIdx = Math.max(0, Math.min(list.length - 1, toPos - 1));
+    if (fromIdx === toIdx) return;
+    const [item] = list.splice(fromIdx, 1);
+    list.splice(toIdx, 0, item);
     commit({ ...data, levels: list }, "Level order updated");
   }
   useEffect(() => {
@@ -144,27 +145,27 @@ export function LibrarySettings({
                 </td>
                 {section === "levels" && (
                   <td>
-                    <div className="cm-row-actions" style={{ justifyContent: "flex-start", gap: 10 }}>
-                      <span className="cm-level-num-badge">{globalIdx + 1}</span>
-                      <button
-                        className="cm-icon-button"
-                        aria-label={"Move " + r.name + " up"}
-                        disabled={globalIdx === 0}
-                        onClick={() => reorderLevel(globalIdx, -1)}
-                        title="Move up"
-                      >
-                        <ArrowUp size={15} />
-                      </button>
-                      <button
-                        className="cm-icon-button"
-                        aria-label={"Move " + r.name + " down"}
-                        disabled={globalIdx === data.levels.length - 1}
-                        onClick={() => reorderLevel(globalIdx, 1)}
-                        title="Move down"
-                      >
-                        <ArrowDown size={15} />
-                      </button>
-                    </div>
+                    <input
+                      type="number"
+                      min={1}
+                      max={data.levels.length}
+                      key={globalIdx}
+                      defaultValue={globalIdx + 1}
+                      className="cm-order-input"
+                      aria-label={"Order position for " + r.name}
+                      title="Type a number and press Enter to move"
+                      onBlur={(e) => {
+                        const pos = parseInt(e.target.value);
+                        if (!isNaN(pos)) reorderLevel(globalIdx, pos);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") {
+                          (e.target as HTMLInputElement).value = String(globalIdx + 1);
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
+                    />
                   </td>
                 )}
                 <td>
