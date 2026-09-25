@@ -76,11 +76,6 @@ export function LibrarySettings({
             {section === "categories" ? "Categories" : "Proficiency levels"}{" "}
             <span className="cm-count">{data[section].length}</span>
           </h3>
-          <p>
-            {section === "categories"
-              ? 'Categories group related skill groups together — for example, "Foundation", "Technical", or "Leadership".'
-              : "Skill levels describe how good someone is at a skill — for example, Beginner, Intermediate, Advanced, Expert. Each skill describes what each level looks like in its own context."}
-          </p>
         </div>
         <button className="cm-button primary" onClick={() => setEditing({})}>
           <Plus size={16} />
