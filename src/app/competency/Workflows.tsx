@@ -11,6 +11,10 @@ import {
   Download,
   FileText,
   ArrowRight,
+  Pencil,
+  Copy,
+  Power,
+  PowerOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Data, uid, progress, download } from "./model";
@@ -92,15 +96,19 @@ export function CourseMapping({ data, work, save }: Props) {
                   ))}
                 </td>
                 <td>
-                  <button
-                    className="cm-link"
-                    onClick={() => {
-                      setError("");
-                      setDraft(structuredClone(c));
-                    }}
-                  >
-                    Edit mapping
-                  </button>
+                  <div className="cm-row-actions">
+                    <button
+                      className="cm-icon-button"
+                      title="Edit mapping"
+                      aria-label={"Edit mapping for " + c.name}
+                      onClick={() => {
+                        setError("");
+                        setDraft(structuredClone(c));
+                      }}
+                    >
+                      <Pencil size={15} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -473,10 +481,6 @@ export function RoleMapping({ data, work, save }: Props) {
           Create assignment
         </button>
       </div>
-      <p className="cm-hint">
-        Assign skills to selected learners, or use profile rules to enrol
-        existing and new users.
-      </p>
       {!work.plans.length ? (
         <div className="cm-empty">
           <h3>Give every role a clear growth path</h3>
@@ -520,12 +524,19 @@ export function RoleMapping({ data, work, save }: Props) {
                     </span>
                   </td>
                   <td>
-                    <div className="cm-actions">
-                      <button className="cm-link" onClick={() => begin(p)}>
-                        Edit
+                    <div className="cm-row-actions">
+                      <button
+                        className="cm-icon-button"
+                        title="Edit"
+                        aria-label={"Edit " + p.name}
+                        onClick={() => begin(p)}
+                      >
+                        <Pencil size={15} />
                       </button>
                       <button
-                        className="cm-link"
+                        className="cm-icon-button"
+                        title="Duplicate"
+                        aria-label={"Duplicate " + p.name}
                         onClick={() =>
                           begin({
                             ...p,
@@ -536,16 +547,17 @@ export function RoleMapping({ data, work, save }: Props) {
                           })
                         }
                       >
-                        Duplicate
+                        <Copy size={15} />
                       </button>
                       <button
-                        className="cm-link"
+                        className="cm-icon-button"
                         disabled={started(p)}
                         title={
                           started(p)
                             ? "Learning has started; this assignment is protected"
-                            : ""
+                            : p.status === "Active" ? "Deactivate" : "Activate"
                         }
+                        aria-label={(p.status === "Active" ? "Deactivate " : "Activate ") + p.name}
                         onClick={() =>
                           save(
                             data,
@@ -553,13 +565,7 @@ export function RoleMapping({ data, work, save }: Props) {
                               ...work,
                               plans: work.plans.map((x) =>
                                 x.id === p.id
-                                  ? {
-                                      ...x,
-                                      status:
-                                        x.status === "Active"
-                                          ? "Inactive"
-                                          : "Active",
-                                    }
+                                  ? { ...x, status: x.status === "Active" ? "Inactive" : "Active" }
                                   : x,
                               ),
                             },
@@ -567,7 +573,7 @@ export function RoleMapping({ data, work, save }: Props) {
                           )
                         }
                       >
-                        {p.status === "Active" ? "Deactivate" : "Activate"}
+                        {p.status === "Active" ? <PowerOff size={15} /> : <Power size={15} />}
                       </button>
                     </div>
                   </td>
