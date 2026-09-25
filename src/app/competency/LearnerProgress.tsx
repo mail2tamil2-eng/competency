@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Plus, Search, Users, ArrowRight } from "lucide-react";
+import { Download, Search, Users, ArrowRight } from "lucide-react";
 import { Data, Assignment, download, progress } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
 import {
@@ -15,12 +15,10 @@ export function LearnerProgress({
   data,
   work,
   save,
-  onAssign,
 }: {
   data: Data;
   work: WorkflowData;
   save: (data: Data, work: WorkflowData, message: string) => boolean;
-  onAssign: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -118,10 +116,6 @@ export function LearnerProgress({
           >
             <Download size={16} />
             Export CSV
-          </button>
-          <button className="cm-button primary" onClick={onAssign}>
-            <Plus size={16} />
-            Assign skill
           </button>
         </div>
       </div>

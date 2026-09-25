@@ -262,7 +262,6 @@ export function CompetencyManagementPage() {
             data={data}
             work={work}
             save={saveWorkflow}
-            onAssign={() => setAssigning(true)}
           />
         )}
       </div>
