@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  Layers,
   Target,
   Plus,
   Upload,
@@ -506,7 +505,7 @@ export function CompetencyLibrary({
                     >
                       <ChevronDown size={16} className={isOpen ? "cm-rotated" : ""} style={{ flexShrink: 0, color: "#526176" }} />
                       <span className="cm-skill-accordion-name">
-                        <strong>{s.name}</strong>
+                        <span className="cm-table-link">{s.name}</span>
                         {s.description && <small>{s.description}</small>}
                       </span>
                       <span className="cm-skill-accordion-meta">
@@ -676,7 +675,12 @@ export function CompetencyLibrary({
                   return (
                     <tr key={c.id}>
                       <td>
-                        <strong>{c.name}</strong>
+                        <button
+                          className="cm-table-link"
+                          onClick={() => { setView({ kind: "skills", cId: c.id }); setOpenSkill(null); setEditingSkill(null); }}
+                        >
+                          {c.name}
+                        </button>
                         <small>{c.description || "No description added"}</small>
                       </td>
                       <td>
@@ -690,12 +694,6 @@ export function CompetencyLibrary({
                       </td>
                       <td>
                         <div className="cm-row-actions">
-                          <button
-                            className="cm-button"
-                            onClick={() => { setView({ kind: "skills", cId: c.id }); setOpenSkill(null); setEditingSkill(null); }}
-                          >
-                            <Layers size={14} /> View skills
-                          </button>
                           <button
                             className="cm-icon-button"
                             aria-label={"Edit " + c.name}

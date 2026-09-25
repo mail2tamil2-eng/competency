@@ -247,6 +247,23 @@
   align-items: center;
   gap: 6px;
 }
+.cm-table-link {
+  color: #2463d6;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: #2463d640;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+}
+.cm-table-link:hover {
+  text-decoration-color: #2463d6;
+  color: #1a52b8;
+}
 .cm-library-row {
   width: 100%;
   display: flex;
