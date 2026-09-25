@@ -186,7 +186,6 @@ function CourseListPopup({
                   <th>Course</th>
                   <th>Level</th>
                   <th>Weightage&nbsp;(%)</th>
-                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -215,9 +214,6 @@ function CourseListPopup({
                           setEdits(edits.map((ed, idx) => idx === i ? { ...ed, weightage: val } : ed));
                         }}
                       />
-                    </td>
-                    <td style={{ color: "#526176", fontSize: 13, whiteSpace: "nowrap" }}>
-                      {edits[i].weightage === 0 ? "Optional" : `${edits[i].weightage}% importance`}
                     </td>
                   </tr>
                 ))}
