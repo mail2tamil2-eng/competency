@@ -213,6 +213,8 @@ export function CompetencyManagementPage() {
             intent={libraryIntent}
             onSettings={() => navigate("settings")}
             commit={commit}
+            work={work}
+            onSaveWork={(next, msg) => saveWorkflow(data, next, msg)}
           />
         )}
         {tab === "settings" && (

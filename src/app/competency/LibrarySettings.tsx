@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Pencil, Trash2, Download } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Download, ArrowUp, ArrowDown } from "lucide-react";
 import { Data, RecordItem, used, download } from "./model";
 import { Editor } from "./Editor";
 import {
@@ -23,6 +23,14 @@ export function LibrarySettings({
     [status, setStatus] = useState(""),
     [editing, setEditing] = useState<{ item?: RecordItem } | null>(null),
     [deleting, setDeleting] = useState<RecordItem | null>(null);
+
+  function reorderLevel(idx: number, dir: -1 | 1) {
+    const list = [...data.levels];
+    const swap = idx + dir;
+    if (swap < 0 || swap >= list.length) return;
+    [list[idx], list[swap]] = [list[swap], list[idx]];
+    commit({ ...data, levels: list }, "Level order updated");
+  }
   useEffect(() => {
     setSection(initialSection);
     setQuery("");
@@ -39,9 +47,6 @@ export function LibrarySettings({
       <div className="cm-section-head">
         <div>
           <h2>Library settings</h2>
-          <p>
-            Before building your skill library, set up the two building blocks every skill needs: <strong>categories</strong> (how you group skills) and <strong>skill levels</strong> (how you measure how good someone is).
-          </p>
         </div>
       </div>
       <div
@@ -119,11 +124,14 @@ export function LibrarySettings({
             <tr>
               <th>Name</th>
               <th>Status</th>
+              {section === "levels" && <th>Order</th>}
               <th className="cm-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {records.map((r) => (
+            {records.map((r) => {
+              const globalIdx = section === "levels" ? data.levels.findIndex((l) => l.id === r.id) : -1;
+              return (
               <tr key={r.id}>
                 <td>
                   <strong>{r.name}</strong>
@@ -134,6 +142,30 @@ export function LibrarySettings({
                     {r.status}
                   </span>
                 </td>
+                {section === "levels" && (
+                  <td>
+                    <div className="cm-row-actions" style={{ justifyContent: "flex-start" }}>
+                      <button
+                        className="cm-icon-button"
+                        aria-label={"Move " + r.name + " up"}
+                        disabled={globalIdx === 0}
+                        onClick={() => reorderLevel(globalIdx, -1)}
+                        title="Move up"
+                      >
+                        <ArrowUp size={15} />
+                      </button>
+                      <button
+                        className="cm-icon-button"
+                        aria-label={"Move " + r.name + " down"}
+                        disabled={globalIdx === data.levels.length - 1}
+                        onClick={() => reorderLevel(globalIdx, 1)}
+                        title="Move down"
+                      >
+                        <ArrowDown size={15} />
+                      </button>
+                    </div>
+                  </td>
+                )}
                 <td>
                   <div className="cm-row-actions">
                     <button
@@ -159,7 +191,8 @@ export function LibrarySettings({
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

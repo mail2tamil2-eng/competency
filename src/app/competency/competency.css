@@ -679,6 +679,78 @@
   }
 }
 
+/* Level tree (skill detail view) */
+.cm-level-tree {
+  border-left: 2px solid #bed5ff;
+  margin: 12px 0 0 8px;
+  padding-left: 0;
+}
+.cm-level-node {
+  position: relative;
+  padding: 12px 12px 12px 28px;
+}
+.cm-level-node:not(.last) {
+  border-bottom: 1px solid #edf4ff;
+}
+.cm-level-node-marker {
+  position: absolute;
+  left: -6px;
+  top: 20px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2463d6;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #bed5ff;
+}
+.cm-level-node-content strong {
+  font-size: 14px;
+  font-weight: 650;
+  color: #263047;
+  display: block;
+}
+.cm-level-node-content p {
+  font-size: 14px;
+  color: #526176;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+/* Course weightage input */
+.cm-weightage-input {
+  width: 64px !important;
+  min-height: 32px !important;
+  padding: 4px 8px !important;
+  text-align: center;
+}
+/* Audience multi-check fields */
+.cm-audience-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 14px;
+}
+.cm-multi-check-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cm-multi-check-label {
+  font-size: 14px;
+  font-weight: 650;
+  color: #4a5266;
+}
+/* Schedule grid alignment */
+.cm-schedule-grid {
+  align-items: start !important;
+}
+.cm-end-date-block {
+  display: flex;
+  flex-direction: column;
+}
+.cm-end-date-check {
+  margin-bottom: 0 !important;
+  padding-top: 2px;
+}
 /* Admin setup guide */
 .cm-setup-guide {
   background: white;

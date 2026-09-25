@@ -340,6 +340,9 @@ export function RoleMapping({ data, work, save }: Props) {
             skills: [],
             status: "Active",
             assignedNames: [],
+            departments: [],
+            roles: [],
+            cohorts: [],
           },
     );
   }
@@ -370,9 +373,12 @@ export function RoleMapping({ data, work, save }: Props) {
       draft.method === "Auto" &&
       !draft.department &&
       !draft.role &&
-      !draft.cohort
+      !draft.cohort &&
+      !draft.departments?.length &&
+      !draft.roles?.length &&
+      !draft.cohorts?.length
     ) {
-      setError("Choose at least one audience criterion.");
+      setError("Choose at least one audience criterion (department, role, or cohort).");
       return false;
     }
     const old = work.plans.find((p) => p.id === draft.id);

@@ -3,6 +3,58 @@ import { Plan, WorkflowData } from "./workflowModel";
 import { AssignmentSkills } from "./AssignmentSkills";
 import { ManualAudience } from "./ManualAudience";
 
+const today = new Date().toLocaleDateString("en-CA");
+
+function MultiCheckField({
+  label,
+  field,
+  plural,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  field: string;
+  plural: string;
+  options: string[];
+  selected: string[];
+  onChange: (values: string[]) => void;
+}) {
+  return (
+    <div className="cm-multi-check-field">
+      <span className="cm-multi-check-label">{label}</span>
+      {options.length === 0 ? (
+        <small style={{ color: "#526176" }}>No {field} data available</small>
+      ) : (
+        <div className="cm-checks">
+          {options.map((v) => (
+            <label key={v} className="cm-inline-check">
+              <input
+                type="checkbox"
+                checked={selected.includes(v)}
+                onChange={(e) =>
+                  onChange(
+                    e.target.checked
+                      ? [...selected, v]
+                      : selected.filter((x) => x !== v),
+                  )
+                }
+              />
+              {v}
+            </label>
+          ))}
+        </div>
+      )}
+      {selected.length > 0 && (
+        <small style={{ color: "#2463d6" }}>
+          {selected.length} selected:{" "}
+          {selected.join(", ")}
+        </small>
+      )}
+    </div>
+  );
+}
+
 export function AssignmentConfiguration({
   data,
   work,
@@ -14,6 +66,10 @@ export function AssignmentConfiguration({
   draft: Plan;
   onChange: (plan: Plan) => void;
 }) {
+  const allDepts = [...new Set(work.employees.map((e) => e.department).filter(Boolean))].sort();
+  const allRoles = [...new Set(work.employees.map((e) => e.role).filter(Boolean))].sort();
+  const allCohorts = [...new Set(work.employees.map((e) => e.cohort).filter((v): v is string => Boolean(v)))].sort();
+
   return (
     <div className="cm-assignment-config">
       <section className="cm-config-section">
@@ -28,16 +84,18 @@ export function AssignmentConfiguration({
           />
         </label>
       </section>
+
       <section className="cm-config-section">
-        <h3>2. Competencies & skills</h3>
+        <h3>2. Competencies &amp; skills</h3>
         <AssignmentSkills
           data={data}
           selected={draft.skills}
           onChange={(skills) => onChange({ ...draft, skills })}
         />
       </section>
+
       <section className="cm-config-section">
-        <h3>3. Enrolment & audience</h3>
+        <h3>3. Enrolment &amp; audience</h3>
         <div className="cm-config-grid">
           <label>
             Enrolment method
@@ -86,6 +144,7 @@ export function AssignmentConfiguration({
             </small>
           </label>
         </div>
+
         {draft.method === "Manual" ? (
           <ManualAudience
             employees={work.employees}
@@ -95,55 +154,52 @@ export function AssignmentConfiguration({
         ) : (
           <div className="cm-auto-audience">
             <h4>Define user profile</h4>
-            <p>Users must match every selected profile field.</p>
-            <div className="cm-config-grid">
-              {(["department", "role", "cohort"] as const).map((field) => (
-                <label key={field}>
-                  {field[0].toUpperCase() + field.slice(1)}
-                  <select
-                    aria-label={field[0].toUpperCase() + field.slice(1)}
-                    value={draft[field] || ""}
-                    onChange={(e) =>
-                      onChange({
-                        ...draft,
-                        [field]: e.target.value,
-                        location: "",
-                      })
-                    }
-                  >
-                    <option value="">Any {field}</option>
-                    {[
-                      ...new Set(
-                        work.employees.map((e) => e[field]).filter(Boolean),
-                      ),
-                    ]
-                      .sort()
-                      .map((v) => (
-                        <option key={v} value={v}>
-                          {v}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-              ))}
+            <p>Users matching <strong>any</strong> selection in each field will be enrolled. Leave a field empty to include all.</p>
+            <div className="cm-audience-fields">
+              <MultiCheckField
+                label="Department"
+                field="department"
+                plural="departments"
+                options={allDepts}
+                selected={draft.departments ?? []}
+                onChange={(departments) => onChange({ ...draft, departments, department: "" })}
+              />
+              <MultiCheckField
+                label="Role"
+                field="role"
+                plural="roles"
+                options={allRoles}
+                selected={draft.roles ?? []}
+                onChange={(roles) => onChange({ ...draft, roles, role: "" })}
+              />
+              <MultiCheckField
+                label="Cohort"
+                field="cohort"
+                plural="cohorts"
+                options={allCohorts}
+                selected={draft.cohorts ?? []}
+                onChange={(cohorts) => onChange({ ...draft, cohorts, cohort: "" })}
+              />
             </div>
           </div>
         )}
       </section>
+
       <section className="cm-config-section">
         <h3>4. Assignment schedule</h3>
-        <div className="cm-config-grid">
+        <div className="cm-config-grid cm-schedule-grid">
           <label>
             Start date *
             <input
               type="date"
               aria-label="Start date"
+              min={today}
               value={draft.start}
               onChange={(e) => onChange({ ...draft, start: e.target.value })}
             />
           </label>
-          <div>
-            <label className="cm-inline-check">
+          <div className="cm-end-date-block">
+            <label className="cm-inline-check cm-end-date-check">
               <input
                 type="checkbox"
                 checked={!!draft.hasEndDate}
@@ -158,19 +214,19 @@ export function AssignmentConfiguration({
               Set end date
             </label>
             {draft.hasEndDate ? (
-              <label>
+              <label style={{ marginTop: 10 }}>
                 End date *
                 <input
                   type="date"
                   aria-label="End date"
-                  min={draft.start}
+                  min={draft.start || today}
                   value={draft.end}
                   onChange={(e) => onChange({ ...draft, end: e.target.value })}
                 />
               </label>
             ) : (
               <p className="cm-field-help">
-                No end date. The assignment stays active until deactivated.
+                No end date — assignment stays active until deactivated.
               </p>
             )}
           </div>

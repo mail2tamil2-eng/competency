@@ -3,7 +3,7 @@ export type Course = {
   id: string;
   name: string;
   duration: string;
-  mappings: { skillId: string; levelId: string }[];
+  mappings: { skillId: string; levelId: string; weightage?: number }[];
 };
 export type Employee = {
   id: string;
@@ -32,6 +32,9 @@ export type Plan = {
   skills: { skillId: string; expected: string }[];
   status: "Active" | "Inactive";
   assignedNames: string[];
+  departments?: string[];
+  roles?: string[];
+  cohorts?: string[];
 };
 export type Proof = {
   id: string;
@@ -95,30 +98,14 @@ export const workflowSeed: WorkflowData = {
     },
   ],
   employees: [
-    {
-      id: "e1",
-      email: "ananya.r@example.com",
-      name: "Ananya R.",
-      department: "Sales",
-      role: "Executive",
-      location: "Chennai",
-    },
-    {
-      id: "e2",
-      email: "rahul.k@example.com",
-      name: "Rahul K.",
-      department: "Support",
-      role: "Team Lead",
-      location: "Bengaluru",
-    },
-    {
-      id: "e3",
-      email: "meera.s@example.com",
-      name: "Meera S.",
-      department: "Sales",
-      role: "Manager",
-      location: "Mumbai",
-    },
+    { id: "e1", email: "ananya.r@example.com", name: "Ananya R.", department: "Sales", role: "Executive", location: "Chennai", cohort: "Batch 2024-A" },
+    { id: "e2", email: "rahul.k@example.com", name: "Rahul K.", department: "Support", role: "Team Lead", location: "Bengaluru", cohort: "Batch 2024-B" },
+    { id: "e3", email: "meera.s@example.com", name: "Meera S.", department: "Sales", role: "Manager", location: "Mumbai", cohort: "Batch 2024-A" },
+    { id: "e4", email: "priya.n@example.com", name: "Priya N.", department: "Engineering", role: "Engineer", location: "Chennai", cohort: "New Joiners 2025" },
+    { id: "e5", email: "arjun.v@example.com", name: "Arjun V.", department: "Support", role: "Executive", location: "Chennai", cohort: "Batch 2024-B" },
+    { id: "e6", email: "divya.m@example.com", name: "Divya M.", department: "Engineering", role: "Team Lead", location: "Bengaluru", cohort: "New Joiners 2025" },
+    { id: "e7", email: "karthik.p@example.com", name: "Karthik P.", department: "Sales", role: "Executive", location: "Mumbai", cohort: "Batch 2024-A" },
+    { id: "e8", email: "sudha.r@example.com", name: "Sudha R.", department: "HR", role: "Manager", location: "Chennai", cohort: "Leadership 2025" },
   ],
   plans: [],
   proofs: [],
@@ -158,14 +145,19 @@ export function requiredCourses(data: Data, work: WorkflowData, a: Assignment) {
 }
 export function matching(work: WorkflowData, p: Plan) {
   const selected = new Set(p.employeeIds);
-  return work.employees.filter((e) =>
-    p.method === "Manual"
-      ? selected.has(e.id)
-      : (!p.department || p.department === e.department) &&
-        (!p.role || p.role === e.role) &&
-        (!p.location || p.location === e.location) &&
-        (!p.cohort || p.cohort === e.cohort),
-  );
+  return work.employees.filter((e) => {
+    if (p.method === "Manual") return selected.has(e.id);
+    const deptOk = p.departments?.length
+      ? p.departments.includes(e.department)
+      : !p.department || p.department === e.department;
+    const roleOk = p.roles?.length
+      ? p.roles.includes(e.role)
+      : !p.role || p.role === e.role;
+    const cohortOk = p.cohorts?.length
+      ? p.cohorts.includes(e.cohort || "")
+      : !p.cohort || p.cohort === e.cohort;
+    return deptOk && roleOk && cohortOk && (!p.location || p.location === e.location);
+  });
 }
 export function applyPlans(data: Data, work: WorkflowData, today: string) {
   const assignments = [...data.assignments];
