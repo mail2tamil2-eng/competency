@@ -38,10 +38,9 @@ export function LibrarySettings({
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Library settings</h2>
+          <h2>Setup</h2>
           <p>
-            Manage the categories and proficiency levels used across your
-            competencies and skills.
+            Before building your skill library, set up the two building blocks every skill needs: <strong>categories</strong> (how you group skills) and <strong>skill levels</strong> (how you measure how good someone is).
           </p>
         </div>
       </div>
@@ -61,25 +60,25 @@ export function LibrarySettings({
               setStatus("");
             }}
           >
-            {s === "categories" ? "Categories" : "Proficiency levels"}
+            {s === "categories" ? "Categories" : "Skill Levels"}
           </button>
         ))}
       </div>
       <div className="cm-section-head">
         <div>
           <h3>
-            {section === "categories" ? "Categories" : "Proficiency levels"}{" "}
+            {section === "categories" ? "Categories" : "Skill Levels"}{" "}
             <span className="cm-count">{data[section].length}</span>
           </h3>
           <p>
             {section === "categories"
-              ? "Group related competencies, for example Foundation or Technical."
-              : "Levels progress from top to bottom. Each skill describes these levels in its own context."}
+              ? 'Categories group related skill groups together — for example, "Foundation", "Technical", or "Leadership".'
+              : "Skill levels describe how good someone is at a skill — for example, Beginner, Intermediate, Advanced, Expert. Each skill describes what each level looks like in its own context."}
           </p>
         </div>
         <button className="cm-button primary" onClick={() => setEditing({})}>
           <Plus size={16} />
-          Add {section === "categories" ? "category" : "level"}
+          Add {section === "categories" ? "category" : "skill level"}
         </button>
       </div>
       <div className="cm-toolbar">
@@ -87,7 +86,7 @@ export function LibrarySettings({
           <Search size={17} />
           <input
             aria-label="Search library settings"
-            placeholder={"Search " + section + "…"}
+            placeholder={section === "categories" ? "Search categories…" : "Search skill levels…"}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -170,8 +169,7 @@ export function LibrarySettings({
         </p>
       )}
       <p className="cm-hint">
-        Items already used by skills, competencies or learners cannot be deleted
-        or deactivated.
+        Items already used by skills, skill groups, or learners cannot be deleted or deactivated.
       </p>
       {editing && (
         <Editor

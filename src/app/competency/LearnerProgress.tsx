@@ -85,9 +85,9 @@ export function LearnerProgress({
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Assignments & progress</h2>
+          <h2>Learner Progress</h2>
           <p>
-            View a learner’s skills and update their proficiency individually.
+            See every employee’s assigned skills and where they currently stand. Use "View skills" to open a learner and update their skill level.
           </p>
         </div>
         <div className="cm-actions">
@@ -130,7 +130,7 @@ export function LearnerProgress({
           <Search size={16} />
           <input
             aria-label="Search learners"
-            placeholder="Search learner, department, competency or skill…"
+            placeholder="Search by name, department, skill group or skill…"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -362,7 +362,7 @@ export function LearnerProgress({
                       <dd>{skill(editRecord)?.name}</dd>
                     </div>
                     <div>
-                      <dt>Current → expected</dt>
+                      <dt>Current → target level</dt>
                       <dd>
                         {levelName(editRecord.current)} →{" "}
                         {levelName(editRecord.expected)}
@@ -424,7 +424,7 @@ export function LearnerProgress({
                 [...new Set(personRows.map(competency))].map((name) => (
                   <details className="cm-person-competency" key={name} open>
                     <summary>
-                      <small>COMPETENCY</small>
+                      <small>SKILL GROUP</small>
                       <strong>{name}</strong>
                       <span>
                         {
@@ -439,7 +439,7 @@ export function LearnerProgress({
                       .map((a) => (
                         <div className="cm-person-skill" key={a.id}>
                           <div>
-                            <small>SKILL</small>
+                            <small>SKILL NAME</small>
                             <strong>{skill(a)?.name}</strong>
                             <p>
                               Current: {levelName(a.current)}{" "}

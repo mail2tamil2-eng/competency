@@ -3,7 +3,20 @@ import { ManagerProgress } from "../competency/ManagerProgress";
 import { LearnerSkillReport } from "../competency/LearnerSkillReport";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { Layers, Users, ListChecks, BookOpen } from "lucide-react";
+import {
+  Layers,
+  Users,
+  ListChecks,
+  BookOpen,
+  Settings2,
+  BarChart2,
+  GraduationCap,
+  TrendingUp,
+  Map,
+  CheckCircle2,
+  Circle,
+  ChevronDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Data, Assignment, key, readData, uid } from "../competency/model";
 import {
@@ -33,15 +46,15 @@ import {
   applyPlans,
 } from "../competency/workflowModel";
 const tabs = [
-  ["settings", "Library settings", ListChecks],
-  ["library", "Competency framework", Layers],
-  ["roles", "Role mapping", Users],
-  ["assignments", "Progress", Users],
-  ["courses", "Course mapping", BookOpen],
+  ["settings", "Setup", Settings2],
+  ["library", "Skill Library", Layers],
+  ["roles", "Learning Plans", Map],
+  ["assignments", "Learner Progress", BarChart2],
+  ["courses", "Courses", BookOpen],
   ["reports", "Reports", ListChecks],
-  ["learner", "My learning", BookOpen],
-  ["learner-report", "Skill progress report", ListChecks],
-  ["manager", "Team progress", Users],
+  ["learner", "My Growth Plan", GraduationCap],
+  ["learner-report", "My Progress", TrendingUp],
+  ["manager", "My Team", Users],
 ] as const;
 type Tab = (typeof tabs)[number][0];
 export function CompetencyManagementPage() {
@@ -142,7 +155,7 @@ export function CompetencyManagementPage() {
           <Layers size={24} />
         </div>
         <div>
-          <h1>Competency Management</h1>
+          <h1>Skills &amp; Growth</h1>
           <p>Build capabilities. Close skill gaps. Help your people grow.</p>
         </div>
         <div className="cm-view-select">
@@ -165,6 +178,9 @@ export function CompetencyManagementPage() {
           </select>
         </div>
       </div>
+      {!isLearner && tab !== "manager" && (
+        <SetupGuide data={data} work={work} activeTab={tab} onNavigate={navigate} />
+      )}
       {tab !== "manager" && (
         <nav className="cm-tabs" aria-label="Competency sections">
           {tabs
@@ -266,6 +282,106 @@ export function CompetencyManagementPage() {
     </div>
   );
 }
+function SetupGuide({
+  data,
+  work,
+  activeTab,
+  onNavigate,
+}: {
+  data: Data;
+  work: WorkflowData;
+  activeTab: Tab;
+  onNavigate: (tab: Tab) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const steps = [
+    {
+      id: "settings" as Tab,
+      label: "Add categories & skill levels",
+      detail: "Set up the building blocks every skill needs",
+      done:
+        data.categories.some((c) => c.status === "Active") &&
+        data.levels.some((l) => l.status === "Active"),
+    },
+    {
+      id: "library" as Tab,
+      label: "Build your skill library",
+      detail: "Create skill groups, then add individual skills inside them",
+      done: data.skills.some((s) => s.status === "Active"),
+    },
+    {
+      id: "roles" as Tab,
+      label: "Create a learning plan",
+      detail: "Choose skills and assign them to your employees",
+      done: work.plans.some((p) => p.status === "Active"),
+    },
+    {
+      id: "assignments" as Tab,
+      label: "Track learner progress",
+      detail: "See where each employee stands and update their skill level",
+      done: data.assignments.length > 0,
+    },
+  ];
+  const completed = steps.filter((s) => s.done).length;
+  if (completed === steps.length) return null;
+  return (
+    <div className="cm-setup-guide">
+      <button
+        className="cm-setup-guide-header"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span>
+          <strong>Getting started</strong>
+          <small>
+            {completed} of {steps.length} steps complete
+          </small>
+        </span>
+        <div className="cm-setup-guide-track">
+          {steps.map((s, i) => (
+            <span
+              key={i}
+              className={"cm-setup-pip" + (s.done ? " done" : "")}
+            />
+          ))}
+        </div>
+        <ChevronDown
+          size={16}
+          className={open ? "cm-rotated" : ""}
+          style={{ color: "#526176", flexShrink: 0 }}
+        />
+      </button>
+      {open && (
+        <div className="cm-setup-steps">
+          {steps.map((step, i) => (
+            <button
+              key={step.id}
+              className={
+                "cm-setup-step" +
+                (step.done ? " done" : "") +
+                (activeTab === step.id ? " current" : "")
+              }
+              onClick={() => onNavigate(step.id)}
+            >
+              <span className="cm-step-icon">
+                {step.done ? (
+                  <CheckCircle2 size={18} />
+                ) : (
+                  <Circle size={18} />
+                )}
+              </span>
+              <span className="cm-step-number">{i + 1}</span>
+              <span className="cm-step-text">
+                <strong>{step.label}</strong>
+                <small>{step.detail}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 function AssignmentForm({
   data,
   onClose,
@@ -295,7 +411,7 @@ function AssignmentForm({
         <DialogHeader>
           <DialogTitle>Assign a skill</DialogTitle>
           <DialogDescription>
-            Choose a learner and the proficiency they need to reach.
+            Choose a learner and the skill level they need to reach.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -360,13 +476,13 @@ function AssignmentForm({
             </select>
           </label>
           <label>
-            Expected level *
+            Target skill level *
             <select
               required
               value={a.expected}
               onChange={(e) => setA({ ...a, expected: e.target.value })}
             >
-              <option value="">Choose expected level</option>
+              <option value="">Choose target level</option>
               {data.levels
                 .filter((l) => l.status === "Active")
                 .map((l) => (
@@ -377,8 +493,7 @@ function AssignmentForm({
             </select>
           </label>
           <p className="cm-hint">
-            Current level starts empty. Record it from the progress table after
-            assessing the learner.
+            The learner's current level starts empty. You can record it later from the Learner Progress table after assessing them.
           </p>
           <div className="cm-dialog-actions">
             <button type="button" className="cm-button" onClick={onClose}>

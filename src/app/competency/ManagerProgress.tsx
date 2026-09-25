@@ -142,8 +142,8 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
             </h3>
             <p>
               {view === "detail"
-                ? `${selectedPerson ? employeeFor(work, selectedPerson)?.email || "Email not recorded" : ""} · Compare proficiency and use Update level to record an assessment.`
-                : "Select View skills to see a reportee’s proficiency and progress."}
+                ? `${selectedPerson ? employeeFor(work, selectedPerson)?.email || "Email not recorded" : ""} · See this person’s skills, their current level, and where they need to get to. Use "Update level" to record an assessment.`
+                : "Select a team member to see their skills, current levels, and how far they’ve progressed."}
             </p>
           </div>
           {view === "summary" ? (
@@ -179,7 +179,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                   aria-label="Search team progress"
                   placeholder={
                     view === "detail"
-                      ? "Search competency or skill…"
+                      ? "Search skill group or skill…"
                       : "Search name, email or skill…"
                   }
                   value={query}
