@@ -894,12 +894,76 @@
   color: #2463d6;
 }
 
-/* Course detail popup */
+/* Course count badge on skill row */
+.cm-course-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid #bed5ff;
+  border-radius: 20px;
+  background: #edf4ff;
+  color: #2463d6;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.cm-course-count-badge:hover {
+  background: #ddeaff;
+}
+
+/* Course list popup */
 .cm-course-popup-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 14px;
   padding: 4px 0;
+}
+.cm-course-popup-row {
+  padding: 14px;
+  border: 1px solid #e6e8f0;
+  border-radius: 9px;
+  background: #fafbfe;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cm-course-popup-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #526176;
+}
+.cm-course-popup-info svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.cm-course-popup-info strong {
+  font-size: 14px;
+  font-weight: 650;
+  color: #263047;
+  display: block;
+}
+.cm-course-popup-info small {
+  font-size: 13px;
+  color: #526176;
+  margin-top: 3px;
+  display: block;
+}
+.cm-course-popup-row > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #636b7e;
+}
+.cm-course-popup-weight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 /* Course weightage input */
 .cm-weightage-input {

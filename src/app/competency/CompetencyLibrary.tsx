@@ -126,88 +126,93 @@ function SkillInlineEdit({
   );
 }
 
-/* ── Course detail popup ── */
-function CourseDetailPopup({
-  course,
-  mapping,
-  levelName,
-  skillName,
+/* ── Mapped courses popup (all courses for a skill) ── */
+function CourseListPopup({
+  courses,
+  skill,
+  data,
   work,
   onSaveWork,
   onClose,
 }: {
-  course: Course;
-  mapping: { skillId: string; levelId: string; weightage?: number };
-  levelName: (id: string) => string;
-  skillName: string;
+  courses: { course: Course; mapping: { skillId: string; levelId: string; weightage?: number } }[];
+  skill: RecordItem;
+  data: Data;
   work: WorkflowData;
   onSaveWork: (work: WorkflowData, msg: string) => boolean;
   onClose: () => void;
 }) {
-  const [duration, setDuration] = useState(course.duration);
-  const [weightage, setWeightage] = useState(mapping.weightage ?? 0);
-  const [saved, setSaved] = useState(false);
+  const [edits, setEdits] = useState(
+    courses.map(({ course, mapping }) => ({
+      courseId: course.id,
+      levelId: mapping.levelId,
+      weightage: mapping.weightage ?? 0,
+    })),
+  );
 
   function save() {
     const updated: WorkflowData = {
       ...work,
-      courses: work.courses.map((c) =>
-        c.id === course.id
-          ? {
-              ...c,
-              duration,
-              mappings: c.mappings.map((m) =>
-                m.skillId === mapping.skillId && m.levelId === mapping.levelId
-                  ? { ...m, weightage }
-                  : m,
-              ),
-            }
-          : c,
-      ),
+      courses: work.courses.map((c) => {
+        const edit = edits.find((e) => e.courseId === c.id);
+        if (!edit) return c;
+        return {
+          ...c,
+          mappings: c.mappings.map((m) =>
+            m.skillId === skill.id && m.levelId === edit.levelId
+              ? { ...m, weightage: edit.weightage }
+              : m,
+          ),
+        };
+      }),
     };
-    if (onSaveWork(updated, "Course details updated")) setSaved(true);
+    if (onSaveWork(updated, "Course weightages saved")) onClose();
   }
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="cm-dialog">
         <DialogHeader>
-          <DialogTitle>{course.name}</DialogTitle>
+          <DialogTitle>Mapped courses</DialogTitle>
           <DialogDescription>
-            Mapped to <strong>{skillName}</strong> at <strong>{levelName(mapping.levelId)}</strong> level
+            {skill.name} — {courses.length} course{courses.length !== 1 ? "s" : ""} mapped
           </DialogDescription>
         </DialogHeader>
         <div className="cm-course-popup-body">
-          <label>
-            Duration
-            <input
-              value={duration}
-              onChange={(e) => { setDuration(e.target.value); setSaved(false); }}
-              placeholder="e.g. 30 min"
-            />
-          </label>
-          <label>
-            Weightage (%)
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                style={{ width: 80 }}
-                value={weightage}
-                onChange={(e) => { setWeightage(Math.max(0, Math.min(100, Number(e.target.value)))); setSaved(false); }}
-              />
-              <span style={{ fontSize: 13, color: "#526176" }}>
-                {weightage === 0 ? "Not mandatory (0%)" : `${weightage}% importance`}
-              </span>
+          {courses.map(({ course, mapping }, i) => (
+            <div key={course.id + mapping.levelId} className="cm-course-popup-row">
+              <div className="cm-course-popup-info">
+                <BookOpen size={14} />
+                <div>
+                  <strong>{course.name}</strong>
+                  <small>Level: {data.levels.find((l) => l.id === mapping.levelId)?.name || mapping.levelId}</small>
+                </div>
+              </div>
+              <label>
+                Weightage (%)
+                <div className="cm-course-popup-weight">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="cm-weightage-input"
+                    value={edits[i].weightage}
+                    onChange={(e) => {
+                      const val = Math.max(0, Math.min(100, Number(e.target.value)));
+                      setEdits(edits.map((ed, idx) => idx === i ? { ...ed, weightage: val } : ed));
+                    }}
+                  />
+                  <span style={{ fontSize: 13, color: "#526176" }}>
+                    {edits[i].weightage === 0 ? "Optional (0%)" : `${edits[i].weightage}% importance`}
+                  </span>
+                </div>
+              </label>
             </div>
-            <small>Set 0% if this course is optional. Higher % = more critical.</small>
-          </label>
-          {saved && <p style={{ color: "#2a9d6b", fontSize: 13 }}>Saved.</p>}
+          ))}
         </div>
         <div className="cm-dialog-actions">
-          <button className="cm-button" onClick={onClose}>Close</button>
-          <button className="cm-button primary" onClick={save}>Save changes</button>
+          <button className="cm-button" onClick={onClose}>Cancel</button>
+          <button className="cm-button primary" onClick={save}>Save</button>
         </div>
       </DialogContent>
     </Dialog>
@@ -246,10 +251,7 @@ export function CompetencyLibrary({
   // skills view state
   const [openSkill, setOpenSkill] = useState<string | null>(null);
   const [editingSkill, setEditingSkill] = useState<string | null>(null);
-  const [coursePopup, setCoursePopup] = useState<{
-    course: Course;
-    mapping: { skillId: string; levelId: string; weightage?: number };
-  } | null>(null);
+  const [coursePopup, setCoursePopup] = useState<string | null>(null); // skill id
 
   useEffect(() => {
     if (intent?.action === "create") setCreating(true);
@@ -384,17 +386,23 @@ export function CompetencyLibrary({
           </DialogContent>
         </Dialog>
       )}
-      {coursePopup && work && onSaveWork && (
-        <CourseDetailPopup
-          course={coursePopup.course}
-          mapping={coursePopup.mapping}
-          levelName={levelName}
-          skillName={data.skills.find((s) => s.id === coursePopup.mapping.skillId)?.name || ""}
-          work={work}
-          onSaveWork={onSaveWork}
-          onClose={() => setCoursePopup(null)}
-        />
-      )}
+      {coursePopup && work && onSaveWork && (() => {
+        const skill = data.skills.find((s) => s.id === coursePopup);
+        if (!skill) return null;
+        const mappings = coursesForSkill(skill.id).flatMap((c) =>
+          c.mappings.filter((m) => m.skillId === skill.id).map((m) => ({ course: c, mapping: m })),
+        );
+        return mappings.length > 0 ? (
+          <CourseListPopup
+            courses={mappings}
+            skill={skill}
+            data={data}
+            work={work}
+            onSaveWork={onSaveWork}
+            onClose={() => setCoursePopup(null)}
+          />
+        ) : null;
+      })()}
     </>
   );
 
@@ -497,6 +505,16 @@ export function CompetencyLibrary({
                         <span className={"cm-badge " + s.status.toLowerCase()}>{s.status}</span>
                       </span>
                     </button>
+                    {courses.length > 0 && work && onSaveWork && (
+                      <button
+                        className="cm-course-count-badge"
+                        title={`${courses.length} mapped course${courses.length !== 1 ? "s" : ""} — click to view`}
+                        onClick={(e) => { e.stopPropagation(); setCoursePopup(s.id); }}
+                      >
+                        <BookOpen size={12} />
+                        {courses.length}
+                      </button>
+                    )}
                     <div className="cm-row-actions" style={{ padding: "0 12px", flexShrink: 0 }}>
                       <button
                         className="cm-icon-button"
@@ -555,36 +573,6 @@ export function CompetencyLibrary({
                             </p>
                           )}
 
-                          {/* Mapped courses */}
-                          <div className="cm-accordion-section">
-                            <span className="cm-accordion-section-label">Mapped courses</span>
-                            {courses.length === 0 ? (
-                              <p style={{ fontSize: 13, color: "#526176", margin: "6px 0 0" }}>
-                                No courses mapped yet. Go to the Course mapping tab to add courses.
-                              </p>
-                            ) : (
-                              <div className="cm-course-links">
-                                {courses.flatMap((c) =>
-                                  c.mappings
-                                    .filter((m) => m.skillId === s.id)
-                                    .map((m) => (
-                                      <button
-                                        key={c.id + m.levelId}
-                                        className="cm-course-link-btn"
-                                        onClick={() => setCoursePopup({ course: c, mapping: m })}
-                                      >
-                                        <BookOpen size={13} />
-                                        <span>{c.name}</span>
-                                        <span className="cm-category" style={{ fontSize: 12 }}>{levelName(m.levelId)}</span>
-                                        {(m.weightage ?? 0) > 0 && (
-                                          <span className="cm-weightage-tag">{m.weightage}%</span>
-                                        )}
-                                      </button>
-                                    )),
-                                )}
-                              </div>
-                            )}
-                          </div>
                         </>
                       )}
                     </div>
