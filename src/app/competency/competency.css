@@ -976,6 +976,31 @@
   padding: 4px 8px !important;
   text-align: center;
 }
+/* Inline level select in progress table */
+.cm-inline-level {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cm-level-inline-select {
+  min-height: 32px !important;
+  padding: 4px 8px !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+  max-width: 150px;
+}
+.cm-save-inline {
+  padding: 4px 10px !important;
+  font-size: 13px !important;
+  min-height: 32px !important;
+  white-space: nowrap;
+}
+.cm-row-dirty {
+  background: #f0f6ff;
+}
+.cm-muted-dash {
+  color: #9aa3b3;
+}
 /* Level order number input */
 .cm-order-input {
   width: 56px !important;
