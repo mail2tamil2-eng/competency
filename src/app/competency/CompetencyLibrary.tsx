@@ -675,12 +675,7 @@ export function CompetencyLibrary({
                   return (
                     <tr key={c.id}>
                       <td>
-                        <button
-                          className="cm-table-link"
-                          onClick={() => { setView({ kind: "skills", cId: c.id }); setOpenSkill(null); setEditingSkill(null); }}
-                        >
-                          {c.name}
-                        </button>
+                        <strong>{c.name}</strong>
                         <small>{c.description || "No description added"}</small>
                       </td>
                       <td>
@@ -688,7 +683,14 @@ export function CompetencyLibrary({
                           {data.categories.find((x) => x.id === c.categoryId)?.name || "Uncategorised"}
                         </span>
                       </td>
-                      <td>{children.length} {children.length === 1 ? "skill" : "skills"}</td>
+                      <td>
+                        <button
+                          className="cm-table-link"
+                          onClick={() => { setView({ kind: "skills", cId: c.id }); setOpenSkill(null); setEditingSkill(null); }}
+                        >
+                          {children.length} {children.length === 1 ? "skill" : "skills"}
+                        </button>
+                      </td>
                       <td>
                         <span className={"cm-badge " + c.status.toLowerCase()}>{c.status}</span>
                       </td>
