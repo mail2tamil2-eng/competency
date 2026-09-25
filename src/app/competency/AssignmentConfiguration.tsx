@@ -291,19 +291,16 @@ export function AssignmentConfiguration({
                   })
                 }
               />
-              Set end date
+              End date
             </label>
             {draft.hasEndDate ? (
-              <label style={{ marginTop: 10 }}>
-                End date *
-                <input
-                  type="date"
-                  aria-label="End date"
-                  min={draft.start || today}
-                  value={draft.end}
-                  onChange={(e) => onChange({ ...draft, end: e.target.value })}
-                />
-              </label>
+              <input
+                type="date"
+                aria-label="End date"
+                min={draft.start || today}
+                value={draft.end}
+                onChange={(e) => onChange({ ...draft, end: e.target.value })}
+              />
             ) : (
               <p className="cm-field-help">
                 No end date — assignment stays active until deactivated.

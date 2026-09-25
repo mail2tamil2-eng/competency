@@ -1162,10 +1162,14 @@
 .cm-end-date-block {
   display: flex;
   flex-direction: column;
+  gap: 6px;
 }
 .cm-end-date-check {
   margin-bottom: 0 !important;
-  padding-top: 2px;
+  padding-top: 0 !important;
+  font-size: 14px;
+  font-weight: 600;
+  color: #636b7e;
 }
 /* Admin setup guide */
 .cm-setup-guide {
