@@ -179,36 +179,51 @@ function CourseListPopup({
           </DialogDescription>
         </DialogHeader>
         <div className="cm-course-popup-body">
-          {courses.map(({ course, mapping }, i) => (
-            <div key={course.id + mapping.levelId} className="cm-course-popup-row">
-              <div className="cm-course-popup-info">
-                <BookOpen size={14} />
-                <div>
-                  <strong>{course.name}</strong>
-                  <small>Level: {data.levels.find((l) => l.id === mapping.levelId)?.name || mapping.levelId}</small>
-                </div>
-              </div>
-              <label>
-                Weightage (%)
-                <div className="cm-course-popup-weight">
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    className="cm-weightage-input"
-                    value={edits[i].weightage}
-                    onChange={(e) => {
-                      const val = Math.max(0, Math.min(100, Number(e.target.value)));
-                      setEdits(edits.map((ed, idx) => idx === i ? { ...ed, weightage: val } : ed));
-                    }}
-                  />
-                  <span style={{ fontSize: 13, color: "#526176" }}>
-                    {edits[i].weightage === 0 ? "Optional (0%)" : `${edits[i].weightage}% importance`}
-                  </span>
-                </div>
-              </label>
-            </div>
-          ))}
+          <div className="cm-course-popup-scroll">
+            <table className="cm-course-popup-table">
+              <thead>
+                <tr>
+                  <th>Course</th>
+                  <th>Level</th>
+                  <th>Weightage&nbsp;(%)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courses.map(({ course, mapping }, i) => (
+                  <tr key={course.id + mapping.levelId}>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <BookOpen size={13} style={{ color: "#526176", flexShrink: 0 }} />
+                        <span>{course.name}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="cm-category" style={{ fontSize: 12 }}>
+                        {data.levels.find((l) => l.id === mapping.levelId)?.name || mapping.levelId}
+                      </span>
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        className="cm-weightage-input"
+                        value={edits[i].weightage}
+                        onChange={(e) => {
+                          const val = Math.max(0, Math.min(100, Number(e.target.value)));
+                          setEdits(edits.map((ed, idx) => idx === i ? { ...ed, weightage: val } : ed));
+                        }}
+                      />
+                    </td>
+                    <td style={{ color: "#526176", fontSize: 13, whiteSpace: "nowrap" }}>
+                      {edits[i].weightage === 0 ? "Optional" : `${edits[i].weightage}% importance`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
         <div className="cm-dialog-actions">
           <button className="cm-button" onClick={onClose}>Cancel</button>

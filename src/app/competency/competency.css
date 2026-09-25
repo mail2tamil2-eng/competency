@@ -914,56 +914,43 @@
   background: #ddeaff;
 }
 
-/* Course list popup */
+/* Course list popup — table layout */
 .cm-course-popup-body {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
   padding: 4px 0;
 }
-.cm-course-popup-row {
-  padding: 14px;
-  border: 1px solid #e6e8f0;
+.cm-course-popup-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #eceef5;
   border-radius: 9px;
+}
+.cm-course-popup-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.cm-course-popup-table th {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #8590aa;
   background: #fafbfe;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  padding: 10px 14px;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid #eceef5;
 }
-.cm-course-popup-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  color: #526176;
-}
-.cm-course-popup-info svg {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-.cm-course-popup-info strong {
+.cm-course-popup-table td {
+  padding: 11px 14px;
   font-size: 14px;
-  font-weight: 650;
-  color: #263047;
-  display: block;
+  border-top: 1px solid #f0f2f7;
+  vertical-align: middle;
 }
-.cm-course-popup-info small {
-  font-size: 13px;
-  color: #526176;
-  margin-top: 3px;
-  display: block;
-}
-.cm-course-popup-row > label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #636b7e;
-}
-.cm-course-popup-weight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.cm-course-popup-table tbody tr:hover td {
+  background: #fafbfe;
 }
 /* Course weightage input */
 .cm-weightage-input {
