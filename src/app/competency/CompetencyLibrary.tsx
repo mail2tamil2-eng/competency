@@ -7,7 +7,6 @@ import {
   Search,
   Pencil,
   Trash2,
-  Settings2,
   ArrowLeft,
   ChevronDown,
   BookOpen,
@@ -640,9 +639,6 @@ export function CompetencyLibrary({
           <option>Draft</option>
           <option>Inactive</option>
         </select>
-        <button className="cm-text-button" onClick={onSettings}>
-          <Settings2 size={15} /> Library settings
-        </button>
         <button
           className="cm-button"
           style={{ marginLeft: "auto" }}
