@@ -600,21 +600,14 @@ export function CompetencyLibrary({
   /* ── LIST VIEW (default) ── */
   return (
     <section className="cm-card cm-unified-library">
-      <div className="cm-section-head cm-section-head--end">
+      <div className="cm-section-head">
+        <div>
+          <h2>Competencies &amp; Skills</h2>
+          <p>Competencies group related skills. Select a competency to view and manage its skills.</p>
+        </div>
         <div className="cm-actions">
           <button className="cm-button" onClick={() => setUploading(true)}>
             <Upload size={16} /> Bulk upload
-          </button>
-          <button
-            className="cm-button"
-            onClick={() =>
-              download("competencies-and-skills.csv", [
-                libraryHeaders(data),
-                ...libraryRows(data, visible),
-              ])
-            }
-          >
-            <Download size={16} /> Export CSV
           </button>
           <button className="cm-button primary" onClick={() => setCreating(true)}>
             <Plus size={16} /> Create competency
@@ -647,6 +640,17 @@ export function CompetencyLibrary({
           <option>Draft</option>
           <option>Inactive</option>
         </select>
+        <button
+          className="cm-button"
+          onClick={() =>
+            download("competencies-and-skills.csv", [
+              libraryHeaders(data),
+              ...libraryRows(data, visible),
+            ])
+          }
+        >
+          <Download size={16} /> Export CSV
+        </button>
         <button className="cm-text-button" onClick={onSettings}>
           <Settings2 size={15} /> Library settings
         </button>

@@ -233,10 +233,6 @@
 .cm-section-head p {
   font-size: 14px;
 }
-.cm-section-head--end {
-  justify-content: flex-end;
-  margin-bottom: 16px;
-}
 .cm-actions {
   display: flex;
   gap: 9px;
