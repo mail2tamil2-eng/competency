@@ -49,38 +49,33 @@ export function LibrarySettings({
         <div>
           <h2>Library settings</h2>
         </div>
-      </div>
-      <div
-        className="cm-settings-tabs"
-        role="group"
-        aria-label="Library settings sections"
-      >
-        {(["categories", "levels"] as const).map((s) => (
-          <button
-            className={section === s ? "active" : ""}
-            aria-pressed={section === s}
-            key={s}
-            onClick={() => {
-              setSection(s);
-              setQuery("");
-              setStatus("");
-            }}
+        <div className="cm-settings-tabs-bar">
+          <div
+            className="cm-settings-tabs"
+            role="group"
+            aria-label="Library settings sections"
           >
-            {s === "categories" ? "Categories" : "Proficiency levels"}
+            {(["categories", "levels"] as const).map((s) => (
+              <button
+                className={section === s ? "active" : ""}
+                aria-pressed={section === s}
+                key={s}
+                onClick={() => {
+                  setSection(s);
+                  setQuery("");
+                  setStatus("");
+                }}
+              >
+                {s === "categories" ? "Categories" : "Proficiency levels"}
+                <span className="cm-tab-count">{data[s].length}</span>
+              </button>
+            ))}
+          </div>
+          <button className="cm-button primary" onClick={() => setEditing({})}>
+            <Plus size={16} />
+            Add {section === "categories" ? "category" : "level"}
           </button>
-        ))}
-      </div>
-      <div className="cm-section-head">
-        <div>
-          <h3>
-            {section === "categories" ? "Categories" : "Proficiency levels"}{" "}
-            <span className="cm-count">{data[section].length}</span>
-          </h3>
         </div>
-        <button className="cm-button primary" onClick={() => setEditing({})}>
-          <Plus size={16} />
-          Add {section === "categories" ? "category" : "level"}
-        </button>
       </div>
       <div className="cm-toolbar">
         <label className="cm-search">
