@@ -10,10 +10,11 @@ import {
   Trash2,
   Settings2,
   ArrowLeft,
-  ChevronRight,
-  Link2,
+  ChevronDown,
+  BookOpen,
+  X,
 } from "lucide-react";
-import { Data, RecordItem, Kind, used, download } from "./model";
+import { Data, RecordItem, Kind, used, download, uid, validate } from "./model";
 import { WorkflowData, Course } from "./workflowModel";
 import { LibraryCreate } from "./LibraryCreate";
 import { LibraryBulkUpload } from "./LibraryBulkUpload";
@@ -33,11 +34,187 @@ export type LibraryIntent = {
   nonce: number;
 } | null;
 
-type ViewState =
-  | { kind: "list" }
-  | { kind: "skills"; cId: string }
-  | { kind: "skill-detail"; cId: string; sId: string };
+type ViewState = { kind: "list" } | { kind: "skills"; cId: string };
 
+/* ── Inline skill edit form ── */
+function SkillInlineEdit({
+  skill,
+  data,
+  onSave,
+  onCancel,
+}: {
+  skill: RecordItem;
+  data: Data;
+  onSave: (item: RecordItem) => void;
+  onCancel: () => void;
+}) {
+  const [draft, setDraft] = useState<RecordItem>(structuredClone(skill));
+  const [errors, setErrors] = useState<string[]>([]);
+
+  function setLevel(levelId: string, desc: string) {
+    setDraft((d) => ({ ...d, levels: { ...d.levels, [levelId]: desc } }));
+  }
+
+  function save() {
+    const errs = validate(draft, "skills", data);
+    if (errs.length) { setErrors(errs); return; }
+    onSave({ ...draft, name: draft.name.trim(), description: draft.description.trim() });
+  }
+
+  return (
+    <div className="cm-skill-inline-edit">
+      {errors.length > 0 && (
+        <p className="cm-error">{errors.join(" ")}</p>
+      )}
+      <div className="cm-skill-edit-fields">
+        <label>
+          Skill name *
+          <input
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            placeholder="Skill name"
+          />
+        </label>
+        <label>
+          Status
+          <select
+            value={draft.status}
+            onChange={(e) =>
+              setDraft({ ...draft, status: e.target.value as RecordItem["status"] })
+            }
+          >
+            <option>Active</option>
+            <option>Inactive</option>
+            <option>Draft</option>
+          </select>
+        </label>
+      </div>
+      <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 14, fontWeight: 600, color: "#636b7e" }}>
+        Description
+        <textarea
+          rows={2}
+          value={draft.description}
+          onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          placeholder="What does this skill mean?"
+        />
+      </label>
+      {data.levels.filter((l) => l.status === "Active").length > 0 && (
+        <div className="cm-skill-edit-levels">
+          <strong>Proficiency level descriptions</strong>
+          <small>Describe what this skill looks like at each level.</small>
+          {data.levels
+            .filter((l) => l.status === "Active")
+            .map((l, i) => (
+              <label key={l.id}>
+                <span className="cm-level-num-badge">{i + 1}</span>
+                {l.name}
+                <textarea
+                  rows={2}
+                  value={draft.levels?.[l.id] || ""}
+                  onChange={(e) => setLevel(l.id, e.target.value)}
+                  placeholder={`What does ${l.name} look like for this skill?`}
+                />
+              </label>
+            ))}
+        </div>
+      )}
+      <div className="cm-skill-edit-actions">
+        <button className="cm-button" onClick={onCancel}>Cancel</button>
+        <button className="cm-button primary" onClick={save}>Save skill</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Course detail popup ── */
+function CourseDetailPopup({
+  course,
+  mapping,
+  levelName,
+  skillName,
+  work,
+  onSaveWork,
+  onClose,
+}: {
+  course: Course;
+  mapping: { skillId: string; levelId: string; weightage?: number };
+  levelName: (id: string) => string;
+  skillName: string;
+  work: WorkflowData;
+  onSaveWork: (work: WorkflowData, msg: string) => boolean;
+  onClose: () => void;
+}) {
+  const [duration, setDuration] = useState(course.duration);
+  const [weightage, setWeightage] = useState(mapping.weightage ?? 0);
+  const [saved, setSaved] = useState(false);
+
+  function save() {
+    const updated: WorkflowData = {
+      ...work,
+      courses: work.courses.map((c) =>
+        c.id === course.id
+          ? {
+              ...c,
+              duration,
+              mappings: c.mappings.map((m) =>
+                m.skillId === mapping.skillId && m.levelId === mapping.levelId
+                  ? { ...m, weightage }
+                  : m,
+              ),
+            }
+          : c,
+      ),
+    };
+    if (onSaveWork(updated, "Course details updated")) setSaved(true);
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="cm-dialog">
+        <DialogHeader>
+          <DialogTitle>{course.name}</DialogTitle>
+          <DialogDescription>
+            Mapped to <strong>{skillName}</strong> at <strong>{levelName(mapping.levelId)}</strong> level
+          </DialogDescription>
+        </DialogHeader>
+        <div className="cm-course-popup-body">
+          <label>
+            Duration
+            <input
+              value={duration}
+              onChange={(e) => { setDuration(e.target.value); setSaved(false); }}
+              placeholder="e.g. 30 min"
+            />
+          </label>
+          <label>
+            Weightage (%)
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                style={{ width: 80 }}
+                value={weightage}
+                onChange={(e) => { setWeightage(Math.max(0, Math.min(100, Number(e.target.value)))); setSaved(false); }}
+              />
+              <span style={{ fontSize: 13, color: "#526176" }}>
+                {weightage === 0 ? "Not mandatory (0%)" : `${weightage}% importance`}
+              </span>
+            </div>
+            <small>Set 0% if this course is optional. Higher % = more critical.</small>
+          </label>
+          {saved && <p style={{ color: "#2a9d6b", fontSize: 13 }}>Saved.</p>}
+        </div>
+        <div className="cm-dialog-actions">
+          <button className="cm-button" onClick={onClose}>Close</button>
+          <button className="cm-button primary" onClick={save}>Save changes</button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ── Main component ── */
 export function CompetencyLibrary({
   data,
   query,
@@ -57,27 +234,27 @@ export function CompetencyLibrary({
   work?: WorkflowData;
   onSaveWork?: (work: WorkflowData, message: string) => boolean;
 }) {
-  const [view, setView] = useState<ViewState>({ kind: "list" }),
-    [category, setCategory] = useState(""),
-    [status, setStatus] = useState(""),
-    [page, setPage] = useState(1),
-    [creating, setCreating] = useState(false),
-    [uploading, setUploading] = useState(false),
-    [editing, setEditing] = useState<{
-      kind: "competencies" | "skills";
-      item?: RecordItem;
-      parent?: RecordItem;
-    } | null>(null),
-    [deleting, setDeleting] = useState<{ kind: Kind; item: RecordItem } | null>(
-      null,
-    );
+  const [view, setView] = useState<ViewState>({ kind: "list" });
+  const [category, setCategory] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [creating, setCreating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [editingComp, setEditingComp] = useState<RecordItem | null>(null);
+  const [deleting, setDeleting] = useState<{ kind: Kind; item: RecordItem } | null>(null);
+
+  // skills view state
+  const [openSkill, setOpenSkill] = useState<string | null>(null);
+  const [editingSkill, setEditingSkill] = useState<string | null>(null);
+  const [coursePopup, setCoursePopup] = useState<{
+    course: Course;
+    mapping: { skillId: string; levelId: string; weightage?: number };
+  } | null>(null);
 
   useEffect(() => {
     if (intent?.action === "create") setCreating(true);
     if (intent?.action === "search") {
-      setCategory("");
-      setStatus("");
-      setPage(1);
+      setCategory(""); setStatus(""); setPage(1);
       setView({ kind: "list" });
     }
     if (intent?.action === "open" && intent.id)
@@ -94,51 +271,28 @@ export function CompetencyLibrary({
     (c) =>
       (!category || c.categoryId === category) &&
       (!status || c.status === status) &&
-      (!term ||
-        matches(c) ||
-        data.skills.some((s) => s.competencyId === c.id && matches(s))),
+      (!term || matches(c) || data.skills.some((s) => s.competencyId === c.id && matches(s))),
   );
   const pages = Math.max(1, Math.ceil(visible.length / 10));
   const current = Math.min(page, pages);
 
-  const competencyOf = (cId: string) =>
-    data.competencies.find((c) => c.id === cId);
-  const skillsOf = (cId: string) =>
-    data.skills.filter((s) => s.competencyId === cId);
   const levelName = (lId: string) =>
     data.levels.find((l) => l.id === lId)?.name || lId;
   const coursesForSkill = (sId: string) =>
-    (work?.courses ?? []).filter((c) =>
-      c.mappings.some((m) => m.skillId === sId),
-    );
+    (work?.courses ?? []).filter((c) => c.mappings.some((m) => m.skillId === sId));
 
-  function updateWeightage(
-    course: Course,
-    skillId: string,
-    levelId: string,
-    weightage: number,
-  ) {
-    if (!work || !onSaveWork) return;
-    onSaveWork(
-      {
-        ...work,
-        courses: work.courses.map((c) =>
-          c.id === course.id
-            ? {
-                ...c,
-                mappings: c.mappings.map((m) =>
-                  m.skillId === skillId && m.levelId === levelId
-                    ? { ...m, weightage }
-                    : m,
-                ),
-              }
-            : c,
-        ),
-      },
-      "Course weightage updated",
-    );
+  function saveSkill(item: RecordItem) {
+    const list = data.skills;
+    if (
+      commit(
+        { ...data, skills: list.map((x) => (x.id === item.id ? item : x)) },
+        "Skill saved",
+      )
+    )
+      setEditingSkill(null);
   }
 
+  /* shared modals */
   const sharedModals = (
     <>
       {creating && (
@@ -174,53 +328,34 @@ export function CompetencyLibrary({
                   competencies: [...data.competencies, ...result.competencies],
                   skills: [...data.skills, ...result.skills],
                 },
-                result.competencies.length +
-                  " competencies and " +
-                  result.skills.length +
-                  " skills imported",
+                result.competencies.length + " competencies and " + result.skills.length + " skills imported",
               )
             ) {
               setUploading(false);
-              onQuery("");
-              setCategory("");
-              setStatus("");
-              setPage(1);
+              onQuery(""); setCategory(""); setStatus(""); setPage(1);
             }
           }}
         />
       )}
-      {editing && (
+      {editingComp && (
         <Editor
-          key={editing.item?.id || editing.parent?.id || editing.kind}
-          kind={editing.kind}
+          kind="competencies"
           data={data}
-          item={editing.item}
-          parent={editing.parent}
-          onClose={() => setEditing(null)}
+          item={editingComp}
+          onClose={() => setEditingComp(null)}
           onSave={(item) => {
-            const list = data[editing.kind];
             if (
               commit(
-                {
-                  ...data,
-                  [editing.kind]: editing.item
-                    ? list.map((x) => (x.id === item.id ? item : x))
-                    : [...list, item],
-                },
+                { ...data, competencies: data.competencies.map((x) => (x.id === item.id ? item : x)) },
                 "Saved successfully",
               )
             )
-              setEditing(null);
+              setEditingComp(null);
           }}
         />
       )}
       {deleting && (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setDeleting(null);
-          }}
-        >
+        <Dialog open onOpenChange={(open) => { if (!open) setDeleting(null); }}>
           <DialogContent className="cm-dialog">
             <DialogHeader>
               <DialogTitle>Delete {deleting.item.name}?</DialogTitle>
@@ -229,21 +364,14 @@ export function CompetencyLibrary({
               </DialogDescription>
             </DialogHeader>
             <div className="cm-dialog-actions">
-              <button className="cm-button" onClick={() => setDeleting(null)}>
-                Keep item
-              </button>
+              <button className="cm-button" onClick={() => setDeleting(null)}>Keep item</button>
               <button
                 className="cm-button destructive"
                 onClick={() => {
                   if (used(data, deleting.kind, deleting.item.id)) return;
                   if (
                     commit(
-                      {
-                        ...data,
-                        [deleting.kind]: data[deleting.kind].filter(
-                          (x) => x.id !== deleting.item.id,
-                        ),
-                      },
+                      { ...data, [deleting.kind]: data[deleting.kind].filter((x) => x.id !== deleting.item.id) },
                       "Item deleted",
                     )
                   )
@@ -256,179 +384,31 @@ export function CompetencyLibrary({
           </DialogContent>
         </Dialog>
       )}
+      {coursePopup && work && onSaveWork && (
+        <CourseDetailPopup
+          course={coursePopup.course}
+          mapping={coursePopup.mapping}
+          levelName={levelName}
+          skillName={data.skills.find((s) => s.id === coursePopup.mapping.skillId)?.name || ""}
+          work={work}
+          onSaveWork={onSaveWork}
+          onClose={() => setCoursePopup(null)}
+        />
+      )}
     </>
   );
 
-  /* ── SKILL DETAIL VIEW ── */
-  if (view.kind === "skill-detail") {
-    const comp = competencyOf(view.cId);
-    const skill = data.skills.find((s) => s.id === view.sId);
-    if (!comp || !skill) {
-      setView({ kind: "list" });
-      return null;
-    }
-    const definedLevels = data.levels.filter((l) => skill.levels?.[l.id]);
-    const courses = coursesForSkill(skill.id);
-
-    return (
-      <section className="cm-card cm-unified-library">
-        <button
-          className="cm-text-button"
-          onClick={() => setView({ kind: "skills", cId: view.cId })}
-        >
-          <ArrowLeft size={15} />
-          Back to {comp.name}
-        </button>
-
-        <div className="cm-section-head" style={{ marginTop: 18 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <h2 style={{ margin: 0 }}>{skill.name}</h2>
-              <span className={"cm-badge " + skill.status.toLowerCase()}>
-                {skill.status}
-              </span>
-            </div>
-            {skill.description && (
-              <p style={{ marginTop: 6 }}>{skill.description}</p>
-            )}
-          </div>
-          <button
-            className="cm-icon-button"
-            aria-label={"Edit " + skill.name}
-            onClick={() =>
-              setEditing({ kind: "skills", item: skill, parent: comp })
-            }
-          >
-            <Pencil size={16} />
-          </button>
-        </div>
-
-        {/* Proficiency levels — tree structure */}
-        <h3>Proficiency levels</h3>
-        {!definedLevels.length ? (
-          <p className="cm-hint">
-            No proficiency levels defined for this skill. Edit the skill to add
-            level descriptions.
-          </p>
-        ) : (
-          <div className="cm-level-tree">
-            {definedLevels.map((l, i) => (
-              <div
-                key={l.id}
-                className={
-                  "cm-level-node" +
-                  (i === definedLevels.length - 1 ? " last" : "")
-                }
-              >
-                <div className="cm-level-node-marker" />
-                <div className="cm-level-node-content">
-                  <strong>{l.name}</strong>
-                  <p>{skill.levels?.[l.id]}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Mapped courses */}
-        <h3 style={{ marginTop: 24 }}>Mapped courses</h3>
-        {!courses.length ? (
-          <p className="cm-hint">
-            No courses mapped to this skill yet. Go to the{" "}
-            <strong>Course mapping</strong> tab to connect courses.
-          </p>
-        ) : (
-          <div className="cm-table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Course</th>
-                  <th>Level</th>
-                  <th>Weightage (%)</th>
-                  <th>Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {courses.flatMap((c) =>
-                  c.mappings
-                    .filter((m) => m.skillId === skill.id)
-                    .map((m) => (
-                      <tr key={c.id + "-" + m.levelId}>
-                        <td>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                              color: "#2463d6",
-                              fontWeight: 600,
-                            }}
-                          >
-                            <Link2 size={13} />
-                            {c.name}
-                          </span>
-                          <small>Demo course</small>
-                        </td>
-                        <td>
-                          <span className="cm-category">
-                            {levelName(m.levelId)}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              className="cm-weightage-input"
-                              value={m.weightage ?? 0}
-                              onChange={(e) =>
-                                updateWeightage(
-                                  c,
-                                  skill.id,
-                                  m.levelId,
-                                  Math.max(0, Math.min(100, Number(e.target.value))),
-                                )
-                              }
-                            />
-                            <span style={{ fontSize: 13, color: "#526176" }}>
-                              {(m.weightage ?? 0) === 0 ? "Not mandatory" : "Important"}
-                            </span>
-                          </div>
-                        </td>
-                        <td>{c.duration}</td>
-                      </tr>
-                    )),
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {sharedModals}
-      </section>
-    );
-  }
-
   /* ── SKILLS VIEW ── */
   if (view.kind === "skills") {
-    const comp = competencyOf(view.cId);
-    if (!comp) {
-      setView({ kind: "list" });
-      return null;
-    }
-    const skills = skillsOf(comp.id);
-    const catName =
-      data.categories.find((x) => x.id === comp.categoryId)?.name ||
-      "Uncategorised";
+    const comp = data.competencies.find((c) => c.id === view.cId);
+    if (!comp) { setView({ kind: "list" }); return null; }
+    const skills = data.skills.filter((s) => s.competencyId === comp.id);
+    const catName = data.categories.find((x) => x.id === comp.categoryId)?.name || "Uncategorised";
 
     return (
       <section className="cm-card cm-unified-library">
-        <button
-          className="cm-text-button"
-          onClick={() => setView({ kind: "list" })}
-        >
-          <ArrowLeft size={15} />
-          Back to competencies
+        <button className="cm-text-button" onClick={() => { setView({ kind: "list" }); setOpenSkill(null); setEditingSkill(null); }}>
+          <ArrowLeft size={15} /> Back to competencies
         </button>
 
         <div className="cm-section-head" style={{ marginTop: 18 }}>
@@ -436,130 +416,182 @@ export function CompetencyLibrary({
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <h2 style={{ margin: 0 }}>{comp.name}</h2>
               <span className="cm-category">{catName}</span>
-              <span className={"cm-badge " + comp.status.toLowerCase()}>
-                {comp.status}
-              </span>
+              <span className={"cm-badge " + comp.status.toLowerCase()}>{comp.status}</span>
             </div>
-            {comp.description && (
-              <p style={{ marginTop: 6 }}>{comp.description}</p>
-            )}
+            {comp.description && <p style={{ marginTop: 6 }}>{comp.description}</p>}
           </div>
           <div className="cm-actions">
-            <button
-              className="cm-icon-button"
-              aria-label={"Edit " + comp.name}
-              onClick={() => setEditing({ kind: "competencies", item: comp })}
-            >
+            <button className="cm-icon-button" aria-label={"Edit " + comp.name} onClick={() => setEditingComp(comp)}>
               <Pencil size={16} />
             </button>
             <button
               className="cm-button primary"
               disabled={comp.status !== "Active"}
-              title={
-                comp.status !== "Active"
-                  ? "Set this competency to Active before adding skills"
-                  : ""
-              }
-              onClick={() => setEditing({ kind: "skills", parent: comp })}
+              title={comp.status !== "Active" ? "Set this competency to Active before adding skills" : ""}
+              onClick={() => {
+                /* open create-skill via Editor in "add" mode */
+                setEditingSkill("__new__");
+              }}
             >
-              <Plus size={15} />
-              Add skill
+              <Plus size={15} /> Add skill
             </button>
           </div>
         </div>
 
         {comp.status !== "Active" && (
-          <p className="cm-hint">
-            Set this competency to Active using Edit before adding skills.
-          </p>
+          <p className="cm-hint">Set this competency to Active using Edit before adding skills.</p>
         )}
 
-        {skills.length ? (
-          <div className="cm-table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Skill</th>
-                  <th>Proficiency levels</th>
-                  <th>Status</th>
-                  <th className="cm-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {skills.map((s) => {
-                  const levelCount = data.levels.filter(
-                    (l) => s.levels?.[l.id],
-                  ).length;
-                  return (
-                    <tr key={s.id}>
-                      <td>
-                        <strong>{s.name}</strong>
-                        <small>{s.description || "No description"}</small>
-                      </td>
-                      <td>
-                        {levelCount}{" "}
-                        {levelCount === 1 ? "level" : "levels"} defined
-                      </td>
-                      <td>
-                        <span className={"cm-badge " + s.status.toLowerCase()}>
-                          {s.status}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="cm-row-actions">
-                          <button
-                            className="cm-button"
-                            onClick={() =>
-                              setView({
-                                kind: "skill-detail",
-                                cId: comp.id,
-                                sId: s.id,
-                              })
-                            }
-                          >
-                            View <ChevronRight size={14} />
-                          </button>
-                          <button
-                            className="cm-icon-button"
-                            aria-label={"Edit " + s.name}
-                            onClick={() =>
-                              setEditing({
-                                kind: "skills",
-                                item: s,
-                                parent: comp,
-                              })
-                            }
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            className="cm-icon-button danger"
-                            aria-label={"Delete " + s.name}
-                            disabled={used(data, "skills", s.id)}
-                            title={
-                              used(data, "skills", s.id)
-                                ? "Used by learners or courses"
-                                : "Delete skill"
-                            }
-                            onClick={() =>
-                              setDeleting({ kind: "skills", item: s })
-                            }
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        {/* Add-skill inline form */}
+        {editingSkill === "__new__" && (
+          <div className="cm-card" style={{ margin: "12px 0", border: "1px solid #bed5ff" }}>
+            <h3 style={{ marginBottom: 14 }}>New skill</h3>
+            <SkillInlineEdit
+              skill={{ id: uid(), name: "", description: "", status: "Active", levels: {}, competencyId: comp.id }}
+              data={data}
+              onSave={(item) => {
+                if (commit({ ...data, skills: [...data.skills, item] }, `Added skill "${item.name}"`))
+                  setEditingSkill(null);
+              }}
+              onCancel={() => setEditingSkill(null)}
+            />
           </div>
-        ) : (
+        )}
+
+        {/* Skill accordions */}
+        {skills.length === 0 && editingSkill !== "__new__" ? (
           <div className="cm-empty">
             <Target size={24} />
             <h3>No skills yet</h3>
             <p>Add the specific abilities that make up this competency.</p>
+          </div>
+        ) : (
+          <div className="cm-skill-accordion-list">
+            {skills.map((s) => {
+              const isOpen = openSkill === s.id;
+              const isEditing = editingSkill === s.id;
+              const definedLevels = data.levels.filter((l) => s.levels?.[l.id] && l.status === "Active");
+              const courses = coursesForSkill(s.id);
+
+              return (
+                <div key={s.id} className={"cm-skill-accordion" + (isOpen ? " open" : "")}>
+                  {/* Header row */}
+                  <div className="cm-skill-accordion-header">
+                    <button
+                      className="cm-skill-accordion-toggle"
+                      aria-expanded={isOpen}
+                      onClick={() => {
+                        if (isEditing) return;
+                        setOpenSkill(isOpen ? null : s.id);
+                      }}
+                    >
+                      <ChevronDown size={16} className={isOpen ? "cm-rotated" : ""} style={{ flexShrink: 0, color: "#526176" }} />
+                      <span className="cm-skill-accordion-name">
+                        <strong>{s.name}</strong>
+                        {s.description && <small>{s.description}</small>}
+                      </span>
+                      <span className="cm-skill-accordion-meta">
+                        <span className="cm-category">
+                          {definedLevels.length} {definedLevels.length === 1 ? "level" : "levels"}
+                        </span>
+                        <span className={"cm-badge " + s.status.toLowerCase()}>{s.status}</span>
+                      </span>
+                    </button>
+                    <div className="cm-row-actions" style={{ padding: "0 12px", flexShrink: 0 }}>
+                      <button
+                        className="cm-icon-button"
+                        aria-label={"Edit " + s.name}
+                        title="Edit skill"
+                        onClick={() => {
+                          setOpenSkill(s.id);
+                          setEditingSkill(isEditing ? null : s.id);
+                        }}
+                      >
+                        {isEditing ? <X size={15} /> : <Pencil size={15} />}
+                      </button>
+                      <button
+                        className="cm-icon-button danger"
+                        aria-label={"Delete " + s.name}
+                        disabled={used(data, "skills", s.id)}
+                        title={used(data, "skills", s.id) ? "Used by learners or courses" : "Delete skill"}
+                        onClick={() => setDeleting({ kind: "skills", item: s })}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Expanded content */}
+                  {isOpen && (
+                    <div className="cm-skill-accordion-body">
+                      {isEditing ? (
+                        <SkillInlineEdit
+                          skill={s}
+                          data={data}
+                          onSave={saveSkill}
+                          onCancel={() => setEditingSkill(null)}
+                        />
+                      ) : (
+                        <>
+                          {/* Proficiency levels tree */}
+                          {definedLevels.length > 0 ? (
+                            <div className="cm-accordion-section">
+                              <span className="cm-accordion-section-label">Proficiency levels</span>
+                              <div className="cm-level-tree">
+                                {definedLevels.map((l, i) => (
+                                  <div key={l.id} className={"cm-level-node" + (i === definedLevels.length - 1 ? " last" : "")}>
+                                    <div className="cm-level-num-badge">{i + 1}</div>
+                                    <div className="cm-level-node-content">
+                                      <strong>{l.name}</strong>
+                                      <p>{s.levels?.[l.id]}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="cm-hint" style={{ margin: "0 0 14px" }}>
+                              No level descriptions added. Click Edit to describe what each level looks like.
+                            </p>
+                          )}
+
+                          {/* Mapped courses */}
+                          <div className="cm-accordion-section">
+                            <span className="cm-accordion-section-label">Mapped courses</span>
+                            {courses.length === 0 ? (
+                              <p style={{ fontSize: 13, color: "#526176", margin: "6px 0 0" }}>
+                                No courses mapped yet. Go to the Course mapping tab to add courses.
+                              </p>
+                            ) : (
+                              <div className="cm-course-links">
+                                {courses.flatMap((c) =>
+                                  c.mappings
+                                    .filter((m) => m.skillId === s.id)
+                                    .map((m) => (
+                                      <button
+                                        key={c.id + m.levelId}
+                                        className="cm-course-link-btn"
+                                        onClick={() => setCoursePopup({ course: c, mapping: m })}
+                                      >
+                                        <BookOpen size={13} />
+                                        <span>{c.name}</span>
+                                        <span className="cm-category" style={{ fontSize: 12 }}>{levelName(m.levelId)}</span>
+                                        {(m.weightage ?? 0) > 0 && (
+                                          <span className="cm-weightage-tag">{m.weightage}%</span>
+                                        )}
+                                      </button>
+                                    )),
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
         {sharedModals}
@@ -573,22 +605,14 @@ export function CompetencyLibrary({
       <div className="cm-section-head">
         <div>
           <h2>Competencies &amp; Skills</h2>
-          <p>
-            Competencies group related skills. Select a competency to view and
-            manage its skills.
-          </p>
+          <p>Competencies group related skills. Select a competency to view and manage its skills.</p>
         </div>
         <div className="cm-actions">
           <button className="cm-button" onClick={() => setUploading(true)}>
-            <Upload size={16} />
-            Bulk upload
+            <Upload size={16} /> Bulk upload
           </button>
-          <button
-            className="cm-button primary"
-            onClick={() => setCreating(true)}
-          >
-            <Plus size={16} />
-            Create competency
+          <button className="cm-button primary" onClick={() => setCreating(true)}>
+            <Plus size={16} /> Create competency
           </button>
         </div>
       </div>
@@ -604,27 +628,15 @@ export function CompetencyLibrary({
           />
         </label>
         {term && (
-          <button className="cm-text-button" onClick={() => onQuery("")}>
-            Clear search
-          </button>
+          <button className="cm-text-button" onClick={() => onQuery("")}>Clear search</button>
         )}
-        <select
-          aria-label="Filter library by category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
+        <select aria-label="Filter library by category" value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">All categories</option>
           {data.categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
+            <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
-        <select
-          aria-label="Filter competency status"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
+        <select aria-label="Filter competency status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All statuses</option>
           <option>Active</option>
           <option>Draft</option>
@@ -639,12 +651,10 @@ export function CompetencyLibrary({
             ])
           }
         >
-          <Download size={16} />
-          Export CSV
+          <Download size={16} /> Export CSV
         </button>
         <button className="cm-text-button" onClick={onSettings}>
-          <Settings2 size={15} />
-          Library settings
+          <Settings2 size={15} /> Library settings
         </button>
       </div>
 
@@ -662,111 +672,61 @@ export function CompetencyLibrary({
                 </tr>
               </thead>
               <tbody>
-                {visible
-                  .slice((current - 1) * 10, current * 10)
-                  .map((c) => {
-                    const children = data.skills.filter(
-                      (s) => s.competencyId === c.id,
-                    );
-                    return (
-                      <tr key={c.id}>
-                        <td>
-                          <strong>{c.name}</strong>
-                          <small>
-                            {c.description ||
-                              "No description added"}
-                          </small>
-                        </td>
-                        <td>
-                          <span className="cm-category">
-                            {data.categories.find(
-                              (x) => x.id === c.categoryId,
-                            )?.name || "Uncategorised"}
-                          </span>
-                        </td>
-                        <td>
-                          {children.length}{" "}
-                          {children.length === 1 ? "skill" : "skills"}
-                        </td>
-                        <td>
-                          <span
-                            className={
-                              "cm-badge " + c.status.toLowerCase()
-                            }
+                {visible.slice((current - 1) * 10, current * 10).map((c) => {
+                  const children = data.skills.filter((s) => s.competencyId === c.id);
+                  return (
+                    <tr key={c.id}>
+                      <td>
+                        <strong>{c.name}</strong>
+                        <small>{c.description || "No description added"}</small>
+                      </td>
+                      <td>
+                        <span className="cm-category">
+                          {data.categories.find((x) => x.id === c.categoryId)?.name || "Uncategorised"}
+                        </span>
+                      </td>
+                      <td>{children.length} {children.length === 1 ? "skill" : "skills"}</td>
+                      <td>
+                        <span className={"cm-badge " + c.status.toLowerCase()}>{c.status}</span>
+                      </td>
+                      <td>
+                        <div className="cm-row-actions">
+                          <button
+                            className="cm-button"
+                            onClick={() => { setView({ kind: "skills", cId: c.id }); setOpenSkill(null); setEditingSkill(null); }}
                           >
-                            {c.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="cm-row-actions">
-                            <button
-                              className="cm-button"
-                              onClick={() =>
-                                setView({ kind: "skills", cId: c.id })
-                              }
-                            >
-                              <Layers size={14} />
-                              View skills
-                            </button>
-                            <button
-                              className="cm-icon-button"
-                              aria-label={"Edit " + c.name}
-                              onClick={() =>
-                                setEditing({
-                                  kind: "competencies",
-                                  item: c,
-                                })
-                              }
-                            >
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              className="cm-icon-button danger"
-                              aria-label={"Delete " + c.name}
-                              disabled={used(data, "competencies", c.id)}
-                              title={
-                                used(data, "competencies", c.id)
-                                  ? "Contains skills; remove unused skills first"
-                                  : "Delete competency"
-                              }
-                              onClick={() =>
-                                setDeleting({ kind: "competencies", item: c })
-                              }
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                            <Layers size={14} /> View skills
+                          </button>
+                          <button
+                            className="cm-icon-button"
+                            aria-label={"Edit " + c.name}
+                            onClick={() => setEditingComp(c)}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            className="cm-icon-button danger"
+                            aria-label={"Delete " + c.name}
+                            disabled={used(data, "competencies", c.id)}
+                            title={used(data, "competencies", c.id) ? "Contains skills; remove unused skills first" : "Delete competency"}
+                            onClick={() => setDeleting({ kind: "competencies", item: c })}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-
           <footer className="cm-pagination">
-            <span>
-              {visible.length} competencies found
-              {term ? " · Matching skills visible inside each competency" : ""}
-            </span>
+            <span>{visible.length} competencies found</span>
             <div>
-              <button
-                className="cm-button"
-                disabled={current === 1}
-                onClick={() => setPage(current - 1)}
-              >
-                Previous
-              </button>
-              <span>
-                Page {current} of {pages}
-              </span>
-              <button
-                className="cm-button"
-                disabled={current === pages}
-                onClick={() => setPage(current + 1)}
-              >
-                Next
-              </button>
+              <button className="cm-button" disabled={current === 1} onClick={() => setPage(current - 1)}>Previous</button>
+              <span>Page {current} of {pages}</span>
+              <button className="cm-button" disabled={current === pages} onClick={() => setPage(current + 1)}>Next</button>
             </div>
           </footer>
         </>
@@ -775,19 +735,11 @@ export function CompetencyLibrary({
           <Search size={26} />
           <h3>No matching competencies or skills</h3>
           <p>Try another name or clear the filters.</p>
-          <button
-            className="cm-button"
-            onClick={() => {
-              onQuery("");
-              setCategory("");
-              setStatus("");
-            }}
-          >
+          <button className="cm-button" onClick={() => { onQuery(""); setCategory(""); setStatus(""); }}>
             Clear filters
           </button>
         </div>
       )}
-
       {sharedModals}
     </section>
   );

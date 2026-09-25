@@ -681,27 +681,33 @@
 
 /* Level tree (skill detail view) */
 .cm-level-tree {
-  border-left: 2px solid #bed5ff;
-  margin: 12px 0 0 8px;
-  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
 }
 .cm-level-node {
-  position: relative;
-  padding: 12px 12px 12px 28px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #edf4ff;
+  border-radius: 8px;
 }
-.cm-level-node:not(.last) {
-  border-bottom: 1px solid #edf4ff;
-}
-.cm-level-node-marker {
-  position: absolute;
-  left: -6px;
-  top: 20px;
-  width: 10px;
-  height: 10px;
+.cm-level-num-badge {
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: #2463d6;
-  border: 2px solid white;
-  box-shadow: 0 0 0 1px #bed5ff;
+  background: #263047;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 .cm-level-node-content strong {
   font-size: 14px;
@@ -714,6 +720,186 @@
   color: #526176;
   margin-top: 4px;
   line-height: 1.6;
+}
+
+/* ── Skill accordion (skills view) ── */
+.cm-skill-accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+.cm-skill-accordion {
+  border: 1px solid #e6e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: white;
+  transition: border-color 0.15s;
+}
+.cm-skill-accordion.open {
+  border-color: #bed5ff;
+}
+.cm-skill-accordion-header {
+  display: flex;
+  align-items: center;
+}
+.cm-skill-accordion-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  text-align: left;
+  color: #263047;
+}
+.cm-skill-accordion-toggle:hover {
+  background: #fafbfe;
+}
+.cm-skill-accordion-name {
+  flex: 1;
+  min-width: 0;
+}
+.cm-skill-accordion-name strong {
+  font-size: 15px;
+  font-weight: 650;
+  display: block;
+  overflow-wrap: anywhere;
+  color: #263047;
+}
+.cm-skill-accordion-name small {
+  display: block;
+  font-size: 13px;
+  color: #526176;
+  margin-top: 3px;
+}
+.cm-skill-accordion-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.cm-skill-accordion-body {
+  border-top: 1px solid #edf4ff;
+  padding: 18px 20px;
+  background: #fafbfe;
+}
+
+/* Inline skill edit form */
+.cm-skill-inline-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cm-skill-edit-fields {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 14px;
+  align-items: end;
+}
+.cm-skill-edit-fields label,
+.cm-skill-inline-edit > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #636b7e;
+}
+.cm-skill-edit-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: white;
+  border: 1px solid #e6e8f0;
+  border-radius: 9px;
+}
+.cm-skill-edit-levels > strong {
+  font-size: 14px;
+  font-weight: 650;
+  color: #263047;
+}
+.cm-skill-edit-levels > small {
+  font-size: 13px;
+  color: #526176;
+  margin-top: -2px;
+}
+.cm-skill-edit-levels > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #636b7e;
+  padding: 10px 0 0;
+  border-top: 1px solid #edf4ff;
+}
+.cm-skill-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #edf4ff;
+  margin-top: 2px;
+}
+
+/* Accordion inner sections */
+.cm-accordion-section {
+  margin-bottom: 18px;
+}
+.cm-accordion-section:last-child {
+  margin-bottom: 0;
+}
+.cm-accordion-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: #8590aa;
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* Course link buttons */
+.cm-course-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cm-course-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid #bed5ff;
+  border-radius: 8px;
+  background: white;
+  color: #2463d6;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  transition: background 0.12s;
+}
+.cm-course-link-btn:hover {
+  background: #edf4ff;
+}
+.cm-weightage-tag {
+  margin-left: auto;
+  background: #edf4ff;
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #2463d6;
+}
+
+/* Course detail popup */
+.cm-course-popup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
 }
 /* Course weightage input */
 .cm-weightage-input {
