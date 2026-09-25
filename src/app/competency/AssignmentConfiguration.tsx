@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Search } from "lucide-react";
 import { Data } from "./model";
 import { Plan, WorkflowData } from "./workflowModel";
 import { AssignmentSkills } from "./AssignmentSkills";
@@ -5,51 +7,79 @@ import { ManualAudience } from "./ManualAudience";
 
 const today = new Date().toLocaleDateString("en-CA");
 
-function MultiCheckField({
+function SearchableCheckField({
   label,
   field,
-  plural,
   options,
   selected,
   onChange,
 }: {
   label: string;
   field: string;
-  plural: string;
   options: string[];
   selected: string[];
   onChange: (values: string[]) => void;
 }) {
+  const [search, setSearch] = useState("");
+  const filtered = options.filter((o) =>
+    o.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
-    <div className="cm-multi-check-field">
-      <span className="cm-multi-check-label">{label}</span>
+    <div className="cm-searchable-field">
+      <div className="cm-searchable-field-header">
+        <span className="cm-multi-check-label">{label}</span>
+        {selected.length > 0 && (
+          <>
+            <span className="cm-selection-count">{selected.length} selected</span>
+            <button
+              type="button"
+              className="cm-text-button"
+              style={{ fontSize: 13 }}
+              onClick={() => onChange([])}
+            >
+              Clear
+            </button>
+          </>
+        )}
+      </div>
       {options.length === 0 ? (
-        <small style={{ color: "#526176" }}>No {field} data available</small>
-      ) : (
-        <div className="cm-checks">
-          {options.map((v) => (
-            <label key={v} className="cm-inline-check">
-              <input
-                type="checkbox"
-                checked={selected.includes(v)}
-                onChange={(e) =>
-                  onChange(
-                    e.target.checked
-                      ? [...selected, v]
-                      : selected.filter((x) => x !== v),
-                  )
-                }
-              />
-              {v}
-            </label>
-          ))}
+        <div className="cm-searchable-panel cm-panel-empty">
+          No {field} data available
         </div>
-      )}
-      {selected.length > 0 && (
-        <small style={{ color: "#2463d6" }}>
-          {selected.length} selected:{" "}
-          {selected.join(", ")}
-        </small>
+      ) : (
+        <div className="cm-searchable-panel">
+          <label className="cm-panel-search">
+            <Search size={14} />
+            <input
+              placeholder={`Search ${field}s…`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </label>
+          <div className="cm-panel-list">
+            {filtered.length === 0 ? (
+              <p className="cm-panel-no-results">No {field}s match &ldquo;{search}&rdquo;</p>
+            ) : (
+              filtered.map((v) => (
+                <label key={v} className="cm-panel-item">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(v)}
+                    onChange={(e) =>
+                      onChange(
+                        e.target.checked
+                          ? [...selected, v]
+                          : selected.filter((x) => x !== v),
+                      )
+                    }
+                  />
+                  {v}
+                </label>
+              ))
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -154,28 +184,28 @@ export function AssignmentConfiguration({
         ) : (
           <div className="cm-auto-audience">
             <h4>Define user profile</h4>
-            <p>Users matching <strong>any</strong> selection in each field will be enrolled. Leave a field empty to include all.</p>
+            <p>
+              Users matching <strong>any</strong> selection in each field will be enrolled.
+              Leave a field empty to include all.
+            </p>
             <div className="cm-audience-fields">
-              <MultiCheckField
+              <SearchableCheckField
                 label="Department"
                 field="department"
-                plural="departments"
                 options={allDepts}
                 selected={draft.departments ?? []}
                 onChange={(departments) => onChange({ ...draft, departments, department: "" })}
               />
-              <MultiCheckField
+              <SearchableCheckField
                 label="Role"
                 field="role"
-                plural="roles"
                 options={allRoles}
                 selected={draft.roles ?? []}
                 onChange={(roles) => onChange({ ...draft, roles, role: "" })}
               />
-              <MultiCheckField
+              <SearchableCheckField
                 label="Cohort"
                 field="cohort"
-                plural="cohorts"
                 options={allCohorts}
                 selected={draft.cohorts ?? []}
                 onChange={(cohorts) => onChange({ ...draft, cohorts, cohort: "" })}
