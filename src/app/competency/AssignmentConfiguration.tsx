@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Plus, ChevronDown, X } from "lucide-react";
 import { Data } from "./model";
 import { Plan, WorkflowData } from "./workflowModel";
 import { AssignmentSkills } from "./AssignmentSkills";
@@ -7,7 +7,7 @@ import { ManualAudience } from "./ManualAudience";
 
 const today = new Date().toLocaleDateString("en-CA");
 
-function SearchableCheckField({
+function ChipSelectField({
   label,
   field,
   options,
@@ -20,67 +20,117 @@ function SearchableCheckField({
   selected: string[];
   onChange: (values: string[]) => void;
 }) {
+  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
   const filtered = options.filter((o) =>
     o.toLowerCase().includes(search.toLowerCase()),
   );
 
+  function toggle(v: string, checked: boolean) {
+    onChange(checked ? [...selected, v] : selected.filter((x) => x !== v));
+  }
+
   return (
-    <div className="cm-searchable-field">
-      <div className="cm-searchable-field-header">
-        <span className="cm-multi-check-label">{label}</span>
-        {selected.length > 0 && (
-          <>
-            <span className="cm-selection-count">{selected.length} selected</span>
-            <button
-              type="button"
-              className="cm-text-button"
-              style={{ fontSize: 13 }}
-              onClick={() => onChange([])}
-            >
-              Clear
-            </button>
-          </>
+    <div className="cm-chip-field">
+      <span className="cm-multi-check-label">{label}</span>
+      <div className="cm-chip-area" ref={ref}>
+        <div className="cm-chips" onClick={() => !open && setOpen(true)}>
+          {selected.map((v) => (
+            <span key={v} className="cm-chip">
+              {v}
+              <button
+                type="button"
+                className="cm-chip-remove"
+                aria-label={`Remove ${v}`}
+                onClick={(e) => { e.stopPropagation(); toggle(v, false); }}
+              >
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+          <button
+            type="button"
+            className="cm-chip-add"
+            onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+          >
+            <Plus size={13} />
+            {selected.length === 0 ? `Select ${field}` : "Add"}
+            <ChevronDown size={12} className={open ? "cm-rotated" : ""} />
+          </button>
+        </div>
+
+        {open && (
+          <div className="cm-chip-dropdown">
+            <label className="cm-panel-search">
+              <Search size={14} />
+              <input
+                autoFocus
+                placeholder={`Search ${field}s…`}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button type="button" onClick={() => setSearch("")} style={{ color: "#526176" }}>
+                  <X size={13} />
+                </button>
+              )}
+            </label>
+            <div className="cm-panel-list">
+              {options.length === 0 ? (
+                <p className="cm-panel-no-results">No {field} data available</p>
+              ) : filtered.length === 0 ? (
+                <p className="cm-panel-no-results">No {field}s match &ldquo;{search}&rdquo;</p>
+              ) : (
+                filtered.map((v) => {
+                  const isSelected = selected.includes(v);
+                  return (
+                    <label key={v} className={"cm-panel-item" + (isSelected ? " checked" : "")}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => toggle(v, e.target.checked)}
+                      />
+                      {v}
+                    </label>
+                  );
+                })
+              )}
+            </div>
+            <div className="cm-chip-dropdown-footer">
+              <button
+                type="button"
+                className="cm-text-button"
+                style={{ fontSize: 13 }}
+                onClick={() => { onChange([]); }}
+              >
+                Clear all
+              </button>
+              <button
+                type="button"
+                className="cm-button primary"
+                style={{ padding: "6px 14px", fontSize: 13, minHeight: 30 }}
+                onClick={() => { setOpen(false); setSearch(""); }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
         )}
       </div>
-      {options.length === 0 ? (
-        <div className="cm-searchable-panel cm-panel-empty">
-          No {field} data available
-        </div>
-      ) : (
-        <div className="cm-searchable-panel">
-          <label className="cm-panel-search">
-            <Search size={14} />
-            <input
-              placeholder={`Search ${field}s…`}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </label>
-          <div className="cm-panel-list">
-            {filtered.length === 0 ? (
-              <p className="cm-panel-no-results">No {field}s match &ldquo;{search}&rdquo;</p>
-            ) : (
-              filtered.map((v) => (
-                <label key={v} className="cm-panel-item">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(v)}
-                    onChange={(e) =>
-                      onChange(
-                        e.target.checked
-                          ? [...selected, v]
-                          : selected.filter((x) => x !== v),
-                      )
-                    }
-                  />
-                  {v}
-                </label>
-              ))
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -189,21 +239,21 @@ export function AssignmentConfiguration({
               Leave a field empty to include all.
             </p>
             <div className="cm-audience-fields">
-              <SearchableCheckField
+              <ChipSelectField
                 label="Department"
                 field="department"
                 options={allDepts}
                 selected={draft.departments ?? []}
                 onChange={(departments) => onChange({ ...draft, departments, department: "" })}
               />
-              <SearchableCheckField
+              <ChipSelectField
                 label="Role"
                 field="role"
                 options={allRoles}
                 selected={draft.roles ?? []}
                 onChange={(roles) => onChange({ ...draft, roles, role: "" })}
               />
-              <SearchableCheckField
+              <ChipSelectField
                 label="Cohort"
                 field="cohort"
                 options={allCohorts}
