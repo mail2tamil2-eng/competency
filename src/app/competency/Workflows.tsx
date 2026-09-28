@@ -42,7 +42,48 @@ type Props = {
 };
 export function CourseMapping({ data, work, save }: Props) {
   const [draft, setDraft] = useState<Course | null>(null),
+    [mappingComps, setMappingComps] = useState<string[]>([]),
     [error, setError] = useState("");
+
+  function openDraft(c?: Course) {
+    setError("");
+    if (c) {
+      setDraft(structuredClone(c));
+      setMappingComps(
+        c.mappings.map(
+          (m) => data.skills.find((s) => s.id === m.skillId)?.competencyId || "",
+        ),
+      );
+    } else {
+      setDraft({ id: uid(), name: "", duration: "", mappings: [{ skillId: "", levelId: "" }] });
+      setMappingComps([""]);
+    }
+  }
+
+  function updateComp(i: number, compId: string, currentSkillId: string) {
+    const newComps = mappingComps.map((c, n) => (n === i ? compId : c));
+    setMappingComps(newComps);
+    const skillStillValid = compId === "" || data.skills.find((s) => s.id === currentSkillId)?.competencyId === compId;
+    if (!skillStillValid && draft) {
+      setDraft({
+        ...draft,
+        mappings: draft.mappings.map((x, n) => (n === i ? { ...x, skillId: "" } : x)),
+      });
+    }
+  }
+
+  function updateSkill(i: number, skillId: string) {
+    if (!draft) return;
+    const comp = data.skills.find((s) => s.id === skillId)?.competencyId || "";
+    setMappingComps(mappingComps.map((c, n) => (n === i ? comp : c)));
+    setDraft({
+      ...draft,
+      mappings: draft.mappings.map((x, n) => (n === i ? { ...x, skillId } : x)),
+    });
+  }
+
+  const activeComps = data.competencies.filter((c) => c.status === "Active");
+
   return (
     <section className="cm-card">
       <div className="cm-section-head">
@@ -53,18 +94,7 @@ export function CourseMapping({ data, work, save }: Props) {
             courses in level order.
           </p>
         </div>
-        <button
-          className="cm-button primary"
-          onClick={() => {
-            setError("");
-            setDraft({
-              id: uid(),
-              name: "",
-              duration: "30 min",
-              mappings: [{ skillId: "", levelId: "" }],
-            });
-          }}
-        >
+        <button className="cm-button primary" onClick={() => openDraft()}>
           <Plus size={16} />
           Add course mapping
         </button>
@@ -83,7 +113,7 @@ export function CourseMapping({ data, work, save }: Props) {
               <tr key={c.id}>
                 <td>
                   <strong>{c.name}</strong>
-                  <small>{c.duration} · Demo course</small>
+                  <small>Demo course</small>
                 </td>
                 <td>
                   {c.mappings.map((m) => (
@@ -101,10 +131,7 @@ export function CourseMapping({ data, work, save }: Props) {
                       className="cm-icon-button"
                       title="Edit mapping"
                       aria-label={"Edit mapping for " + c.name}
-                      onClick={() => {
-                        setError("");
-                        setDraft(structuredClone(c));
-                      }}
+                      onClick={() => openDraft(c)}
                     >
                       <Pencil size={15} />
                     </button>
@@ -200,34 +227,36 @@ export function CourseMapping({ data, work, save }: Props) {
                   onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                 />
               </label>
-              <label>
-                Duration
-                <input
-                  value={draft.duration}
-                  onChange={(e) =>
-                    setDraft({ ...draft, duration: e.target.value })
-                  }
-                />
-              </label>
               {draft.mappings.map((m, i) => (
                 <div key={i} className="cm-mapping-row">
+                  <label>
+                    Competency
+                    <select
+                      value={mappingComps[i] || ""}
+                      onChange={(e) => updateComp(i, e.target.value, m.skillId)}
+                    >
+                      <option value="">All competencies</option>
+                      {activeComps.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <label>
                     Skill *
                     <select
                       required
                       value={m.skillId}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          mappings: draft.mappings.map((x, n) =>
-                            n === i ? { ...x, skillId: e.target.value } : x,
-                          ),
-                        })
-                      }
+                      onChange={(e) => updateSkill(i, e.target.value)}
                     >
                       <option value="">Select skill</option>
                       {data.skills
-                        .filter((s) => s.status === "Active")
+                        .filter(
+                          (s) =>
+                            s.status === "Active" &&
+                            (!mappingComps[i] || s.competencyId === mappingComps[i]),
+                        )
                         .map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name}
@@ -261,14 +290,16 @@ export function CourseMapping({ data, work, save }: Props) {
                   </label>
                   <button
                     type="button"
-                    className="cm-button"
+                    className="cm-text-button"
+                    style={{ color: "#e53935", marginBottom: 2 }}
                     aria-label={"Remove mapping " + (i + 1)}
-                    onClick={() =>
+                    onClick={() => {
                       setDraft({
                         ...draft,
                         mappings: draft.mappings.filter((_, n) => n !== i),
-                      })
-                    }
+                      });
+                      setMappingComps(mappingComps.filter((_, n) => n !== i));
+                    }}
                   >
                     Remove
                   </button>
@@ -276,13 +307,15 @@ export function CourseMapping({ data, work, save }: Props) {
               ))}
               <button
                 type="button"
-                className="cm-button"
-                onClick={() =>
+                className="cm-text-button"
+                style={{ alignSelf: "flex-start", marginTop: 4 }}
+                onClick={() => {
                   setDraft({
                     ...draft,
                     mappings: [...draft.mappings, { skillId: "", levelId: "" }],
-                  })
-                }
+                  });
+                  setMappingComps([...mappingComps, ""]);
+                }}
               >
                 + Add skill
               </button>
