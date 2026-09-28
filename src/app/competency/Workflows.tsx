@@ -15,6 +15,7 @@ import {
   Copy,
   Power,
   PowerOff,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Data, uid, progress, download } from "./model";
@@ -290,8 +291,8 @@ export function CourseMapping({ data, work, save }: Props) {
                   </label>
                   <button
                     type="button"
-                    className="cm-text-button"
-                    style={{ color: "#e53935", marginBottom: 2 }}
+                    className="cm-icon-button danger"
+                    title="Remove"
                     aria-label={"Remove mapping " + (i + 1)}
                     onClick={() => {
                       setDraft({
@@ -301,7 +302,7 @@ export function CourseMapping({ data, work, save }: Props) {
                       setMappingComps(mappingComps.filter((_, n) => n !== i));
                     }}
                   >
-                    Remove
+                    <Trash2 size={15} />
                   </button>
                 </div>
               ))}
