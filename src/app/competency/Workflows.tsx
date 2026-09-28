@@ -294,6 +294,7 @@ export function CourseMapping({ data, work, save }: Props) {
                     className="cm-icon-button danger"
                     title="Remove"
                     aria-label={"Remove mapping " + (i + 1)}
+                    style={{ marginBottom: "17px" }}
                     onClick={() => {
                       setDraft({
                         ...draft,
