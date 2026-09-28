@@ -663,6 +663,51 @@ body {
 .cm .cm-report-toolbar + .cm-table-controls {
   margin-top: 16px;
 }
+.cm .cm-report-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  padding: 14px 0 4px;
+}
+.cm .cm-report-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #526176;
+  min-width: 140px;
+}
+.cm .cm-report-filters label.cm-search {
+  min-width: 200px;
+  flex-direction: row;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d0d8e8;
+  border-radius: 7px;
+  padding: 0 10px;
+  gap: 8px;
+  color: #8899aa;
+}
+.cm .cm-report-filters label.cm-search input {
+  border: none;
+  background: transparent;
+  padding: 8px 0;
+  font-size: 14px;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+.cm .cm-report-filters select,
+.cm .cm-report-filters input[type="date"] {
+  width: 100%;
+}
+.cm-table-count {
+  font-size: 13px;
+  color: #526176;
+  margin-left: auto;
+}
 .cm-dialog .cm-text-button:disabled {
   color: #526176;
   opacity: 1;

@@ -238,8 +238,7 @@ export function CompetencyManagementPage() {
         {tab === "learner-report" && (
           <LearnerSkillReport
             data={data}
-            learnerKey={learnerKey}
-            onLearnerChange={setLearnerKey}
+            work={work}
           />
         )}
         {tab === "manager" && (
