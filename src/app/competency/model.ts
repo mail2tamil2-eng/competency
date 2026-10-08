@@ -215,6 +215,15 @@ export function progress(data: Data, a: Assignment) {
     ? "Completed"
     : "In Progress";
 }
+export function contentMissing(data: Data, work: WorkflowData, a: Assignment): boolean {
+  const ci = data.levels.findIndex((l) => l.id === a.current);
+  const ei = data.levels.findIndex((l) => l.id === a.expected);
+  if (ci >= ei) return false;
+  const start = ci < 0 ? 0 : ci + 1;
+  return data.levels.slice(start, ei + 1).some(
+    (l) => !work.courses.some((c) => c.mappings.some((m) => m.skillId === a.skillId && m.levelId === l.id)),
+  );
+}
 export function csv(rows: string[][]) {
   return (
     "\uFEFF" +

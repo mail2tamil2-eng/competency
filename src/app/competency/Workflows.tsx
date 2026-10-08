@@ -16,9 +16,12 @@ import {
   Power,
   PowerOff,
   Trash2,
+  Layers,
+  AlertTriangle,
+  Target,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Data, uid, progress, download } from "./model";
+import { Data, uid, progress, contentMissing, download } from "./model";
 import {
   WorkflowData,
   Course,
@@ -733,6 +736,7 @@ export function Learning({
     ...new Map(data.assignments.map((a) => [personKey(a), a])).entries(),
   ];
   const [localKey, setLocalKey] = useState(""),
+    [skillView, setSkillView] = useState<"skill" | "competency">("skill"),
     [submission, setSubmission] = useState<{
       assignmentId: string;
       courseId: string;
@@ -861,7 +865,193 @@ export function Learning({
           ? "Manager preview · All demo employees are shown. Production access must be limited to authorized reportees."
           : "Learner preview · Course completion is simulated in this prototype."}
       </p>
-      {assignments.map((a) => {
+
+      {/* My Skill Widget — learner only */}
+      {!manager && assignments.length > 0 && (() => {
+        const achieved = assignments.filter((a) => progress(data, a) === "Completed").length;
+        const inProgress = assignments.filter((a) => progress(data, a) === "In Progress").length;
+        const notStarted = assignments.filter((a) => progress(data, a) === "Yet to Start").length;
+        const needsAttention = assignments.filter((a) => progress(data, a) !== "Completed" && contentMissing(data, work, a)).length;
+        const pct = assignments.length ? Math.round((achieved / assignments.length) * 100) : 0;
+        return (
+          <div className="cm-skill-widget">
+            <div className="cm-skill-widget-stat">
+              <strong>{assignments.length}</strong>
+              <span>Assigned skills</span>
+            </div>
+            <div className="cm-skill-widget-stat success">
+              <strong>{achieved}</strong>
+              <span>Achieved</span>
+            </div>
+            <div className="cm-skill-widget-stat pending">
+              <strong>{inProgress}</strong>
+              <span>In Progress</span>
+            </div>
+            <div className="cm-skill-widget-stat muted">
+              <strong>{notStarted}</strong>
+              <span>Not Started</span>
+            </div>
+            {needsAttention > 0 && (
+              <div className="cm-skill-widget-stat warn">
+                <strong>{needsAttention}</strong>
+                <span>Needs Attention</span>
+              </div>
+            )}
+            <div className="cm-skill-widget-progress">
+              <span>Overall progress</span>
+              <div className="cm-skill-widget-bar">
+                <div style={{ width: pct + "%" }} />
+              </div>
+              <strong>{pct}%</strong>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* View toggle — learner only */}
+      {!manager && assignments.length > 0 && (
+        <div className="cm-view-toggle" role="group" aria-label="View mode">
+          <button
+            className={skillView === "skill" ? "active" : ""}
+            aria-pressed={skillView === "skill"}
+            onClick={() => setSkillView("skill")}
+          >
+            <Target size={15} /> Skill view
+          </button>
+          <button
+            className={skillView === "competency" ? "active" : ""}
+            aria-pressed={skillView === "competency"}
+            onClick={() => setSkillView("competency")}
+          >
+            <Layers size={15} /> Competency view
+          </button>
+        </div>
+      )}
+
+      {/* Career path — learner only, shown when a matching active progression exists */}
+      {!manager && (() => {
+        const firstA = assignments[0];
+        if (!firstA) return null;
+        const emp = work.employees.find(
+          (e) => e.id === firstA.employeeId || (e.name === firstA.name && e.department === firstA.department),
+        );
+        if (!emp?.role) return null;
+        const completed = assignments.filter((a) => progress(data, a) === "Completed").length;
+        const pct = assignments.length ? Math.round((completed / assignments.length) * 100) : 0;
+        const rp = (work.roleProgressions || []).find(
+          (r) => r.status === "Active" && r.currentRole === emp.role,
+        );
+        if (!rp) return null;
+        const meetsThreshold = pct >= rp.threshold;
+        const nextRolePlans = work.plans.filter(
+          (p) => p.status === "Active" &&
+            (p.roles?.includes(rp.nextRole) || p.role === rp.nextRole),
+        );
+        const nextRoleSkillIds = [...new Set(nextRolePlans.flatMap((p) => p.skills.map((s) => s.skillId)))];
+        const mySkillIds = new Set(assignments.map((a) => a.skillId));
+        return (
+          <div className="cm-career-path">
+            <div className="cm-career-path-header">
+              <Target size={18} />
+              <div>
+                <strong>Career path: {rp.currentRole} → {rp.nextRole}</strong>
+                <span>Current role {pct}% complete ({completed}/{assignments.length} skills achieved)</span>
+              </div>
+              {meetsThreshold ? (
+                <span className="cm-badge active">Ready to prepare</span>
+              ) : (
+                <span className="cm-badge">Reach {rp.threshold}% to unlock</span>
+              )}
+            </div>
+            {meetsThreshold && nextRoleSkillIds.length > 0 && (
+              <div className="cm-career-path-skills">
+                <p>Skills needed for {rp.nextRole}</p>
+                {nextRoleSkillIds.map((skillId) => {
+                  const skill = data.skills.find((s) => s.id === skillId);
+                  if (!skill) return null;
+                  const assignment = assignments.find((a) => a.skillId === skillId);
+                  const st = assignment ? progress(data, assignment) : "Not yet assigned";
+                  return (
+                    <div key={skillId} className="cm-career-skill-row">
+                      <span>{skill.name}</span>
+                      <span className={`cm-badge ${st === "Completed" ? "active" : mySkillIds.has(skillId) ? "draft" : ""}`}>
+                        {st === "Completed" ? "Achieved" : st}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {meetsThreshold && nextRoleSkillIds.length === 0 && (
+              <p className="cm-hint" style={{ marginTop: 12 }}>
+                No skills have been assigned for the {rp.nextRole} role yet. Contact your administrator to set up next-role learning.
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Competency view — grouped by competency */}
+      {!manager && skillView === "competency" && (() => {
+        const grouped = new Map<string, typeof assignments>();
+        for (const a of assignments) {
+          const skill = data.skills.find((s) => s.id === a.skillId);
+          const cId = skill?.competencyId || "__none__";
+          if (!grouped.has(cId)) grouped.set(cId, []);
+          grouped.get(cId)!.push(a);
+        }
+        return (
+          <div className="cm-competency-view">
+            {[...grouped.entries()].map(([cId, items]) => {
+              const comp = data.competencies.find((c) => c.id === cId);
+              const done = items.filter((a) => progress(data, a) === "Completed").length;
+              const ip = items.filter((a) => progress(data, a) === "In Progress").length;
+              const pct = items.length ? Math.round((done / items.length) * 100) : 0;
+              const compStatus = done === items.length ? "Completed" : ip > 0 ? "In Progress" : "Not Started";
+              return (
+                <div key={cId} className="cm-competency-group">
+                  <div className="cm-competency-group-header">
+                    <div>
+                      <strong>{comp?.name || "Uncategorised"}</strong>
+                      <span className="cm-category">{items.length} skill{items.length !== 1 ? "s" : ""}</span>
+                      <span className={`cm-badge ${compStatus === "Completed" ? "active" : compStatus === "In Progress" ? "draft" : ""}`}>
+                        {compStatus}
+                      </span>
+                    </div>
+                    <div className="cm-competency-group-progress">
+                      <progress max={100} value={pct} aria-label={`${comp?.name} progress`} />
+                      <span>{pct}%</span>
+                    </div>
+                  </div>
+                  <div className="cm-competency-skills">
+                    {items.map((a) => {
+                      const skill = data.skills.find((s) => s.id === a.skillId);
+                      const st = progress(data, a);
+                      const gap = data.levels.findIndex((l) => l.id === a.expected) - data.levels.findIndex((l) => l.id === a.current);
+                      const missing = contentMissing(data, work, a);
+                      return (
+                        <div key={a.id} className="cm-competency-skill-row">
+                          <span><strong>{skill?.name}</strong></span>
+                          <span className="cm-skill-progress-detail">
+                            {a.current ? data.levels.find((l) => l.id === a.current)?.name : "Not assessed"}
+                            {" → "}
+                            {data.levels.find((l) => l.id === a.expected)?.name}
+                            {missing && <span className="cm-content-missing"><AlertTriangle size={12} /> Content missing</span>}
+                          </span>
+                          <span className={`cm-badge ${st === "Completed" ? "active" : st === "In Progress" ? "draft" : ""}`}>{st}</span>
+                          {st !== "Completed" && gap > 0 && <span className="cm-gap-chip">{gap} level{gap !== 1 ? "s" : ""} to go</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {(manager || skillView === "skill") && assignments.map((a) => {
         const courses = requiredCourses(data, work, a);
         const done = work.completed[a.id] || [];
         const first = courses.find((c) => !done.includes(c.id));
@@ -874,7 +1064,7 @@ export function Learning({
                 <h3>{data.skills.find((s) => s.id === a.skillId)?.name}</h3>
                 <p>
                   {data.levels.find((l) => l.id === a.current)?.name ||
-                    "Current level not recorded"}{" "}
+                    "Not assessed"}{" "}
                   → {data.levels.find((l) => l.id === a.expected)?.name}
                 </p>
               </div>
@@ -945,28 +1135,25 @@ export function Learning({
               </label>
             )}
             {!a.current && (
-              <p className="cm-hint">
-                Your administrator or manager needs to record your current level
-                before your learning plan can be generated.
+              <p className="cm-hint cm-not-assessed">
+                Not Assessed — your administrator or manager needs to record your current level before your learning plan can be generated.
               </p>
             )}
             {a.current &&
-              currentIndex < expectedIndex &&
-              data.levels
-                .slice(currentIndex + 1, expectedIndex + 1)
-                .some(
-                  (l) =>
-                    !work.courses.some((c) =>
-                      c.mappings.some(
-                        (m) => m.skillId === a.skillId && m.levelId === l.id,
-                      ),
-                    ),
-                ) && (
-                <p className="cm-hint">
-                  Some required levels do not have courses yet. Your
-                  administrator can add them under Course mapping.
-                </p>
-              )}
+              currentIndex < expectedIndex && (() => {
+                const missingLevels = data.levels
+                  .slice(currentIndex + 1, expectedIndex + 1)
+                  .filter((l) => !work.courses.some((c) => c.mappings.some((m) => m.skillId === a.skillId && m.levelId === l.id)));
+                if (!missingLevels.length) return null;
+                const skillName = data.skills.find((s) => s.id === a.skillId)?.name || "this skill";
+                const compName = data.competencies.find((c) => c.id === data.skills.find((s) => s.id === a.skillId)?.competencyId)?.name || "";
+                return (
+                  <p className="cm-hint cm-content-missing-hint">
+                    <AlertTriangle size={14} />
+                    {" "}Learning Unavailable — required learning for {skillName} ({missingLevels.map((l) => l.name).join(", ")}) under {compName} has not been configured. Please contact your administrator.
+                  </p>
+                );
+              })()}
             {courses.map((c) => {
               const proof = work.proofs
                 .filter((p) => p.assignmentId === a.id && p.courseId === c.id)

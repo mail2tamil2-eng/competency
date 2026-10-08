@@ -1,6 +1,7 @@
 import { LearnerProgress } from "../competency/LearnerProgress";
 import { ManagerProgress } from "../competency/ManagerProgress";
 import { LearnerSkillReport } from "../competency/LearnerSkillReport";
+import { CareerProgressionConfig } from "../competency/CareerProgressionConfig";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
@@ -13,9 +14,10 @@ import {
   GraduationCap,
   TrendingUp,
   Map,
+  Route,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Data, Assignment, key, readData, uid } from "../competency/model";
+import { Data, Assignment, key, readData, seed, uid } from "../competency/model";
 import {
   CompetencyLibrary,
   LibraryIntent,
@@ -48,6 +50,7 @@ const tabs = [
   ["roles", "Role mapping", Map],
   ["assignments", "Progress", BarChart2],
   ["courses", "Course mapping", BookOpen],
+  ["career-progression", "Role progression", Route],
   ["reports", "Reports", ListChecks],
   ["learner", "My learning", GraduationCap],
   ["learner-report", "Skill progress report", TrendingUp],
@@ -70,6 +73,7 @@ export function CompetencyManagementPage() {
   const isLearner = tab === "learner" || tab === "learner-report";
   const [learnerKey, setLearnerKey] = useState("");
   const [assigning, setAssigning] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [libraryIntent, setLibraryIntent] = useState<LibraryIntent>(null);
   const [settingsSection, setSettingsSection] = useState<
     "categories" | "levels"
@@ -173,6 +177,13 @@ export function CompetencyManagementPage() {
             <option value="learner">Learner preview</option>
             <option value="manager">Manager preview</option>
           </select>
+          <button
+            className="cm-button cm-reset-demo-btn"
+            title="Reset all data back to demo defaults"
+            onClick={() => setConfirmReset(true)}
+          >
+            Reset demo data
+          </button>
         </div>
       </div>
 
@@ -249,6 +260,9 @@ export function CompetencyManagementPage() {
             save={saveWorkflow}
           />
         )}
+        {tab === "career-progression" && (
+          <CareerProgressionConfig data={data} work={work} save={saveWorkflow} />
+        )}
         {tab === "reports" && <Reports data={data} work={work} />}
 
         {tab === "assignments" && (
@@ -259,6 +273,33 @@ export function CompetencyManagementPage() {
           />
         )}
       </div>
+      {confirmReset && (
+        <Dialog open onOpenChange={(open) => { if (!open) setConfirmReset(false); }}>
+          <DialogContent className="cm-dialog">
+            <DialogHeader>
+              <DialogTitle>Reset demo data?</DialogTitle>
+              <DialogDescription>
+                This will erase all your changes and restore the original demo records. This cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="cm-dialog-actions">
+              <button className="cm-button" onClick={() => setConfirmReset(false)}>Cancel</button>
+              <button
+                className="cm-button primary"
+                onClick={() => {
+                  const fresh = { ...seed, workflow: workflowSeed };
+                  localStorage.setItem(key, JSON.stringify(fresh));
+                  setData(fresh);
+                  setConfirmReset(false);
+                  toast.success("Demo data restored");
+                }}
+              >
+                Yes, reset
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
       {assigning && (
         <AssignmentForm
           data={data}

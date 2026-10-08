@@ -25,6 +25,7 @@ export type Plan = {
   assignedEmployeeIds?: string[];
   method: "Manual" | "Auto";
   type: "Static" | "Dynamic";
+  progressionType?: "level-wise" | "skill-wise" | "competency-wise" | "independent";
   department: string;
   role: string;
   location: string;
@@ -35,6 +36,13 @@ export type Plan = {
   departments?: string[];
   roles?: string[];
   cohorts?: string[];
+};
+export type RoleProgression = {
+  id: string;
+  currentRole: string;
+  nextRole: string;
+  threshold: number;
+  status: "Active" | "Inactive";
 };
 export type Proof = {
   id: string;
@@ -56,6 +64,7 @@ export type WorkflowData = {
   proofs: Proof[];
   completed: Record<string, string[]>;
   settings: { admin: boolean; learner: boolean; manager: boolean };
+  roleProgressions: RoleProgression[];
 };
 export const workflowKey = "axle-competency-workflows-v1";
 export const workflowSeed: WorkflowData = {
@@ -133,6 +142,7 @@ export const workflowSeed: WorkflowData = {
   proofs: [],
   completed: {},
   settings: { admin: true, learner: true, manager: true },
+  roleProgressions: [],
 };
 export function readWorkflows(): WorkflowData {
   try {
@@ -249,14 +259,27 @@ export function completeCourse(
   const expected = data.levels.findIndex((l) => l.id === a.expected);
   while (current < expected) {
     const level = data.levels[current + 1];
-    const courses = work.courses.filter((c) =>
+    const levelCourses = work.courses.filter((c) =>
       c.mappings.some((m) => m.skillId === a.skillId && m.levelId === level.id),
     );
-    if (
-      !courses.length ||
-      !courses.every((c) => completed[a.id].includes(c.id))
-    )
-      break;
+    if (!levelCourses.length) break;
+    const hasWeightage = levelCourses.some((c) => {
+      const m = c.mappings.find((m) => m.skillId === a.skillId && m.levelId === level.id);
+      return (m?.weightage ?? 0) > 0;
+    });
+    let levelDone: boolean;
+    if (hasWeightage) {
+      const completedWeight = levelCourses
+        .filter((c) => completed[a.id].includes(c.id))
+        .reduce((sum, c) => {
+          const m = c.mappings.find((m) => m.skillId === a.skillId && m.levelId === level.id);
+          return sum + (m?.weightage ?? 0);
+        }, 0);
+      levelDone = completedWeight >= 100;
+    } else {
+      levelDone = levelCourses.every((c) => completed[a.id].includes(c.id));
+    }
+    if (!levelDone) break;
     current++;
   }
   return {
@@ -296,6 +319,7 @@ export function updateCurrent(
         data.levels.findIndex((l) => l.id === m.levelId) <= rank,
     ),
   );
+  const at = new Date().toISOString();
   return {
     data: {
       ...data,
@@ -307,8 +331,12 @@ export function updateCurrent(
               updatedBy: by,
               completedDate:
                 rank >= data.levels.findIndex((l) => l.id === a.expected)
-                  ? x.completedDate || new Date().toISOString()
+                  ? x.completedDate || at
                   : undefined,
+              levelHistory: [
+                ...(x.levelHistory || []),
+                { from: x.current, to: levelId, at, by, reason: "" },
+              ],
             }
           : x,
       ),

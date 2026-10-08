@@ -1,7 +1,14 @@
-import { useState } from "react";
-import { Download, Search, Users } from "lucide-react";
+import { Fragment, useState } from "react";
+import { Download, Search, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { Data, Assignment, download, progress } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../components/ui/dialog";
 
 const personKey = (a: Assignment) => JSON.stringify([a.name, a.department]);
 
@@ -16,32 +23,50 @@ export function LearnerProgress({
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
-  const [bulk, setBulk] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [bulkLevel, setBulkLevel] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dirtyLevels, setDirtyLevels] = useState<Record<string, string>>({});
+  const [confirming, setConfirming] = useState<{
+    id: string;
+    fromId: string;
+    toId: string;
+  } | null>(null);
 
   const skill = (a: Assignment) => data.skills.find((s) => s.id === a.skillId);
   const competency = (a: Assignment) =>
     data.competencies.find((c) => c.id === skill(a)?.competencyId)?.name || "Uncategorized";
   const levelName = (id: string) =>
-    data.levels.find((l) => l.id === id)?.name || "Not recorded";
+    id ? data.levels.find((l) => l.id === id)?.name || "Not recorded" : "Not assessed";
   const empFor = (a: Assignment) =>
     work.employees.find(
       (e) => e.id === a.employeeId || (e.name === a.name && e.department === a.department),
     );
 
-  const matches = (a: Assignment) => {
-    const emp = empFor(a);
-    return `${a.name} ${a.department} ${emp?.role ?? ""} ${emp?.email ?? ""} ${skill(a)?.name ?? ""} ${competency(a)}`
+  const allGroups = new Map<string, Assignment[]>();
+  for (const a of data.assignments) {
+    const k = personKey(a);
+    if (!allGroups.has(k)) allGroups.set(k, []);
+    allGroups.get(k)!.push(a);
+  }
+
+  const filteredGroups = [...allGroups.entries()].filter(([, items]) => {
+    const emp = empFor(items[0]);
+    return `${items[0].name} ${items[0].department} ${emp?.role ?? ""} ${emp?.email ?? ""}`
       .toLowerCase()
       .includes(query.trim().toLowerCase());
-  };
+  });
 
-  const records = data.assignments.filter(matches);
-  const total = records.length;
-  const currentPage = Math.min(page, Math.max(0, Math.ceil(total / 10) - 1));
-  const chosen = data.assignments.filter((a) => selected.includes(a.id));
+  const PAGE_SIZE = 10;
+  const total = filteredGroups.length;
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(total / PAGE_SIZE) - 1));
+  const pageGroups = filteredGroups.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
+  function toggleExpand(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
 
   function setDirty(id: string, val: string, original: string) {
     if (val === original) {
@@ -51,32 +76,42 @@ export function LearnerProgress({
     }
   }
 
-  function saveOne(a: Assignment) {
+  function requestSave(a: Assignment) {
     const newLevel = dirtyLevels[a.id];
     if (newLevel === undefined) return;
-    const next = updateCurrent(data, work, a.id, newLevel, "Admin");
+    setConfirming({ id: a.id, fromId: a.current, toId: newLevel });
+  }
+
+  function confirmSave() {
+    if (!confirming) return;
+    const a = data.assignments.find((x) => x.id === confirming.id);
+    if (!a) return;
+    const next = updateCurrent(data, work, a.id, confirming.toId, "Admin");
     if (save(next.data, next.work, `Updated ${a.name}: ${skill(a)?.name}`)) {
-      setDirtyLevels((prev) => { const n = { ...prev }; delete n[a.id]; return n; });
+      setDirtyLevels((prev) => { const n = { ...prev }; delete n[confirming.id]; return n; });
+      setConfirming(null);
     }
   }
 
-  function applyBulk() {
-    if (!bulkLevel || !chosen.length) return;
-    let next = { data, work };
-    for (const a of chosen)
-      next = updateCurrent(next.data, next.work, a.id, bulkLevel, "Admin");
-    if (save(next.data, next.work, `Updated ${chosen.length} skill records`)) {
-      setSelected([]);
-      setBulkLevel("");
-    }
+  function learnerSummary(items: Assignment[]) {
+    const completed = items.filter((a) => progress(data, a) === "Completed").length;
+    const pct = Math.round((completed / items.length) * 100);
+    const status =
+      completed === items.length ? "Completed"
+      : items.some((a) => progress(data, a) === "In Progress") ? "In Progress"
+      : "Yet to Start";
+    return { completed, pct, status };
   }
+
+  const levels = data.levels;
+  const n = levels.length;
 
   return (
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
           <h2>Assignments &amp; progress</h2>
-          <p>View and update learner proficiency levels across all assigned skills.</p>
+          <p>View and update learner proficiency levels. Click a row to expand skills.</p>
         </div>
         <div className="cm-actions">
           <button
@@ -106,135 +141,200 @@ export function LearnerProgress({
           <Search size={16} />
           <input
             aria-label="Search learners"
-            placeholder="Search name, role, email, skill…"
+            placeholder="Search name, role, email, department…"
             value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(0); }}
           />
         </label>
-        <button
-          className="cm-button"
-          onClick={() => { setBulk(!bulk); setSelected([]); setBulkLevel(""); setPage(0); }}
-        >
-          <Users size={16} />
-          {bulk ? "Exit bulk update" : "Bulk update"}
-        </button>
       </div>
-
-      {bulk && (
-        <div className="cm-progress-bulk">
-          <div>
-            <strong>Bulk update mode</strong>
-            <p>Select records then pick a level and apply.</p>
-            <span>
-              {chosen.length} records across {new Set(chosen.map(personKey)).size} learners selected
-              {chosen.some((a) => !matches(a)) ? " (includes selections outside this search)" : ""}
-            </span>
-          </div>
-          <div className="cm-actions">
-            <select
-              aria-label="Bulk current level"
-              value={bulkLevel}
-              onChange={(e) => setBulkLevel(e.target.value)}
-            >
-              <option value="">Choose level</option>
-              {data.levels.filter((l) => l.status === "Active").map((l) => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
-            <button
-              className="cm-button primary"
-              disabled={!bulkLevel || !chosen.length}
-              onClick={applyBulk}
-            >
-              Apply to {chosen.length || "0"} records
-            </button>
-            <button
-              className="cm-text-button"
-              disabled={!chosen.length}
-              onClick={() => setSelected([])}
-            >
-              Clear selection
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="cm-table-wrap">
         <table>
           <thead>
             <tr>
-              {bulk && <th>Select</th>}
               <th>Learner</th>
               <th>Role</th>
               <th>Email</th>
-              <th>Competency / Skill</th>
-              <th>Current level</th>
-              <th>Expected level</th>
+              <th>Skills</th>
+              <th>Progress</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {records.slice(currentPage * 10, (currentPage + 1) * 10).map((a) => {
-              const emp = empFor(a);
-              const isDirty = dirtyLevels[a.id] !== undefined;
+            {pageGroups.map(([key, items]) => {
+              const emp = empFor(items[0]);
+              const { pct, status } = learnerSummary(items);
+              const isOpen = expanded.has(key);
               return (
-                <tr key={a.id} className={isDirty ? "cm-row-dirty" : ""}>
-                  {bulk && (
+                <Fragment key={key}>
+                  <tr
+                    className={`cm-learner-row${isOpen ? " cm-learner-row-open" : ""}`}
+                    onClick={() => toggleExpand(key)}
+                  >
                     <td>
-                      <input
-                        type="checkbox"
-                        aria-label={`Select ${a.name} ${skill(a)?.name}`}
-                        checked={selected.includes(a.id)}
-                        onChange={(e) =>
-                          setSelected(
-                            e.target.checked
-                              ? [...selected, a.id]
-                              : selected.filter((id) => id !== a.id),
-                          )
-                        }
-                      />
+                      <strong>{items[0].name}</strong>
+                      <small>{items[0].department}</small>
                     </td>
+                    <td>{emp?.role || <span className="cm-muted-dash">—</span>}</td>
+                    <td>{emp?.email || <span className="cm-muted-dash">—</span>}</td>
+                    <td>
+                      <span className="cm-skill-count-badge">
+                        {items.length} skill{items.length !== 1 ? "s" : ""}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="cm-lp-progress">
+                        <div className="cm-lp-bar">
+                          <div style={{ width: pct + "%" }} />
+                        </div>
+                        <span className={`cm-badge ${status === "Completed" ? "active" : status === "In Progress" ? "draft" : ""}`}>
+                          {pct}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="cm-right">
+                      {isOpen ? <ChevronUp size={16} color="#526176" /> : <ChevronDown size={16} color="#526176" />}
+                    </td>
+                  </tr>
+
+                  {isOpen && (
+                    <tr className="cm-learner-detail-row">
+                      <td colSpan={6} style={{ padding: 0 }}>
+                        <div className="cm-learner-skills">
+
+                          {/* Level legend header */}
+                          <div className="cm-gap-legend-bar">
+                            <span className="cm-gap-legend-item">
+                              <span className="cm-gap-legend-dot done" />
+                              Completed level
+                            </span>
+                            <span className="cm-gap-legend-item">
+                              <span className="cm-gap-legend-dot current" />
+                              Current level
+                            </span>
+                            <span className="cm-gap-legend-item">
+                              <span className="cm-gap-legend-dot target" />★ Target level
+                            </span>
+                            <span className="cm-gap-legend-item">
+                              <span className="cm-gap-legend-dot beyond" />
+                              Beyond target
+                            </span>
+                          </div>
+
+                          {items.map((a) => {
+                            const isDirty = dirtyLevels[a.id] !== undefined;
+                            const st = progress(data, a);
+                            const currentIdx = levels.findIndex((l) => l.id === a.current);
+                            const expectedIdx = levels.findIndex((l) => l.id === a.expected);
+                            const gapCount = currentIdx >= 0 && expectedIdx > currentIdx ? expectedIdx - currentIdx : 0;
+
+                            function dotClass(i: number) {
+                              if (currentIdx >= 0 && i === currentIdx && i === expectedIdx) return "achieved";
+                              if (currentIdx >= 0 && i === currentIdx) return "current";
+                              if (i === expectedIdx) return "target";
+                              if (currentIdx >= 0 && i < currentIdx) return "done";
+                              if (expectedIdx >= 0 && i > expectedIdx) return "beyond";
+                              return "empty";
+                            }
+
+                            return (
+                              <div key={a.id} className={`cm-gap-skill-card${isDirty ? " dirty" : ""}`}>
+                                {/* Card header */}
+                                <div className="cm-gap-skill-header">
+                                  <div className="cm-gap-skill-info">
+                                    <strong>{skill(a)?.name}</strong>
+                                    <span className="cm-category">{competency(a)}</span>
+                                  </div>
+                                  <div className="cm-gap-skill-meta">
+                                    {gapCount > 0 && (
+                                      <span className="cm-gap-chip">
+                                        {gapCount} level{gapCount !== 1 ? "s" : ""} to go
+                                      </span>
+                                    )}
+                                    {!a.current && (
+                                      <span className="cm-gap-chip not-assessed">Not assessed</span>
+                                    )}
+                                    <span className={`cm-badge ${st === "Completed" ? "active" : st === "In Progress" ? "draft" : ""}`}>
+                                      {st}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Visual level track */}
+                                <div className="cm-gap-track-wrap">
+                                  {n >= 2 && (
+                                    <div
+                                      className="cm-gap-track"
+                                      style={{ '--n': n, '--cur': currentIdx, '--exp': expectedIdx } as React.CSSProperties}
+                                    >
+                                      <div className="cm-gap-rail" />
+                                      {currentIdx >= 0 && <div className="cm-gap-fill" />}
+                                      {currentIdx >= 0 && expectedIdx > currentIdx && <div className="cm-gap-dash" />}
+                                      {levels.map((level, i) => {
+                                        const dc = dotClass(i);
+                                        return (
+                                          <div
+                                            key={level.id}
+                                            className={`cm-gap-dot ${dc}${i === 0 ? " first" : i === n - 1 ? " last" : ""}`}
+                                            style={{ '--i': i } as React.CSSProperties}
+                                            title={level.name}
+                                          >
+                                            {dc === "target" && <span aria-hidden>★</span>}
+                                            {dc === "achieved" && <CheckCircle2 size={11} />}
+                                            <span className="cm-gap-label">{level.name}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Edit controls */}
+                                <div className="cm-gap-edit" onClick={(e) => e.stopPropagation()}>
+                                  <span className="cm-gap-edit-label">Update level</span>
+                                  <select
+                                    className="cm-level-inline-select"
+                                    aria-label={`Current level for ${a.name} ${skill(a)?.name}`}
+                                    value={dirtyLevels[a.id] ?? a.current}
+                                    onChange={(e) => setDirty(a.id, e.target.value, a.current)}
+                                  >
+                                    <option value="">Not assessed</option>
+                                    {levels
+                                      .filter((l) => l.status === "Active" || l.id === a.current)
+                                      .map((l) => {
+                                        const lIdx = levels.findIndex((x) => x.id === l.id);
+                                        const beyondExpected = expectedIdx >= 0 && lIdx > expectedIdx;
+                                        const isDowngrade = a.current && currentIdx >= 0 && lIdx < currentIdx;
+                                        return (
+                                          <option key={l.id} value={l.id} disabled={beyondExpected || !!isDowngrade}>
+                                            {l.name}
+                                            {beyondExpected ? " (beyond target)" : isDowngrade ? " (completed)" : ""}
+                                          </option>
+                                        );
+                                      })}
+                                  </select>
+                                  {isDirty && (
+                                    <button
+                                      className="cm-button primary cm-save-inline"
+                                      onClick={() => requestSave(a)}
+                                    >
+                                      Save
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    </tr>
                   )}
-                  <td>
-                    <strong>{a.name}</strong>
-                    <small>{a.department}</small>
-                  </td>
-                  <td>{emp?.role || <span className="cm-muted-dash">—</span>}</td>
-                  <td>{emp?.email || <span className="cm-muted-dash">—</span>}</td>
-                  <td>
-                    <small>{competency(a)}</small>
-                    <strong>{skill(a)?.name}</strong>
-                  </td>
-                  <td>
-                    <div className="cm-inline-level">
-                      <select
-                        className="cm-level-inline-select"
-                        aria-label={`Current level for ${a.name} ${skill(a)?.name}`}
-                        value={dirtyLevels[a.id] ?? a.current}
-                        onChange={(e) => setDirty(a.id, e.target.value, a.current)}
-                      >
-                        <option value="">Not recorded</option>
-                        {data.levels
-                          .filter((l) => l.status === "Active" || l.id === a.current)
-                          .map((l) => (
-                            <option key={l.id} value={l.id}>{l.name}</option>
-                          ))}
-                      </select>
-                      {isDirty && (
-                        <button className="cm-button primary cm-save-inline" onClick={() => saveOne(a)}>
-                          Save
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                  <td>{levelName(a.expected)}</td>
-                </tr>
+                </Fragment>
               );
             })}
             {!total && (
               <tr>
-                <td colSpan={bulk ? 7 : 6} className="cm-empty">
-                  No records match your search.
-                </td>
+                <td colSpan={6} className="cm-empty">No learners match your search.</td>
               </tr>
             )}
           </tbody>
@@ -243,17 +343,43 @@ export function LearnerProgress({
 
       <div className="cm-pagination">
         <span>
-          {total ? `${currentPage * 10 + 1}–${Math.min((currentPage + 1) * 10, total)} of ${total}` : "0"} skill records
+          {total
+            ? `${currentPage * PAGE_SIZE + 1}–${Math.min((currentPage + 1) * PAGE_SIZE, total)} of ${total}`
+            : "0"}{" "}
+          learners
         </span>
         <div>
           <button className="cm-button" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}>
             Previous
           </button>
-          <button className="cm-button" disabled={(currentPage + 1) * 10 >= total} onClick={() => setPage(currentPage + 1)}>
+          <button className="cm-button" disabled={(currentPage + 1) * PAGE_SIZE >= total} onClick={() => setPage(currentPage + 1)}>
             Next
           </button>
         </div>
       </div>
+
+      {confirming && (() => {
+        const a = data.assignments.find((x) => x.id === confirming.id);
+        return (
+          <Dialog open onOpenChange={(open) => { if (!open) setConfirming(null); }}>
+            <DialogContent className="cm-dialog">
+              <DialogHeader>
+                <DialogTitle>Confirm level update</DialogTitle>
+                <DialogDescription>
+                  Update the current level from{" "}
+                  <strong>{levelName(confirming.fromId) || "Not assessed"}</strong> to{" "}
+                  <strong>{levelName(confirming.toId)}</strong> for{" "}
+                  <strong>{skill(a!)?.name}</strong>?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="cm-dialog-actions">
+                <button className="cm-button" onClick={() => setConfirming(null)}>Cancel</button>
+                <button className="cm-button primary" onClick={confirmSave}>Update level</button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </section>
   );
 }

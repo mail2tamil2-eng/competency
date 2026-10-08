@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Search, Pencil, Trash2, Download } from "lucide-react";
+import { toast } from "sonner";
 import { Data, RecordItem, used, download } from "./model";
 import { Editor } from "./Editor";
 import {
@@ -25,6 +26,11 @@ export function LibrarySettings({
     [deleting, setDeleting] = useState<RecordItem | null>(null);
 
   function reorderLevel(fromIdx: number, toPos: number) {
+    const level = data.levels[fromIdx];
+    if (used(data, "levels", level.id)) {
+      toast.error(`${level.name} is in use — its order cannot be changed.`);
+      return;
+    }
     const list = [...data.levels];
     const toIdx = Math.max(0, Math.min(list.length - 1, toPos - 1));
     if (fromIdx === toIdx) return;

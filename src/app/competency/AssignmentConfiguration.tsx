@@ -175,7 +175,30 @@ export function AssignmentConfiguration({
       </section>
 
       <section className="cm-config-section">
-        <h3>3. Enrolment &amp; audience</h3>
+        <h3>3. Learning progression</h3>
+        <label>
+          Progression type
+          <select
+            aria-label="Learning progression type"
+            value={draft.progressionType || "level-wise"}
+            onChange={(e) => onChange({ ...draft, progressionType: e.target.value as Plan["progressionType"] })}
+          >
+            <option value="level-wise">Level-wise — L1 → L2 → L3 within each skill</option>
+            <option value="skill-wise">Skill-wise — Skill 1 → Skill 2 → Skill 3</option>
+            <option value="competency-wise">Competency-wise — Competency 1 → 2 → 3</option>
+            <option value="independent">Independent — no sequence between skills</option>
+          </select>
+          <small>
+            {(!draft.progressionType || draft.progressionType === "level-wise") && "Learner must complete each level before the next level unlocks within the same skill."}
+            {draft.progressionType === "skill-wise" && "Learner must complete a skill before the next skill is unlocked."}
+            {draft.progressionType === "competency-wise" && "Learner must complete each competency before the next competency is unlocked."}
+            {draft.progressionType === "independent" && "All applicable learning is available at once with no prerequisite sequence."}
+          </small>
+        </label>
+      </section>
+
+      <section className="cm-config-section">
+        <h3>4. Enrolment &amp; audience</h3>
         <div className="cm-config-grid">
           <label>
             Enrolment method
@@ -266,7 +289,7 @@ export function AssignmentConfiguration({
       </section>
 
       <section className="cm-config-section">
-        <h3>4. Assignment schedule</h3>
+        <h3>5. Assignment schedule</h3>
         <div className="cm-config-grid cm-schedule-grid">
           <label>
             Start date *
