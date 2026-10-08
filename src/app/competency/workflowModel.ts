@@ -312,6 +312,8 @@ export function updateCurrent(
   const a = data.assignments.find((x) => x.id === assignmentId);
   if (!a) return { data, work };
   const rank = data.levels.findIndex((l) => l.id === levelId);
+  const currentRank = data.levels.findIndex((l) => l.id === a.current);
+  if (currentRank >= 0 && rank <= currentRank) return { data, work };
   const courses = work.courses.filter((c) =>
     c.mappings.some(
       (m) =>

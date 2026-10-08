@@ -1983,11 +1983,7 @@
 
 /* ── Learner accordion (Assignments & progress) ── */
 .cm-learner-row {
-  cursor: pointer;
   transition: background 0.12s;
-}
-.cm-learner-row:hover td {
-  background: #f7f9ff;
 }
 .cm-learner-row-open td {
   background: #f0f6ff;
@@ -2229,6 +2225,16 @@
   font-weight: 650;
   color: #8590aa;
   white-space: nowrap;
+}
+.cm-gap-hint {
+  font-size: 12px;
+  color: #a0a8bc;
+  white-space: nowrap;
+}
+.cm-gap-highest {
+  font-size: 13px;
+  font-weight: 650;
+  color: #2a9d6b;
 }
 
 /* ── My Skill Widget ── */
@@ -2595,4 +2601,289 @@
   .cm-library-explainer p {
     font-size: 14px;
   }
+}
+
+/* ── Learner Progress redesign ── */
+
+/* Skill gap summary in main table */
+.cm-gap-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #526176;
+}
+.cm-gap-summary.below { color: #b45309; font-weight: 600; }
+.cm-gap-summary.met   { color: #2a9d6b; font-weight: 600; }
+.cm-gap-summary-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+}
+.cm-gap-summary-check {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Panel backdrop */
+.cm-lp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.3);
+  z-index: 200;
+}
+
+/* Side panel */
+.cm-lp-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 820px;
+  max-width: 100vw;
+  height: 100vh;
+  background: #fff;
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 40px rgba(15, 23, 42, 0.16);
+  animation: cm-lp-slide-in 0.22s ease-out;
+}
+@keyframes cm-lp-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.cm-lp-panel-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid #e4e8f0;
+}
+.cm-lp-panel-heading h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2235;
+  margin: 0 0 5px;
+  line-height: 1.25;
+}
+.cm-lp-panel-heading span {
+  font-size: 13px;
+  color: #7a8198;
+  line-height: 1.4;
+}
+.cm-lp-close {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e4e8f0;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #526176;
+  padding: 0;
+  transition: background 0.12s;
+}
+.cm-lp-close:hover { background: #f5f6fa; }
+.cm-lp-close:focus-visible { outline: 2px solid #2463d6; outline-offset: 2px; }
+
+.cm-lp-summary {
+  flex-shrink: 0;
+  padding: 10px 24px;
+  font-size: 13px;
+  color: #526176;
+  background: #f7f9ff;
+  border-bottom: 1px solid #e4e8f0;
+}
+
+.cm-lp-toolbar {
+  flex-shrink: 0;
+  padding: 10px 24px;
+  border-bottom: 1px solid #e4e8f0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: #fff;
+}
+.cm-lp-filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  color: #526176;
+  cursor: pointer;
+  user-select: none;
+}
+.cm-lp-filter-toggle input { margin: 0; cursor: pointer; }
+
+.cm-lp-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Skill table inside panel */
+.cm-lp-skill-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.cm-lp-skill-table thead th {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7a8198;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f7f9ff;
+  border-bottom: 1px solid #e4e8f0;
+  white-space: nowrap;
+}
+.cm-lp-skill-table thead th:first-child { padding-left: 24px; }
+.cm-lp-skill-table thead th:last-child  { padding-right: 24px; }
+
+.cm-lp-skill-row td {
+  padding: 14px 14px;
+  border-bottom: 1px solid #f0f2f7;
+  vertical-align: middle;
+  font-size: 14px;
+  color: #2a3348;
+}
+.cm-lp-skill-row td:first-child { padding-left: 24px; }
+.cm-lp-skill-row td:last-child  { padding-right: 24px; }
+.cm-lp-skill-row.open > td { border-bottom: none; }
+
+.cm-lp-skill-name {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2463d6;
+  cursor: pointer;
+  text-align: left;
+  display: block;
+  margin-bottom: 3px;
+  text-underline-offset: 2px;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.12s;
+}
+.cm-lp-skill-name:hover { text-decoration-color: #2463d6; }
+.cm-lp-skill-name:focus-visible {
+  outline: 2px solid #2463d6;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.cm-lp-skill-comp {
+  font-size: 12px;
+  color: #8590aa;
+  display: block;
+}
+
+.cm-lp-cell-level { white-space: nowrap; }
+
+.cm-lp-muted {
+  color: #a0a8bc;
+  font-style: italic;
+}
+
+.cm-lp-gap-status { font-size: 14px; color: #526176; white-space: nowrap; }
+.cm-lp-gap-status.below { color: #b45309; font-weight: 600; }
+.cm-lp-gap-status.met   { color: #2a9d6b; }
+.cm-lp-gap-status.muted { color: #a0a8bc; }
+
+.cm-lp-at-max {
+  font-size: 13px;
+  color: #a0a8bc;
+  white-space: nowrap;
+}
+.cm-lp-update-btn { font-size: 13px; padding: 5px 12px; }
+
+/* Detail expansion row */
+.cm-lp-detail-row > td {
+  padding: 0 24px 16px !important;
+  border-bottom: 1px solid #f0f2f7;
+  background: #fafbff;
+}
+.cm-lp-detail { padding: 12px 0 4px; }
+.cm-lp-detail-meta {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: #526176;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cm-lp-detail-meta > span {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+.cm-lp-detail-meta em {
+  font-style: normal;
+  color: #a0a8bc;
+  font-size: 12px;
+}
+.cm-lp-scale {
+  max-width: 440px;
+  padding-top: 4px;
+}
+
+/* Update popover */
+.cm-update-popover {
+  position: fixed;
+  z-index: 300;
+  background: #fff;
+  border: 1px solid #d8dce8;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.14);
+  padding: 16px 18px;
+  width: 268px;
+}
+.cm-update-popover-skill {
+  font-size: 14px;
+  font-weight: 650;
+  color: #1a2235;
+  margin: 0 0 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cm-update-popover-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.cm-update-popover-label {
+  font-size: 12px;
+  font-weight: 650;
+  color: #8590aa;
+}
+.cm-update-popover-value {
+  font-size: 14px;
+  color: #2a3348;
+}
+.cm-update-popover-hint {
+  font-size: 12px;
+  color: #a0a8bc;
+  margin: 0 0 14px;
+}
+.cm-update-popover-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Mobile: full-screen panel */
+@media (max-width: 860px) {
+  .cm-lp-panel { width: 100vw; }
 }
