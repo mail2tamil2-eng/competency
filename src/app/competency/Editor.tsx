@@ -30,6 +30,7 @@ export function Editor({
           name: "",
           description: "",
           status: "Active",
+          order: kind === "levels" ? data.levels.length + 1 : undefined,
           levels: {},
           categoryId: parent?.categoryId,
           competencyId: parent?.id,
@@ -164,6 +165,24 @@ export function Editor({
                     />
                   </label>
                 ))}
+            </>
+          )}
+          {kind === "levels" && (
+            <>
+              <label>
+                Level order
+                <input
+                  type="number"
+                  min={1}
+                  max={item ? data.levels.length : data.levels.length + 1}
+                  value={draft.order ?? (item ? data.levels.length : data.levels.length + 1)}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value);
+                    setDraft((d) => ({ ...d, order: isNaN(v) ? undefined : v }));
+                  }}
+                />
+              </label>
+              <p className="cm-hint">Defines the proficiency sequence, from lowest to highest.</p>
             </>
           )}
           <label>

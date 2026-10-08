@@ -5,6 +5,7 @@ export type RecordItem = {
   name: string;
   description: string;
   status: "Active" | "Inactive" | "Draft";
+  order?: number;
   categoryId?: string;
   competencyId?: string;
   levels?: Record<string, string>;
@@ -58,6 +59,7 @@ export const seed: Data = {
   levels: ["Beginner", "Intermediate", "Advanced", "Expert"].map((name, i) => ({
     id: "l" + i,
     name,
+    order: i + 1,
     description: [
       "Understands the fundamentals",
       "Applies the skill with guidance",
@@ -172,6 +174,9 @@ export function readData(): Data {
       )
     )
       throw Error();
+    data.levels = (data.levels as RecordItem[])
+      .map((l, i) => (l.order == null ? { ...l, order: i + 1 } : l))
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
     return data;
   } catch {
     return structuredClone(seed);

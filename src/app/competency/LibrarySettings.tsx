@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Plus, Search, Pencil, Trash2, Download } from "lucide-react";
-import { toast } from "sonner";
 import { Data, RecordItem, used, download } from "./model";
 import { Editor } from "./Editor";
 import {
@@ -25,18 +24,13 @@ export function LibrarySettings({
     [editing, setEditing] = useState<{ item?: RecordItem } | null>(null),
     [deleting, setDeleting] = useState<RecordItem | null>(null);
 
-  function reorderLevel(fromIdx: number, toPos: number) {
-    const level = data.levels[fromIdx];
-    if (used(data, "levels", level.id)) {
-      toast.error(`${level.name} is in use — its order cannot be changed.`);
-      return;
-    }
-    const list = [...data.levels];
-    const toIdx = Math.max(0, Math.min(list.length - 1, toPos - 1));
-    if (fromIdx === toIdx) return;
-    const [item] = list.splice(fromIdx, 1);
-    list.splice(toIdx, 0, item);
-    commit({ ...data, levels: list }, "Level order updated");
+  function applyLevelOrder(allLevels: RecordItem[], newItem: RecordItem, isNew: boolean): RecordItem[] {
+    const maxPos = isNew ? allLevels.length + 1 : allLevels.length;
+    const targetPos = Math.max(1, Math.min(maxPos, newItem.order ?? maxPos));
+    const others = isNew ? allLevels : allLevels.filter((l) => l.id !== newItem.id);
+    const sorted = [...others].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    sorted.splice(targetPos - 1, 0, newItem);
+    return sorted.map((l, i) => ({ ...l, order: i + 1 }));
   }
   useEffect(() => {
     setSection(initialSection);
@@ -122,13 +116,11 @@ export function LibrarySettings({
             <tr>
               <th>Name</th>
               <th>Status</th>
-              {section === "levels" && <th>Order</th>}
               <th className="cm-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {records.map((r) => {
-              const globalIdx = section === "levels" ? data.levels.findIndex((l) => l.id === r.id) : -1;
               return (
               <tr key={r.id}>
                 <td>
@@ -140,31 +132,6 @@ export function LibrarySettings({
                     {r.status}
                   </span>
                 </td>
-                {section === "levels" && (
-                  <td>
-                    <input
-                      type="number"
-                      min={1}
-                      max={data.levels.length}
-                      key={globalIdx}
-                      defaultValue={globalIdx + 1}
-                      className="cm-order-input"
-                      aria-label={"Order position for " + r.name}
-                      title="Type a number and press Enter to move"
-                      onBlur={(e) => {
-                        const pos = parseInt(e.target.value);
-                        if (!isNaN(pos)) reorderLevel(globalIdx, pos);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        if (e.key === "Escape") {
-                          (e.target as HTMLInputElement).value = String(globalIdx + 1);
-                          (e.target as HTMLInputElement).blur();
-                        }
-                      }}
-                    />
-                  </td>
-                )}
                 <td>
                   <div className="cm-row-actions">
                     <button
@@ -210,18 +177,17 @@ export function LibrarySettings({
           item={editing.item}
           onClose={() => setEditing(null)}
           onSave={(item) => {
-            if (
-              commit(
-                {
-                  ...data,
-                  [section]: editing.item
-                    ? data[section].map((x) => (x.id === item.id ? item : x))
-                    : [...data[section], item],
-                },
-                "Saved successfully",
-              )
-            )
-              setEditing(null);
+            const isNew = !editing.item;
+            const nextData =
+              section === "levels"
+                ? { ...data, levels: applyLevelOrder(data.levels, item, isNew) }
+                : {
+                    ...data,
+                    [section]: isNew
+                      ? [...data[section], item]
+                      : data[section].map((x) => (x.id === item.id ? item : x)),
+                  };
+            if (commit(nextData, "Saved successfully")) setEditing(null);
           }}
         />
       )}

@@ -1002,14 +1002,6 @@
   color: #9aa3b3;
 }
 /* Level order number input */
-.cm-order-input {
-  width: 56px !important;
-  min-height: 34px !important;
-  padding: 4px 8px !important;
-  text-align: center;
-  font-weight: 700;
-  color: #263047;
-}
 /* Audience chip + dropdown fields */
 .cm-audience-fields {
   display: flex;
