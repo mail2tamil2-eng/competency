@@ -1,17 +1,18 @@
-import { Fragment, useRef, useState, useEffect, useCallback } from "react";
-import { Download, Search, X, CheckCircle2 } from "lucide-react";
+import { Fragment, useState, useEffect } from "react";
+import { Download, Search, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { Data, Assignment, download } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
 
 const personKey = (a: Assignment) => JSON.stringify([a.name, a.department]);
 
 type GapStatus = "below" | "met" | "above" | "not-assessed" | "no-target";
+
 function getGap(data: Data, a: Assignment): { status: GapStatus; gap: number | null } {
   const ci = data.levels.findIndex((l) => l.id === a.current);
   const ei = data.levels.findIndex((l) => l.id === a.expected);
   if (!a.current || ci < 0) return { status: "not-assessed", gap: null };
   if (!a.expected || ei < 0) return { status: "no-target", gap: null };
-  if (ci > ei) return { status: "above", gap: 0 };
+  if (ci > ei) return { status: "above", gap: ci - ei };
   if (ci === ei) return { status: "met", gap: 0 };
   return { status: "below", gap: ei - ci };
 }
@@ -30,32 +31,11 @@ export function LearnerProgress({
 
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
-  const [panelKey, setPanelKey] = useState<string | null>(null);
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [belowOnly, setBelowOnly] = useState<Record<string, boolean>>({});
   const [updateId, setUpdateId] = useState<string | null>(null);
   const [updatePos, setUpdatePos] = useState({ top: 0, right: 0 });
   const [pendingLevel, setPendingLevel] = useState("");
-  const [belowOnly, setBelowOnly] = useState(false);
-
-  const viewBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  const closePanel = useCallback(() => {
-    const key = panelKey;
-    setPanelKey(null);
-    setDetailId(null);
-    setBelowOnly(false);
-    setTimeout(() => key && viewBtnRefs.current[key]?.focus(), 50);
-  }, [panelKey]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (updateId) { setUpdateId(null); return; }
-      if (panelKey) closePanel();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [updateId, panelKey, closePanel]);
 
   useEffect(() => {
     if (!updateId) return;
@@ -65,6 +45,14 @@ export function LearnerProgress({
     };
     document.addEventListener("mousedown", onOutside);
     return () => document.removeEventListener("mousedown", onOutside);
+  }, [updateId]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && updateId) setUpdateId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [updateId]);
 
   // Group assignments by person
@@ -119,6 +107,42 @@ export function LearnerProgress({
       .join(" · ");
   }
 
+  function toggleExpand(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  // Filter and paginate
+  const filteredGroups = [...allGroups.entries()].filter(([, items]) => {
+    const emp = empFor(items[0]);
+    return `${items[0].name} ${items[0].department} ${emp?.role ?? ""} ${emp?.email ?? ""}`
+      .toLowerCase()
+      .includes(query.trim().toLowerCase());
+  });
+  const PAGE_SIZE = 10;
+  const total = filteredGroups.length;
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(total / PAGE_SIZE) - 1));
+  const pageGroups = filteredGroups.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
+  function expandAll() {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      pageGroups.forEach(([key]) => next.add(key));
+      return next;
+    });
+  }
+  function collapseAll() {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      pageGroups.forEach(([key]) => next.delete(key));
+      return next;
+    });
+  }
+
   function openUpdate(e: React.MouseEvent<HTMLButtonElement>, a: Assignment) {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -149,29 +173,13 @@ export function LearnerProgress({
     return "empty";
   }
 
-  // Filter and paginate
-  const filteredGroups = [...allGroups.entries()].filter(([, items]) => {
-    const emp = empFor(items[0]);
-    return `${items[0].name} ${items[0].department} ${emp?.role ?? ""} ${emp?.email ?? ""}`
-      .toLowerCase()
-      .includes(query.trim().toLowerCase());
-  });
-  const PAGE_SIZE = 10;
-  const total = filteredGroups.length;
-  const currentPage = Math.min(page, Math.max(0, Math.ceil(total / PAGE_SIZE) - 1));
-  const pageGroups = filteredGroups.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
-
-  const panelAllItems = panelKey ? allGroups.get(panelKey) || [] : [];
-  const panelItems = panelAllItems.filter(
-    (a) => !belowOnly || getGap(data, a).status === "below",
-  );
-
   return (
     <section className="cm-card">
+      {/* Header */}
       <div className="cm-section-head">
         <div>
           <h2>Assignments &amp; progress</h2>
-          <p>Click "View skills" to review and update a learner's proficiency levels.</p>
+          <p>Expand one or more learners to compare and update proficiency levels.</p>
         </div>
         <div className="cm-actions">
           <button
@@ -191,9 +199,7 @@ export function LearnerProgress({
                     lvlName(a.current), lvlName(a.expected),
                     g.gap != null
                       ? String(g.gap)
-                      : g.status === "not-assessed"
-                        ? "Not assessed"
-                        : "No target",
+                      : g.status === "not-assessed" ? "Not assessed" : "No target",
                     g.status,
                   ];
                 }),
@@ -206,8 +212,9 @@ export function LearnerProgress({
         </div>
       </div>
 
-      <div className="cm-toolbar">
-        <label className="cm-search">
+      {/* Toolbar: search + expand controls */}
+      <div className="cm-toolbar cm-lp-toolbar">
+        <label className="cm-search cm-lp-search-field">
           <Search size={16} />
           <input
             aria-label="Search learners"
@@ -216,52 +223,243 @@ export function LearnerProgress({
             onChange={(e) => { setQuery(e.target.value); setPage(0); }}
           />
         </label>
+        <div className="cm-lp-expand-btns">
+          <button className="cm-button" onClick={expandAll}>Expand all</button>
+          <button className="cm-button" onClick={collapseAll}>Collapse all</button>
+        </div>
       </div>
 
+      {/* Main table */}
       <div className="cm-table-wrap">
         <table>
           <thead>
             <tr>
+              <th className="cm-exp-col"></th>
               <th>Learner</th>
               <th>Role</th>
               <th>Assigned skills</th>
               <th>Skill gaps</th>
-              <th></th>
             </tr>
           </thead>
           <tbody>
             {pageGroups.map(([key, items]) => {
+              const isOpen = expanded.has(key);
               const emp = empFor(items[0]);
               const gap = rowGapSummary(items);
+              const isBelowOnly = belowOnly[key] ?? false;
+              const visibleItems = items.filter(
+                (a) => !isBelowOnly || getGap(data, a).status === "below",
+              );
+
               return (
-                <tr key={key} className="cm-learner-row">
-                  <td>
-                    <strong>{items[0].name}</strong>
-                    <small>{items[0].department}</small>
-                  </td>
-                  <td>{emp?.role || <span className="cm-muted-dash">—</span>}</td>
-                  <td>
-                    <span className="cm-skill-count-badge">
-                      {items.length} skill{items.length !== 1 ? "s" : ""}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`cm-gap-summary${gap.cls ? " " + gap.cls : ""}`}>
-                      {gap.cls === "below" && <span className="cm-gap-summary-dot" aria-hidden />}
-                      {gap.cls === "met" && <span className="cm-gap-summary-check" aria-hidden>✓</span>}
-                      {gap.text}
-                    </span>
-                  </td>
-                  <td className="cm-right">
-                    <button
-                      className="cm-button"
-                      ref={(el) => { viewBtnRefs.current[key] = el; }}
-                      onClick={() => { setPanelKey(key); setDetailId(null); setBelowOnly(false); }}
-                    >
-                      View skills
-                    </button>
-                  </td>
-                </tr>
+                <Fragment key={key}>
+                  {/* Learner summary row */}
+                  <tr className={`cm-learner-row${isOpen ? " open" : ""}`}>
+                    <td className="cm-exp-cell">
+                      <button
+                        className="cm-expand-toggle"
+                        aria-expanded={isOpen}
+                        aria-label={`${isOpen ? "Collapse" : "Expand"} skills for ${items[0].name}`}
+                        onClick={() => toggleExpand(key)}
+                      >
+                        {isOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      </button>
+                    </td>
+                    <td>
+                      <strong>{items[0].name}</strong>
+                      <small>{items[0].department}</small>
+                    </td>
+                    <td>{emp?.role || <span className="cm-muted-dash">—</span>}</td>
+                    <td>
+                      <span className="cm-skill-count-badge">
+                        {items.length} skill{items.length !== 1 ? "s" : ""}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`cm-gap-summary${gap.cls ? " " + gap.cls : ""}`}>
+                        {gap.cls === "below" && <span className="cm-gap-summary-dot" aria-hidden />}
+                        {gap.cls === "met" && <span className="cm-gap-summary-check" aria-hidden>✓</span>}
+                        {gap.text}
+                      </span>
+                    </td>
+                  </tr>
+
+                  {/* Expanded skill table */}
+                  {isOpen && (
+                    <tr className="cm-learner-exp-row">
+                      <td colSpan={5}>
+                        <div className="cm-learner-exp">
+
+                          {/* Summary + filter bar */}
+                          <div className="cm-learner-exp-bar">
+                            <span className="cm-learner-exp-summary">{buildSummary(items)}</span>
+                            <label className="cm-lp-filter-toggle">
+                              <input
+                                type="checkbox"
+                                checked={isBelowOnly}
+                                onChange={(e) =>
+                                  setBelowOnly((prev) => ({ ...prev, [key]: e.target.checked }))
+                                }
+                              />
+                              Below target only
+                            </label>
+                          </div>
+
+                          {/* Skill comparison table */}
+                          <div className="cm-skill-cmp-scroll">
+                            <table className="cm-skill-cmp-table">
+                              <thead>
+                                <tr>
+                                  <th className="cm-sct-skill">Skill</th>
+                                  <th className="cm-sct-cmp">
+                                    <span className="cm-sct-cmp-label">Proficiency comparison</span>
+                                    {n >= 2 && (
+                                      <div
+                                        className="cm-cmp-level-header"
+                                        style={{ "--n": n } as React.CSSProperties}
+                                      >
+                                        {levels.map((l, i) => (
+                                          <span
+                                            key={l.id}
+                                            className={`cm-cmp-lh-label${i === 0 ? " first" : i === n - 1 ? " last" : ""}`}
+                                            style={{ "--i": i } as React.CSSProperties}
+                                          >
+                                            {l.name}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </th>
+                                  <th className="cm-sct-gap">Gap / Status</th>
+                                  <th className="cm-sct-action"></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {visibleItems.map((a) => {
+                                  const g = getGap(data, a);
+                                  const ci = levels.findIndex((l) => l.id === a.current);
+                                  const ei = levels.findIndex((l) => l.id === a.expected);
+                                  const lastActiveIdx = levels.reduce(
+                                    (max, l, i) => (l.status === "Active" ? i : max),
+                                    -1,
+                                  );
+                                  const isAtMax = ci >= 0 && ci >= lastActiveIdx;
+
+                                  let gapText = "—", gapCls = "";
+                                  if (g.status === "below") {
+                                    gapText = `${g.gap} level${g.gap !== 1 ? "s" : ""} below target`;
+                                    gapCls = "below";
+                                  } else if (g.status === "met") {
+                                    gapText = "Target met";
+                                    gapCls = "met";
+                                  } else if (g.status === "above") {
+                                    gapText = `${g.gap} level${g.gap !== 1 ? "s" : ""} above target`;
+                                  } else if (g.status === "not-assessed") {
+                                    gapText = "Not assessed";
+                                    gapCls = "muted";
+                                  } else if (g.status === "no-target") {
+                                    gapText = "Target not set";
+                                    gapCls = "muted";
+                                  }
+
+                                  return (
+                                    <tr key={a.id} className="cm-skill-cmp-row">
+                                      <td className="cm-sct-td-skill">
+                                        <strong>{skillOf(a)?.name || "—"}</strong>
+                                        <span className="cm-lp-skill-comp">{compOf(a)}</span>
+                                      </td>
+                                      <td className="cm-sct-td-cmp">
+                                        <span className="cm-cmp-text">
+                                          Current:{" "}
+                                          <strong>{a.current ? lvlName(a.current) : "—"}</strong>
+                                          {"  ·  "}
+                                          Target:{" "}
+                                          <strong>{a.expected ? lvlName(a.expected) : "—"}</strong>
+                                        </span>
+                                        {n >= 2 && (
+                                          <div
+                                            className="cm-cmp-track"
+                                            style={{
+                                              "--n": n,
+                                              "--cur": ci,
+                                              "--exp": ei,
+                                            } as React.CSSProperties}
+                                          >
+                                            <div className="cm-cmp-rail" />
+                                            {ci >= 0 && <div className="cm-cmp-fill" />}
+                                            {ci >= 0 && ei > ci && <div className="cm-cmp-dash" />}
+                                            {levels.map((level, i) => {
+                                              const dc = dotClass(i, ci, ei);
+                                              return (
+                                                <div
+                                                  key={level.id}
+                                                  className={`cm-cmp-dot ${dc}`}
+                                                  style={{ "--i": i } as React.CSSProperties}
+                                                  title={level.name}
+                                                >
+                                                  {dc === "target" && <span aria-hidden>★</span>}
+                                                  {dc === "achieved" && <CheckCircle2 size={9} />}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+                                      </td>
+                                      <td className="cm-sct-td-gap">
+                                        <span
+                                          className={`cm-lp-gap-status${gapCls ? " " + gapCls : ""}`}
+                                        >
+                                          {gapText}
+                                        </span>
+                                      </td>
+                                      <td className="cm-sct-td-action">
+                                        {isAtMax ? (
+                                          <span className="cm-lp-at-max">Highest level</span>
+                                        ) : (
+                                          <button
+                                            className="cm-button cm-lp-update-btn"
+                                            onClick={(e) => openUpdate(e, a)}
+                                          >
+                                            Update
+                                          </button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                                {visibleItems.length === 0 && (
+                                  <tr>
+                                    <td colSpan={4} className="cm-empty">
+                                      {isBelowOnly
+                                        ? "No skills are currently below target."
+                                        : "No skills assigned."}
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Legend */}
+                          <div className="cm-cmp-legend">
+                            <span className="cm-cmp-legend-item">
+                              <span className="cm-cmp-legend-dot current" />
+                              Current level
+                            </span>
+                            <span className="cm-cmp-legend-item">
+                              <span className="cm-cmp-legend-dot target">★</span>
+                              Target level
+                            </span>
+                            <span className="cm-cmp-legend-item">
+                              <span className="cm-cmp-legend-dash" />
+                              Gap
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               );
             })}
             {!total && (
@@ -273,6 +471,7 @@ export function LearnerProgress({
         </table>
       </div>
 
+      {/* Pagination */}
       <div className="cm-pagination">
         <span>
           {total
@@ -294,203 +493,7 @@ export function LearnerProgress({
         </div>
       </div>
 
-      {/* ── Side panel ── */}
-      {panelKey && (() => {
-        const allItems = allGroups.get(panelKey)!;
-        const emp = empFor(allItems[0]);
-        const summary = buildSummary(allItems);
-        return (
-          <>
-            <div className="cm-lp-overlay" onClick={closePanel} />
-            <aside
-              className="cm-lp-panel"
-              role="dialog"
-              aria-modal="true"
-              aria-label={`Skills for ${allItems[0].name}`}
-            >
-              <div className="cm-lp-panel-header">
-                <div className="cm-lp-panel-heading">
-                  <h2>{allItems[0].name}</h2>
-                  <span>
-                    {[emp?.role, allItems[0].department, emp?.email]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
-                </div>
-                <button className="cm-lp-close" aria-label="Close panel" onClick={closePanel}>
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="cm-lp-summary">{summary}</div>
-
-              <div className="cm-lp-toolbar">
-                <label className="cm-lp-filter-toggle">
-                  <input
-                    type="checkbox"
-                    checked={belowOnly}
-                    onChange={(e) => setBelowOnly(e.target.checked)}
-                  />
-                  Below target only
-                </label>
-              </div>
-
-              <div className="cm-lp-body">
-                <table className="cm-lp-skill-table">
-                  <thead>
-                    <tr>
-                      <th>Skill</th>
-                      <th>Current</th>
-                      <th>Target</th>
-                      <th>Gap</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {panelItems.map((a) => {
-                      const g = getGap(data, a);
-                      const ci = levels.findIndex((l) => l.id === a.current);
-                      const ei = levels.findIndex((l) => l.id === a.expected);
-                      const lastActiveIdx = levels.reduce(
-                        (max, l, i) => (l.status === "Active" ? i : max),
-                        -1,
-                      );
-                      const isAtMax = ci >= 0 && ci >= lastActiveIdx;
-                      const isOpen = detailId === a.id;
-
-                      let gapText = "—";
-                      let gapCls = "";
-                      if (g.status === "below") {
-                        gapText = `${g.gap} level${g.gap !== 1 ? "s" : ""} below`;
-                        gapCls = "below";
-                      } else if (g.status === "met") {
-                        gapText = "Target met";
-                        gapCls = "met";
-                      } else if (g.status === "above") {
-                        gapText = "Above target";
-                      } else if (g.status === "not-assessed") {
-                        gapText = "Not assessed";
-                        gapCls = "muted";
-                      } else if (g.status === "no-target") {
-                        gapText = "No target set";
-                        gapCls = "muted";
-                      }
-
-                      return (
-                        <Fragment key={a.id}>
-                          <tr className={`cm-lp-skill-row${isOpen ? " open" : ""}`}>
-                            <td>
-                              <button
-                                className="cm-lp-skill-name"
-                                onClick={() => setDetailId(isOpen ? null : a.id)}
-                                aria-expanded={isOpen}
-                              >
-                                {skillOf(a)?.name || "—"}
-                              </button>
-                              <span className="cm-lp-skill-comp">{compOf(a)}</span>
-                            </td>
-                            <td className="cm-lp-cell-level">
-                              {a.current
-                                ? lvlName(a.current)
-                                : <span className="cm-lp-muted">Not assessed</span>}
-                            </td>
-                            <td className="cm-lp-cell-level">
-                              {a.expected
-                                ? lvlName(a.expected)
-                                : <span className="cm-lp-muted">Not set</span>}
-                            </td>
-                            <td>
-                              <span className={`cm-lp-gap-status${gapCls ? " " + gapCls : ""}`}>
-                                {gapText}
-                              </span>
-                            </td>
-                            <td className="cm-right">
-                              {isAtMax ? (
-                                <span className="cm-lp-at-max">Highest level</span>
-                              ) : (
-                                <button
-                                  className="cm-button cm-lp-update-btn"
-                                  onClick={(e) => openUpdate(e, a)}
-                                >
-                                  Update
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-
-                          {isOpen && (
-                            <tr className="cm-lp-detail-row">
-                              <td colSpan={5}>
-                                <div className="cm-lp-detail">
-                                  <div className="cm-lp-detail-meta">
-                                    <span>
-                                      <em>Current</em>
-                                      {a.current ? lvlName(a.current) : "Not assessed"}
-                                    </span>
-                                    <span>
-                                      <em>Target</em>
-                                      {a.expected ? lvlName(a.expected) : "Not set"}
-                                    </span>
-                                    <span className={`cm-lp-gap-status${gapCls ? " " + gapCls : ""}`}>
-                                      {gapText}
-                                    </span>
-                                  </div>
-                                  {n >= 2 && (
-                                    <div className="cm-lp-scale">
-                                      <div
-                                        className="cm-gap-track"
-                                        style={{
-                                          "--n": n,
-                                          "--cur": ci,
-                                          "--exp": ei,
-                                        } as React.CSSProperties}
-                                      >
-                                        <div className="cm-gap-rail" />
-                                        {ci >= 0 && <div className="cm-gap-fill" />}
-                                        {ci >= 0 && ei > ci && <div className="cm-gap-dash" />}
-                                        {levels.map((level, i) => {
-                                          const dc = dotClass(i, ci, ei);
-                                          return (
-                                            <div
-                                              key={level.id}
-                                              className={`cm-gap-dot ${dc}${i === 0 ? " first" : i === n - 1 ? " last" : ""}`}
-                                              style={{ "--i": i } as React.CSSProperties}
-                                              title={level.name}
-                                            >
-                                              {dc === "target" && <span aria-hidden>★</span>}
-                                              {dc === "achieved" && <CheckCircle2 size={11} />}
-                                              <span className="cm-gap-label">{level.name}</span>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </Fragment>
-                      );
-                    })}
-                    {panelItems.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="cm-empty">
-                          {belowOnly
-                            ? "No skills are currently below target."
-                            : "No skills assigned."}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </aside>
-          </>
-        );
-      })()}
-
-      {/* ── Update popover ── */}
+      {/* Update popover */}
       {updateId && (() => {
         const a = data.assignments.find((x) => x.id === updateId);
         if (!a) return null;
