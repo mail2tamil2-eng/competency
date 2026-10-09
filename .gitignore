@@ -7,5 +7,7 @@ playwright-report/
 !.env.example
 .vercel/
 artifacts/*.mjs
+ss_*.mjs
+ss_*.png
 
 .vercel

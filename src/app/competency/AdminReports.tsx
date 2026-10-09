@@ -266,7 +266,7 @@ function SkillReport({
           <option>Completed</option>
         </select>
         {hasFilters && <button className="cm-text-button" onClick={clearFilters}>Clear</button>}
-        <button className="cm-button" onClick={exportReport}><Download size={16} /> Export CSV</button>
+        <button className="cm-button" style={{ marginLeft: 'auto' }} onClick={exportReport}><Download size={16} /> Export CSV</button>
       </div>
       <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Skill-wise report table">
         <table>
@@ -419,7 +419,7 @@ function LearnerReport({
             aria-label="Assigned to" />
         </span>
         {hasFilters && <button className="cm-text-button" onClick={clearFilters}>Clear</button>}
-        <button className="cm-button" onClick={exportReport}><Download size={16} /> Export CSV</button>
+        <button className="cm-button" style={{ marginLeft: 'auto' }} onClick={exportReport}><Download size={16} /> Export CSV</button>
       </div>
       <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Learner-wise report table">
         <table>

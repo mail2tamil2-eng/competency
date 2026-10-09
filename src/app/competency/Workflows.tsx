@@ -224,7 +224,7 @@ export function CourseMapping({ data, work, save }: Props) {
                 </p>
               )}
               <label>
-                Course name *
+                <span className="cm-req-label">Course name <span className="req">*</span></span>
                 <input
                   required
                   value={draft.name}
@@ -248,7 +248,7 @@ export function CourseMapping({ data, work, save }: Props) {
                     </select>
                   </label>
                   <label>
-                    Skill *
+                    <span className="cm-req-label">Skill <span className="req">*</span></span>
                     <select
                       required
                       value={m.skillId}
@@ -269,7 +269,7 @@ export function CourseMapping({ data, work, save }: Props) {
                     </select>
                   </label>
                   <label>
-                    Level *
+                    <span className="cm-req-label">Level <span className="req">*</span></span>
                     <select
                       required
                       value={m.levelId}

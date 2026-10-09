@@ -9,6 +9,7 @@ export type RecordItem = {
   categoryId?: string;
   competencyId?: string;
   levels?: Record<string, string>;
+  courses?: Record<string, string>;
 };
 export type Assignment = {
   id: string;

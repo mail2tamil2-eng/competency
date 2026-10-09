@@ -379,7 +379,7 @@ function AssignmentForm({
             </p>
           )}
           <label>
-            Learner name *
+            <span className="cm-req-label">Learner name <span className="req">*</span></span>
             <input
               required
               value={a.name}
@@ -387,7 +387,7 @@ function AssignmentForm({
             />
           </label>
           <label>
-            Department *
+            <span className="cm-req-label">Department <span className="req">*</span></span>
             <input
               required
               value={a.department}
@@ -395,7 +395,7 @@ function AssignmentForm({
             />
           </label>
           <label>
-            Skill *
+            <span className="cm-req-label">Skill <span className="req">*</span></span>
             <select
               required
               value={a.skillId}
@@ -412,7 +412,7 @@ function AssignmentForm({
             </select>
           </label>
           <label>
-            Expected level *
+            <span className="cm-req-label">Expected level <span className="req">*</span></span>
             <select
               required
               value={a.expected}

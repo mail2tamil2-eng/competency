@@ -66,7 +66,7 @@ function SkillInlineEdit({
       )}
       <div className="cm-skill-edit-fields">
         <label>
-          Skill name *
+          <span className="cm-req-label">Skill name <span className="req">*</span></span>
           <input
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
@@ -309,6 +309,7 @@ export function CompetencyLibrary({
       {creating && (
         <LibraryCreate
           data={data}
+          onSaveWork={onSaveWork}
           onClose={() => setCreating(false)}
           onSave={(competency, skills) => {
             if (

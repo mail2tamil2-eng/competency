@@ -155,7 +155,7 @@ export function AssignmentConfiguration({
       <section className="cm-config-section">
         <h3>1. Assignment details</h3>
         <label>
-          Assignment name *
+          <span className="cm-req-label">Assignment name <span className="req">*</span></span>
           <input
             aria-label="Assignment name"
             value={draft.name}
@@ -292,7 +292,7 @@ export function AssignmentConfiguration({
         <h3>5. Assignment schedule</h3>
         <div className="cm-config-grid cm-schedule-grid">
           <label>
-            Start date *
+            <span className="cm-req-label">Start date <span className="req">*</span></span>
             <input
               type="date"
               aria-label="Start date"

@@ -437,9 +437,7 @@ body {
 .cm .cm-growth,
 .cm .cm-setup > span,
 .cm .cm-create-skill-number,
-.cm .cm-steps .active,
 .cm-dialog .cm-create-skill-number,
-.cm-dialog .cm-steps .active,
 .cm-dialog .cm-assignment-count strong,
 .cm-dialog .cm-assignment-group-toggle small,
 .cm-dialog .cm-person-competency summary small {
@@ -663,68 +661,158 @@ body {
 .cm .cm-report-toolbar + .cm-table-controls {
   margin-top: 16px;
 }
+/* ── Unified filter bar ── */
+/* Normalise both toolbar and report-filters contexts to the same 36 px token */
+.cm .cm-toolbar,
 .cm .cm-report-filters {
   display: flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  padding: 16px 0 8px;
+  padding: 14px 0 10px;
+  margin: 0;
 }
-.cm .cm-report-filters label.cm-search {
-  flex: 1;
-  min-width: 180px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  background: #fff;
-  border: 1px solid #d0d8e8;
-  border-radius: 7px;
-  padding: 0 10px;
-  gap: 8px;
-  color: #8899aa;
-  font-weight: 400;
-  font-size: 15px;
-  height: 40px;
-}
-.cm .cm-report-filters label.cm-search input {
-  border: none;
-  background: transparent;
-  padding: 9px 0;
-  font-size: 15px;
-  outline: none;
-  flex: 1;
-  min-width: 0;
-}
+
+/* Reset the 44 px platform override for every form control inside a filter bar */
+.cm .cm-toolbar input:not([type="checkbox"]):not([type="radio"]),
+.cm .cm-toolbar select,
+.cm .cm-report-filters input:not([type="checkbox"]):not([type="radio"]),
 .cm .cm-report-filters select {
-  min-width: 140px;
-  flex-shrink: 0;
+  height: 36px;
+  min-height: 36px;
+  font-size: 14px;
+  line-height: 1.4;
+  border: 1px solid #d1d9e6;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #fff;
+  color: #374151;
   width: auto;
 }
+
+/* Search wrapper — used as <label class="cm-search"> in both contexts */
+.cm .cm-toolbar label.cm-search,
+.cm .cm-report-filters label.cm-search {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  height: 36px;
+  min-height: 36px;
+  border: 1px solid #d1d9e6;
+  border-radius: 8px;
+  padding: 0 10px 0 34px;
+  background: #fff;
+  flex: 1;
+  min-width: 200px;
+  max-width: 380px;
+  font-weight: 400;
+  font-size: 14px;
+  color: #9ca3af;
+}
+.cm .cm-toolbar label.cm-search:focus-within,
+.cm .cm-report-filters label.cm-search:focus-within {
+  border-color: #2d74fa;
+  box-shadow: 0 0 0 3px #2d74fa18;
+}
+.cm .cm-toolbar label.cm-search > svg,
+.cm .cm-report-filters label.cm-search > svg {
+  position: absolute;
+  left: 10px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+.cm .cm-toolbar label.cm-search input,
+.cm .cm-report-filters label.cm-search input {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  height: auto !important;
+  min-height: unset !important;
+  font-size: 14px !important;
+  background: transparent !important;
+  color: #374151 !important;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Custom select — remove native chrome, add unified chevron */
+.cm .cm-toolbar select,
+.cm .cm-report-filters select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+  min-width: 130px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.cm .cm-toolbar select:hover,
+.cm .cm-report-filters select:hover {
+  border-color: #a8b8d0;
+}
+.cm .cm-toolbar select:focus,
+.cm .cm-report-filters select:focus {
+  border-color: #2d74fa;
+  box-shadow: 0 0 0 3px #2d74fa18;
+  outline: none;
+}
+
+/* Date range wrapper */
 .cm .cm-date-range {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #fff;
-  border: 1px solid #d0d8e8;
-  border-radius: 7px;
+  height: 36px;
+  min-height: 36px;
+  border: 1px solid #d1d9e6;
+  border-radius: 8px;
   padding: 0 10px;
-  height: 40px;
+  background: #fff;
   flex-shrink: 0;
+}
+.cm .cm-date-range:focus-within {
+  border-color: #2d74fa;
+  box-shadow: 0 0 0 3px #2d74fa18;
 }
 .cm .cm-date-range input[type="date"] {
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  outline: none;
-  color: #263047;
-  padding: 0;
-  min-width: 118px;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  height: auto !important;
+  min-height: unset !important;
+  font-size: 13px !important;
+  color: #374151 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  width: 128px;
 }
 .cm .cm-date-range-sep {
-  color: #8899aa;
-  font-size: 14px;
-  font-weight: 600;
+  color: #c0cad8;
+  font-size: 13px;
   flex-shrink: 0;
+}
+
+/* Buttons inside filter bars */
+.cm .cm-toolbar .cm-button,
+.cm .cm-report-filters .cm-button {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 8px;
+}
+.cm .cm-toolbar .cm-text-button,
+.cm .cm-report-filters .cm-text-button {
+  height: 36px;
+  min-height: 36px;
+  font-size: 14px;
 }
 .cm .cm-report-footer {
   display: flex;

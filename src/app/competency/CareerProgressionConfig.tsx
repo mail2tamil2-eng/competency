@@ -169,7 +169,7 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
             </DialogHeader>
             {error && <p className="cm-error" role="alert">{error}</p>}
             <label>
-              Current role *
+              <span className="cm-req-label">Current role <span className="req">*</span></span>
               {allRoles.length > 0 ? (
                 <select
                   value={draft.currentRole}
@@ -187,7 +187,7 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
               )}
             </label>
             <label>
-              Next role *
+              <span className="cm-req-label">Next role <span className="req">*</span></span>
               {allRoles.length > 0 ? (
                 <select
                   value={draft.nextRole}
