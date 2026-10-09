@@ -226,8 +226,11 @@ function SkillReport({
 
   const total = rows.length;
   const cp = Math.min(page, Math.max(0, Math.ceil(total / size) - 1));
-
   const hasFilters = !!(filterComp || filterDept || filterRole || filterStatus || query);
+
+  function clearFilters() {
+    setFilterComp(""); setFilterDept(""); setFilterRole(""); setFilterStatus(""); setQuery(""); setPage(0);
+  }
 
   function exportReport() {
     download("skill-wise-report.csv", [
@@ -238,13 +241,7 @@ function SkillReport({
 
   return (
     <div>
-      <div className="cm-section-head">
-        <div>
-          <p>Overview of completion across all enrolled learners per skill.</p>
-        </div>
-        <button className="cm-button" onClick={exportReport}><Download size={16} /> Export CSV</button>
-      </div>
-      <div className="cm-toolbar cm-report-toolbar">
+      <div className="cm-report-filters">
         <label className="cm-search">
           <Search size={16} />
           <input placeholder="Search skill or competency…" value={query}
@@ -268,15 +265,8 @@ function SkillReport({
           <option>Yet to Start</option>
           <option>Completed</option>
         </select>
-        {hasFilters && (
-          <button className="cm-text-button" onClick={() => { setFilterComp(""); setFilterDept(""); setFilterRole(""); setFilterStatus(""); setQuery(""); setPage(0); }}>
-            Clear filters
-          </button>
-        )}
-      </div>
-      <div className="cm-table-controls">
-        <ManagerPageSize value={size} onChange={(v) => { setSize(v); setPage(0); }} />
-        <p className="cm-manager-caption">{total} skills</p>
+        {hasFilters && <button className="cm-text-button" onClick={clearFilters}>Clear</button>}
+        <button className="cm-button" onClick={exportReport}><Download size={16} /> Export CSV</button>
       </div>
       <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Skill-wise report table">
         <table>
@@ -317,7 +307,10 @@ function SkillReport({
           </tbody>
         </table>
       </div>
-      <ManagerPagination total={total} page={cp} pageSize={size} onPage={setPage} />
+      <div className="cm-report-footer">
+        <ManagerPageSize value={size} onChange={(v) => { setSize(v); setPage(0); }} />
+        <ManagerPagination total={total} page={cp} pageSize={size} onPage={setPage} />
+      </div>
     </div>
   );
 }
@@ -387,6 +380,10 @@ function LearnerReport({
   const cp = Math.min(page, Math.max(0, Math.ceil(total / size) - 1));
   const hasFilters = !!(filterManager || filterStatus || filterAssignedFrom || filterAssignedTo || query);
 
+  function clearFilters() {
+    setQuery(""); setFilterManager(""); setFilterStatus(""); setFilterAssignedFrom(""); setFilterAssignedTo(""); setPage(0);
+  }
+
   function exportReport() {
     download("learner-wise-report.csv", [
       ["User ID", "Name", "Email", "Role", "Department", "Reporting Manager", "Assigned Skills", "Skills with Gap", "Completed Skills", "Overall Progress %"],
@@ -396,13 +393,7 @@ function LearnerReport({
 
   return (
     <div>
-      <div className="cm-section-head">
-        <div>
-          <p>Per-learner summary of assigned skills and completion. Click any count to drill down.</p>
-        </div>
-        <button className="cm-button" onClick={exportReport}><Download size={16} /> Export CSV</button>
-      </div>
-      <div className="cm-toolbar cm-report-toolbar">
+      <div className="cm-report-filters">
         <label className="cm-search">
           <Search size={16} />
           <input placeholder="Search name, email or department…" value={query}
@@ -418,23 +409,17 @@ function LearnerReport({
           <option>Yet to Start</option>
           <option>Completed</option>
         </select>
-        <label style={{ fontSize: 13, display: "flex", flexDirection: "column", gap: 2 }}>
-          Assigned from
-          <input type="date" value={filterAssignedFrom} onChange={(e) => { setFilterAssignedFrom(e.target.value); setPage(0); }} />
-        </label>
-        <label style={{ fontSize: 13, display: "flex", flexDirection: "column", gap: 2 }}>
-          Assigned to
-          <input type="date" value={filterAssignedTo} onChange={(e) => { setFilterAssignedTo(e.target.value); setPage(0); }} />
-        </label>
-        {hasFilters && (
-          <button className="cm-text-button" onClick={() => { setQuery(""); setFilterManager(""); setFilterStatus(""); setFilterAssignedFrom(""); setFilterAssignedTo(""); setPage(0); }}>
-            Clear filters
-          </button>
-        )}
-      </div>
-      <div className="cm-table-controls">
-        <ManagerPageSize value={size} onChange={(v) => { setSize(v); setPage(0); }} />
-        <p className="cm-manager-caption">{total} learners</p>
+        <span className="cm-date-range">
+          <input type="date" value={filterAssignedFrom}
+            onChange={(e) => { setFilterAssignedFrom(e.target.value); setPage(0); }}
+            aria-label="Assigned from" />
+          <span className="cm-date-range-sep">–</span>
+          <input type="date" value={filterAssignedTo}
+            onChange={(e) => { setFilterAssignedTo(e.target.value); setPage(0); }}
+            aria-label="Assigned to" />
+        </span>
+        {hasFilters && <button className="cm-text-button" onClick={clearFilters}>Clear</button>}
+        <button className="cm-button" onClick={exportReport}><Download size={16} /> Export CSV</button>
       </div>
       <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Learner-wise report table">
         <table>
@@ -479,7 +464,10 @@ function LearnerReport({
           </tbody>
         </table>
       </div>
-      <ManagerPagination total={total} page={cp} pageSize={size} onPage={setPage} />
+      <div className="cm-report-footer">
+        <ManagerPageSize value={size} onChange={(v) => { setSize(v); setPage(0); }} />
+        <ManagerPagination total={total} page={cp} pageSize={size} onPage={setPage} />
+      </div>
     </div>
   );
 }
@@ -507,18 +495,23 @@ export function Reports({ data, work }: { data: Data; work: WorkflowData }) {
           <h2>Skill progress reports</h2>
         </div>
       </div>
-      <div className="cm-toolbar">
-        <label>
-          Report type
-          <select
-            aria-label="Report type"
-            value={mode}
-            onChange={(e) => { setMode(e.target.value as "skill" | "learner"); setDrill(null); }}
+      <div className="cm-settings-tabs-bar">
+        <div className="cm-settings-tabs" role="group" aria-label="Report type">
+          <button
+            className={mode === "skill" ? "active" : ""}
+            aria-pressed={mode === "skill"}
+            onClick={() => { setMode("skill"); setDrill(null); }}
           >
-            <option value="skill">Skill-wise learner progress</option>
-            <option value="learner">Learner-wise skill report</option>
-          </select>
-        </label>
+            Skill-wise learner progress
+          </button>
+          <button
+            className={mode === "learner" ? "active" : ""}
+            aria-pressed={mode === "learner"}
+            onClick={() => { setMode("learner"); setDrill(null); }}
+          >
+            Learner-wise skill report
+          </button>
+        </div>
       </div>
       {mode === "skill"
         ? <SkillReport data={data} work={work} onDrill={(skillId, filter) => setDrill({ kind: "skill", skillId, filter })} />
