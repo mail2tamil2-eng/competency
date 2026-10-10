@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import {
   Plus,
   Trash2,
@@ -375,25 +375,41 @@ export function LibraryCreate({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="cm-steps">
-          {["Competency", "Skills & courses", "Review"].map((label, i) => (
-            <span
-              key={label}
-              className={[
-                "cm-step-item",
-                step === i + 1 ? "active" : "",
-                step > i + 1 ? "done" : "",
-                i < 2 ? "has-connector" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <span className="cm-step-num">
-                {step > i + 1 ? <CheckCircle2 size={11} /> : i + 1}
-              </span>
-              {label}
-            </span>
-          ))}
+        <nav aria-label="Progress" className="cm-stepper">
+          {(["Competency details", "Skills & courses", "Review"] as const).map((label, i) => {
+            const stepNum = i + 1;
+            const isDone = step > stepNum;
+            const isCurrent = step === stepNum;
+            return (
+              <Fragment key={label}>
+                {i > 0 && (
+                  <div
+                    className={`cm-stepper-line${step > i ? " done" : ""}`}
+                    aria-hidden="true"
+                  />
+                )}
+                <button
+                  type="button"
+                  className={["cm-stepper-step", isCurrent ? "current" : "", isDone ? "done" : ""].filter(Boolean).join(" ")}
+                  aria-current={isCurrent ? "step" : undefined}
+                  aria-label={`Step ${stepNum} of 3: ${label}${isDone ? ", completed" : ""}`}
+                  disabled={!isDone}
+                  onClick={() => { setErrors([]); setStep(stepNum); }}
+                >
+                  <span className="cm-stepper-circle" aria-hidden="true">
+                    {isDone ? <CheckCircle2 size={14} /> : stepNum}
+                  </span>
+                  <span className="cm-stepper-label">{label}</span>
+                </button>
+              </Fragment>
+            );
+          })}
+        </nav>
+        <div className="cm-stepper-mobile" aria-hidden="true">
+          <span>Step {step} of 3 · {["Competency details", "Skills & courses", "Review"][step - 1]}</span>
+          <div className="cm-stepper-mobile-bar">
+            <div className="cm-stepper-mobile-progress" style={{ width: `${(step / 3) * 100}%` }} />
+          </div>
         </div>
 
         <form
