@@ -3066,14 +3066,16 @@
 .cm-cmp-dot.empty    { background: #fff; border: 2px solid #d8dce8; }
 .cm-cmp-dot.beyond   { background: #f0f2f7; border: 1px solid #d8dce8; }
 
-/* Legend below the skill table */
+/* Shared page-level legend */
 .cm-cmp-legend {
   display: flex;
   gap: 18px;
-  padding: 8px 18px 10px 56px;
-  border-top: 1px solid #e8edf8;
-  background: #fafbff;
   flex-wrap: wrap;
+}
+.cm-cmp-legend-shared {
+  padding: 6px 0 12px;
+  border-bottom: 1px solid var(--cm-border);
+  margin-bottom: 2px;
 }
 .cm-cmp-legend-item {
   display: inline-flex;
@@ -3102,6 +3104,5 @@
   .cm-lp-expand-btns { display: none; }
   .cm-skill-cmp-table thead th:first-child,
   .cm-skill-cmp-row td:first-child,
-  .cm-learner-exp-bar,
-  .cm-cmp-legend { padding-left: 16px; }
+  .cm-learner-exp-bar { padding-left: 16px; }
 }

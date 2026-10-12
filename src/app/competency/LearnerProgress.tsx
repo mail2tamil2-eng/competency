@@ -229,6 +229,22 @@ export function LearnerProgress({
         </div>
       </div>
 
+      {/* Shared legend — shown once for the whole page */}
+      <div className="cm-cmp-legend cm-cmp-legend-shared">
+        <span className="cm-cmp-legend-item">
+          <span className="cm-cmp-legend-dot current" />
+          Current level
+        </span>
+        <span className="cm-cmp-legend-item">
+          <span className="cm-cmp-legend-dot target">★</span>
+          Target level
+        </span>
+        <span className="cm-cmp-legend-item">
+          <span className="cm-cmp-legend-dash" />
+          Gap
+        </span>
+      </div>
+
       {/* Main table */}
       <div className="cm-table-wrap">
         <table>
@@ -440,21 +456,6 @@ export function LearnerProgress({
                             </table>
                           </div>
 
-                          {/* Legend */}
-                          <div className="cm-cmp-legend">
-                            <span className="cm-cmp-legend-item">
-                              <span className="cm-cmp-legend-dot current" />
-                              Current level
-                            </span>
-                            <span className="cm-cmp-legend-item">
-                              <span className="cm-cmp-legend-dot target">★</span>
-                              Target level
-                            </span>
-                            <span className="cm-cmp-legend-item">
-                              <span className="cm-cmp-legend-dash" />
-                              Gap
-                            </span>
-                          </div>
                         </div>
                       </td>
                     </tr>
