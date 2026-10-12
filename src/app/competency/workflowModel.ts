@@ -44,6 +44,13 @@ export type RoleProgression = {
   threshold: number;
   status: "Active" | "Inactive";
 };
+export type CareerPath = {
+  id: string;
+  name: string;
+  roles: string[];      // 2–5 ordered roles
+  thresholds: number[]; // thresholds[i] = % at roles[i] needed to advance to roles[i+1]
+  status: "Active" | "Inactive";
+};
 export type Proof = {
   id: string;
   assignmentId: string;
@@ -65,7 +72,22 @@ export type WorkflowData = {
   completed: Record<string, string[]>;
   settings: { admin: boolean; learner: boolean; manager: boolean };
   roleProgressions: RoleProgression[];
+  careerPaths?: CareerPath[];
 };
+/** Derives roleProgressions from careerPaths so Workflows.tsx needs no changes. */
+export function syncProgressions(work: WorkflowData): WorkflowData {
+  const paths = work.careerPaths ?? [];
+  const roleProgressions: RoleProgression[] = paths.flatMap((path) =>
+    path.roles.slice(0, -1).map((role, i) => ({
+      id: `${path.id}-t${i}`,
+      currentRole: role,
+      nextRole: path.roles[i + 1],
+      threshold: path.thresholds[i] ?? 80,
+      status: path.status,
+    }))
+  );
+  return { ...work, roleProgressions };
+}
 export const workflowKey = "axle-competency-workflows-v1";
 export const workflowSeed: WorkflowData = {
   courses: [

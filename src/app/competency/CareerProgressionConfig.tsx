@@ -1,8 +1,7 @@
-import { useState } from "react";
-import { Plus, Pencil, Power, PowerOff, Trash2, TrendingUp } from "lucide-react";
-import { Data } from "./model";
-import { WorkflowData, RoleProgression } from "./workflowModel";
-import { uid } from "./model";
+import { Fragment, useState } from "react";
+import { Plus, Pencil, Power, PowerOff, Trash2, ChevronRight, Route } from "lucide-react";
+import { Data, uid } from "./model";
+import { WorkflowData, CareerPath, syncProgressions } from "./workflowModel";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +10,9 @@ import {
   DialogDescription,
 } from "../components/ui/dialog";
 
+const MAX_ROLES = 5;
+const MIN_ROLES = 2;
+
 type Props = {
   data: Data;
   work: WorkflowData;
@@ -18,223 +20,309 @@ type Props = {
 };
 
 export function CareerProgressionConfig({ data, work, save }: Props) {
-  const [draft, setDraft] = useState<RoleProgression | null>(null);
-  const [error, setError] = useState("");
-  const [deleting, setDeleting] = useState<RoleProgression | null>(null);
+  const [draft, setDraft] = useState<CareerPath | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [deleting, setDeleting] = useState<CareerPath | null>(null);
 
   const allRoles = [...new Set(work.employees.map((e) => e.role).filter(Boolean))].sort();
+  const paths = work.careerPaths ?? [];
 
-  function begin(rp?: RoleProgression) {
-    setError("");
+  function begin(path?: CareerPath) {
+    setErrors([]);
     setDraft(
-      rp
-        ? structuredClone(rp)
-        : { id: uid(), currentRole: "", nextRole: "", threshold: 80, status: "Active" },
+      path
+        ? structuredClone(path)
+        : { id: uid(), name: "", roles: ["", ""], thresholds: [80], status: "Active" },
     );
   }
 
-  function saveConfig() {
+  function updateRole(i: number, value: string) {
     if (!draft) return;
-    if (!draft.currentRole.trim() || !draft.nextRole.trim()) {
-      setError("Both Current Role and Next Role are required.");
-      return;
+    const roles = [...draft.roles];
+    roles[i] = value;
+    setDraft({ ...draft, roles });
+    setErrors([]);
+  }
+
+  function updateThreshold(i: number, raw: string) {
+    if (!draft) return;
+    const v = Math.max(1, Math.min(100, parseInt(raw, 10) || 1));
+    const thresholds = [...draft.thresholds];
+    thresholds[i] = v;
+    setDraft({ ...draft, thresholds });
+  }
+
+  function addRole() {
+    if (!draft || draft.roles.length >= MAX_ROLES) return;
+    setDraft({ ...draft, roles: [...draft.roles, ""], thresholds: [...draft.thresholds, 80] });
+  }
+
+  function removeRole(i: number) {
+    if (!draft || draft.roles.length <= MIN_ROLES) return;
+    const roles = draft.roles.filter((_, idx) => idx !== i);
+    // Remove the threshold leading INTO the removed role (index i-1); for i=0 remove index 0.
+    const removeIdx = i === 0 ? 0 : i - 1;
+    const thresholds = draft.thresholds.filter((_, j) => j !== removeIdx);
+    setDraft({ ...draft, roles, thresholds });
+    setErrors([]);
+  }
+
+  function validate(): string[] {
+    if (!draft) return [];
+    const errs: string[] = [];
+    if (!draft.name.trim()) errs.push("Career path name is required.");
+    if (draft.roles.some((r) => !r.trim())) errs.push("All roles must be selected.");
+    const seen = new Set<string>();
+    for (const r of draft.roles) {
+      if (r && seen.has(r)) { errs.push("Each role can only appear once in a path."); break; }
+      if (r) seen.add(r);
     }
-    if (draft.currentRole === draft.nextRole) {
-      setError("Current Role and Next Role must be different.");
-      return;
+    for (let i = 0; i < draft.thresholds.length; i++) {
+      const t = draft.thresholds[i];
+      if (!t || t < 1 || t > 100)
+        errs.push(`Threshold for step ${i + 1}→${i + 2} must be between 1 and 100.`);
     }
-    if (draft.threshold < 0 || draft.threshold > 100) {
-      setError("Threshold must be between 0 and 100.");
-      return;
-    }
-    const existing = (work.roleProgressions || []).some(
-      (r) => r.id !== draft.id && r.currentRole === draft.currentRole && r.nextRole === draft.nextRole,
+    const isDup = paths.some(
+      (p) =>
+        p.id !== draft.id &&
+        p.roles.length === draft.roles.length &&
+        p.roles.every((r, i) => r === draft.roles[i]),
     );
-    if (existing) {
-      setError(`A progression from "${draft.currentRole}" to "${draft.nextRole}" already exists.`);
-      return;
-    }
-    const list = work.roleProgressions || [];
-    const isNew = !list.some((r) => r.id === draft.id);
-    if (
-      save(
-        data,
-        { ...work, roleProgressions: isNew ? [...list, draft] : list.map((r) => (r.id === draft.id ? draft : r)) },
-        isNew ? "Role progression created" : "Role progression updated",
-      )
-    ) {
+    if (isDup) errs.push("A career path with this exact role sequence already exists.");
+    return errs;
+  }
+
+  function savePath() {
+    if (!draft) return;
+    const errs = validate();
+    setErrors(errs);
+    if (errs.length) return;
+    const clean: CareerPath = { ...draft, name: draft.name.trim() };
+    const isNew = !paths.some((p) => p.id === draft.id);
+    const updatedPaths = isNew
+      ? [...paths, clean]
+      : paths.map((p) => (p.id === draft.id ? clean : p));
+    const updatedWork = syncProgressions({ ...work, careerPaths: updatedPaths });
+    if (save(data, updatedWork, isNew ? "Career path created" : "Career path updated"))
       setDraft(null);
-    }
   }
 
-  function toggleStatus(rp: RoleProgression) {
-    save(
-      data,
-      { ...work, roleProgressions: (work.roleProgressions || []).map((r) => r.id === rp.id ? { ...r, status: r.status === "Active" ? "Inactive" : "Active" } : r) },
-      "Role progression status updated",
+  function toggleStatus(path: CareerPath) {
+    const updatedPaths = paths.map((p) =>
+      p.id === path.id
+        ? { ...p, status: p.status === "Active" ? ("Inactive" as const) : ("Active" as const) }
+        : p,
     );
+    save(data, syncProgressions({ ...work, careerPaths: updatedPaths }), "Career path status updated");
   }
 
-  function deleteConfig() {
+  function confirmDelete() {
     if (!deleting) return;
-    save(
-      data,
-      { ...work, roleProgressions: (work.roleProgressions || []).filter((r) => r.id !== deleting.id) },
-      "Role progression deleted",
-    );
+    const updatedPaths = paths.filter((p) => p.id !== deleting.id);
+    save(data, syncProgressions({ ...work, careerPaths: updatedPaths }), "Career path deleted");
     setDeleting(null);
   }
-
-  const progressions = work.roleProgressions || [];
 
   return (
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
           <h2>Role progression</h2>
-          <p>Configure current → next role relationships and the completion threshold that triggers career recommendations.</p>
+          <p>Configure career paths and progression thresholds for employee development.</p>
         </div>
         <button className="cm-button primary" onClick={() => begin()}>
-          <Plus size={16} /> Add progression
+          <Plus size={16} /> Create career path
         </button>
       </div>
 
-      {progressions.length === 0 ? (
+      {paths.length === 0 ? (
         <div className="cm-empty">
-          <TrendingUp size={28} />
-          <h3>No progressions configured</h3>
-          <p>Define role progressions so learners can see their career path and recommended next-role skills.</p>
-          <button className="cm-button" onClick={() => begin()}>Add your first progression</button>
+          <Route size={28} />
+          <h3>No career paths configured</h3>
+          <p>Create a career path to define role progressions and help learners plan their growth.</p>
+          <button className="cm-button" onClick={() => begin()}>
+            Create your first career path
+          </button>
         </div>
       ) : (
-        <div className="cm-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Current role</th>
-                <th>Next role</th>
-                <th>Threshold</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {progressions.map((rp) => (
-                <tr key={rp.id}>
-                  <td><strong>{rp.currentRole}</strong></td>
-                  <td>{rp.nextRole}</td>
-                  <td>{rp.threshold}% current role completion</td>
-                  <td><span className={`cm-badge ${rp.status === "Active" ? "active" : ""}`}>{rp.status}</span></td>
-                  <td>
-                    <div className="cm-row-actions">
-                      <button
-                        className="cm-icon-button"
-                        aria-label={`Edit ${rp.currentRole} → ${rp.nextRole}`}
-                        onClick={() => begin(rp)}
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        className="cm-icon-button"
-                        aria-label={(rp.status === "Active" ? "Deactivate " : "Activate ") + rp.currentRole}
-                        title={rp.status === "Active" ? "Deactivate" : "Activate"}
-                        onClick={() => toggleStatus(rp)}
-                      >
-                        {rp.status === "Active" ? <PowerOff size={15} /> : <Power size={15} />}
-                      </button>
-                      <button
-                        className="cm-icon-button danger"
-                        aria-label={`Delete ${rp.currentRole} → ${rp.nextRole}`}
-                        onClick={() => setDeleting(rp)}
-                      >
-                        <Trash2 size={15} />
-                      </button>
+        <div className="cm-cp-list">
+          {paths.map((path) => (
+            <div
+              key={path.id}
+              className={`cm-cp-card${path.status === "Inactive" ? " inactive" : ""}`}
+            >
+              <div className="cm-cp-card-header">
+                <div className="cm-cp-card-meta">
+                  <strong className="cm-cp-card-name">{path.name}</strong>
+                  <span className={`cm-badge${path.status === "Active" ? " active" : ""}`}>
+                    {path.status}
+                  </span>
+                </div>
+                <div className="cm-row-actions">
+                  <button
+                    className="cm-icon-button"
+                    aria-label={`Edit ${path.name}`}
+                    onClick={() => begin(path)}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    className="cm-icon-button"
+                    title={path.status === "Active" ? "Deactivate" : "Activate"}
+                    aria-label={(path.status === "Active" ? "Deactivate " : "Activate ") + path.name}
+                    onClick={() => toggleStatus(path)}
+                  >
+                    {path.status === "Active" ? <PowerOff size={15} /> : <Power size={15} />}
+                  </button>
+                  <button
+                    className="cm-icon-button danger"
+                    aria-label={`Delete ${path.name}`}
+                    onClick={() => setDeleting(path)}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
+              <div className="cm-cp-chain">
+                {path.roles.map((role, i) => (
+                  <Fragment key={i}>
+                    <div className="cm-cp-role">
+                      <span className="cm-cp-role-num">{i + 1}</span>
+                      <span className="cm-cp-role-name">{role}</span>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    {i < path.roles.length - 1 && (
+                      <div className="cm-cp-connector" aria-hidden="true">
+                        <ChevronRight size={13} className="cm-cp-arrow" />
+                        <span className="cm-cp-pct">{path.thresholds[i]}%</span>
+                      </div>
+                    )}
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
+      {/* Create / Edit modal */}
       {draft && (
         <Dialog open onOpenChange={(open) => { if (!open) setDraft(null); }}>
-          <DialogContent className="cm-dialog">
+          <DialogContent className="cm-dialog cm-cp-dialog">
             <DialogHeader>
-              <DialogTitle>{(work.roleProgressions || []).some((r) => r.id === draft.id) ? "Edit" : "Add"} role progression</DialogTitle>
+              <DialogTitle>
+                {paths.some((p) => p.id === draft.id) ? "Edit" : "Create"} career path
+              </DialogTitle>
               <DialogDescription>
-                Define the current role, the next role a learner progresses toward, and the completion threshold that triggers recommendations.
+                Define the role sequence and the completion threshold required for each transition.
               </DialogDescription>
             </DialogHeader>
-            {error && <p className="cm-error" role="alert">{error}</p>}
+
+            {errors.length > 0 && (
+              <div className="cm-error" role="alert">
+                {errors.map((e) => <div key={e}>{e}</div>)}
+              </div>
+            )}
+
             <label>
-              <span className="cm-req-label">Current role <span className="req">*</span></span>
-              {allRoles.length > 0 ? (
-                <select
-                  value={draft.currentRole}
-                  onChange={(e) => { setDraft({ ...draft, currentRole: e.target.value }); setError(""); }}
-                >
-                  <option value="">Select current role</option>
-                  {allRoles.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-              ) : (
-                <input
-                  placeholder="e.g. Junior Developer"
-                  value={draft.currentRole}
-                  onChange={(e) => { setDraft({ ...draft, currentRole: e.target.value }); setError(""); }}
-                />
-              )}
-            </label>
-            <label>
-              <span className="cm-req-label">Next role <span className="req">*</span></span>
-              {allRoles.length > 0 ? (
-                <select
-                  value={draft.nextRole}
-                  onChange={(e) => { setDraft({ ...draft, nextRole: e.target.value }); setError(""); }}
-                >
-                  <option value="">Select next role</option>
-                  {allRoles.filter((r) => r !== draft.currentRole).map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-              ) : (
-                <input
-                  placeholder="e.g. Senior Developer"
-                  value={draft.nextRole}
-                  onChange={(e) => { setDraft({ ...draft, nextRole: e.target.value }); setError(""); }}
-                />
-              )}
-            </label>
-            <label>
-              Progression threshold (%)
+              <span className="cm-req-label">
+                Career path name <span className="req">*</span>
+              </span>
               <input
-                type="number"
-                min={0}
-                max={100}
-                value={draft.threshold}
-                onChange={(e) => setDraft({ ...draft, threshold: Math.max(0, Math.min(100, Number(e.target.value))) })}
+                autoFocus
+                value={draft.name}
+                placeholder="e.g. Project Management Track"
+                onChange={(e) => { setDraft({ ...draft, name: e.target.value }); setErrors([]); }}
               />
-              <small>Minimum current-role completion % before next-role learning is recommended.</small>
             </label>
+
+            <div className="cm-cp-builder">
+              <p className="cm-cp-builder-label">Role sequence</p>
+              {draft.roles.map((role, i) => (
+                <Fragment key={i}>
+                  <div className="cm-cp-builder-role-row">
+                    <span className="cm-cp-builder-num">{i + 1}</span>
+                    <select
+                      aria-label={`Role ${i + 1}`}
+                      value={role}
+                      onChange={(e) => updateRole(i, e.target.value)}
+                    >
+                      <option value="">Select role</option>
+                      {allRoles.map((r) => (
+                        <option
+                          key={r}
+                          value={r}
+                          disabled={draft.roles.some((x, j) => j !== i && x === r)}
+                        >
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                    {draft.roles.length > MIN_ROLES && (
+                      <button
+                        type="button"
+                        className="cm-icon-button"
+                        aria-label={`Remove role ${i + 1}`}
+                        onClick={() => removeRole(i)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                  {i < draft.roles.length - 1 && (
+                    <div className="cm-cp-builder-transition">
+                      <span className="cm-cp-builder-line" aria-hidden="true" />
+                      <div className="cm-cp-builder-threshold">
+                        <label className="cm-cp-threshold-label">
+                          <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            aria-label={`Threshold from role ${i + 1} to role ${i + 2}`}
+                            value={draft.thresholds[i]}
+                            onChange={(e) => updateThreshold(i, e.target.value)}
+                          />
+                          <span>% completion required to advance</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </Fragment>
+              ))}
+
+              {draft.roles.length < MAX_ROLES ? (
+                <button type="button" className="cm-cp-add-role-btn" onClick={addRole}>
+                  <Plus size={13} /> Add next role
+                </button>
+              ) : (
+                <p className="cm-field-hint" style={{ marginTop: 8 }}>
+                  Maximum of {MAX_ROLES} roles reached.
+                </p>
+              )}
+            </div>
+
             <div className="cm-dialog-actions">
               <button className="cm-button" onClick={() => setDraft(null)}>Cancel</button>
-              <button className="cm-button primary" onClick={saveConfig}>Save progression</button>
+              <button className="cm-button primary" onClick={savePath}>Save career path</button>
             </div>
           </DialogContent>
         </Dialog>
       )}
 
+      {/* Delete confirmation */}
       {deleting && (
         <Dialog open onOpenChange={(open) => { if (!open) setDeleting(null); }}>
           <DialogContent className="cm-dialog">
             <DialogHeader>
-              <DialogTitle>Delete progression?</DialogTitle>
+              <DialogTitle>Delete career path?</DialogTitle>
               <DialogDescription>
-                Remove the {deleting.currentRole} → {deleting.nextRole} progression? Career recommendations based on this configuration will no longer be generated.
+                Remove &ldquo;{deleting.name}&rdquo;? This removes{" "}
+                {deleting.roles.length - 1} transition
+                {deleting.roles.length > 2 ? "s" : ""} from progression recommendations and cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <div className="cm-dialog-actions">
               <button className="cm-button" onClick={() => setDeleting(null)}>Keep it</button>
-              <button className="cm-button destructive" onClick={deleteConfig}>Delete</button>
+              <button className="cm-button destructive" onClick={confirmDelete}>Delete</button>
             </div>
           </DialogContent>
         </Dialog>

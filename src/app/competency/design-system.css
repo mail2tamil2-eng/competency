@@ -1494,3 +1494,192 @@
   background: var(--cm-primary);
   border-radius: 999px;
 }
+
+/* ── Career path config cards ────────────────────────────────────────────── */
+.cm-cp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cm-cp-card {
+  border: 1px solid var(--cm-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: white;
+}
+.cm-cp-card.inactive {
+  opacity: 0.6;
+}
+.cm-cp-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.cm-cp-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.cm-cp-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+.cm-cp-chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  row-gap: 8px;
+}
+.cm-cp-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f4ff;
+  border: 1px solid #d4e0ff;
+  border-radius: 20px;
+  padding: 4px 12px 4px 6px;
+  white-space: nowrap;
+}
+.cm-cp-role-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #2463d6;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cm-cp-role-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e3a5f;
+}
+.cm-cp-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 4px;
+  gap: 0;
+}
+.cm-cp-arrow {
+  color: #9ca3af;
+}
+.cm-cp-pct {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* ── Career path builder (modal) ─────────────────────────────────────────── */
+.cm-cp-dialog {
+  max-width: 500px !important;
+}
+.cm-cp-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--cm-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fafbff;
+}
+.cm-cp-builder-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cm-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.cm-cp-builder-role-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cm-cp-builder-role-row select {
+  flex: 1;
+  min-width: 0;
+}
+.cm-cp-builder-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #2463d6;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cm-cp-builder-transition {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 2px 0;
+}
+.cm-cp-builder-line {
+  display: block;
+  width: 2px;
+  background: #d4e0ff;
+  margin: 0 11px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+.cm-cp-builder-threshold {
+  flex: 1;
+  padding: 6px 0;
+}
+.cm-cp-threshold-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #374151;
+  font-size: 13px;
+  cursor: auto;
+}
+.cm-cp-threshold-label input[type="number"] {
+  width: 60px;
+  text-align: center;
+  padding: 4px 6px;
+  flex-shrink: 0;
+}
+.cm-cp-threshold-label span {
+  color: var(--cm-muted);
+  font-size: 12px;
+}
+.cm-cp-add-role-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 14px;
+  background: white;
+  border: 1.5px dashed #d1d5db;
+  border-radius: 6px;
+  color: #2463d6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.12s, border-color 0.12s;
+}
+.cm-cp-add-role-btn:hover {
+  background: #f0f4ff;
+  border-color: #2463d6;
+}
+@media (max-width: 600px) {
+  .cm-cp-chain { row-gap: 6px; }
+  .cm-cp-role-name { font-size: 12px; }
+}
