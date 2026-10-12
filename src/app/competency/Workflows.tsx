@@ -13,8 +13,6 @@ import {
   ArrowRight,
   Pencil,
   Copy,
-  Power,
-  PowerOff,
   Trash2,
   Layers,
   AlertTriangle,
@@ -588,7 +586,9 @@ export function RoleMapping({ data, work, save }: Props) {
                         <Copy size={15} />
                       </button>
                       <button
-                        className="cm-icon-button"
+                        role="switch"
+                        aria-checked={p.status === "Active"}
+                        className="cm-toggle-switch"
                         disabled={started(p)}
                         title={
                           started(p)
@@ -611,7 +611,7 @@ export function RoleMapping({ data, work, save }: Props) {
                           )
                         }
                       >
-                        {p.status === "Active" ? <PowerOff size={15} /> : <Power size={15} />}
+                        <span className="cm-toggle-thumb" />
                       </button>
                     </div>
                   </td>

@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react";
-import { Plus, Pencil, Power, PowerOff, Trash2, ChevronRight, Route } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronRight, Route } from "lucide-react";
 import { Data, uid } from "./model";
 import { WorkflowData, CareerPath, syncProgressions } from "./workflowModel";
 import {
@@ -167,12 +167,14 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
                     <Pencil size={15} />
                   </button>
                   <button
-                    className="cm-icon-button"
+                    role="switch"
+                    aria-checked={path.status === "Active"}
+                    className="cm-toggle-switch"
                     title={path.status === "Active" ? "Deactivate" : "Activate"}
                     aria-label={(path.status === "Active" ? "Deactivate " : "Activate ") + path.name}
                     onClick={() => toggleStatus(path)}
                   >
-                    {path.status === "Active" ? <PowerOff size={15} /> : <Power size={15} />}
+                    <span className="cm-toggle-thumb" />
                   </button>
                   <button
                     className="cm-icon-button danger"
