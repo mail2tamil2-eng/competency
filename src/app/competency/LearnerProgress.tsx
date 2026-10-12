@@ -212,7 +212,7 @@ export function LearnerProgress({
         </div>
       </div>
 
-      {/* Toolbar: search + expand controls */}
+      {/* Toolbar: search + legend + expand controls */}
       <div className="cm-toolbar cm-lp-toolbar">
         <label className="cm-search cm-lp-search-field">
           <Search size={16} />
@@ -223,26 +223,24 @@ export function LearnerProgress({
             onChange={(e) => { setQuery(e.target.value); setPage(0); }}
           />
         </label>
+        <div className="cm-cmp-legend cm-cmp-legend-inline">
+          <span className="cm-cmp-legend-item">
+            <span className="cm-cmp-legend-dot current" />
+            Current level
+          </span>
+          <span className="cm-cmp-legend-item">
+            <span className="cm-cmp-legend-dot target">★</span>
+            Target level
+          </span>
+          <span className="cm-cmp-legend-item">
+            <span className="cm-cmp-legend-dash" />
+            Gap
+          </span>
+        </div>
         <div className="cm-lp-expand-btns">
           <button className="cm-button" onClick={expandAll}>Expand all</button>
           <button className="cm-button" onClick={collapseAll}>Collapse all</button>
         </div>
-      </div>
-
-      {/* Shared legend — shown once for the whole page */}
-      <div className="cm-cmp-legend cm-cmp-legend-shared">
-        <span className="cm-cmp-legend-item">
-          <span className="cm-cmp-legend-dot current" />
-          Current level
-        </span>
-        <span className="cm-cmp-legend-item">
-          <span className="cm-cmp-legend-dot target">★</span>
-          Target level
-        </span>
-        <span className="cm-cmp-legend-item">
-          <span className="cm-cmp-legend-dash" />
-          Gap
-        </span>
       </div>
 
       {/* Main table */}

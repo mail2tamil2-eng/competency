@@ -3066,16 +3066,14 @@
 .cm-cmp-dot.empty    { background: #fff; border: 2px solid #d8dce8; }
 .cm-cmp-dot.beyond   { background: #f0f2f7; border: 1px solid #d8dce8; }
 
-/* Shared page-level legend */
+/* Legend */
 .cm-cmp-legend {
   display: flex;
   gap: 18px;
   flex-wrap: wrap;
 }
-.cm-cmp-legend-shared {
-  padding: 6px 0 12px;
-  border-bottom: 1px solid var(--cm-border);
-  margin-bottom: 2px;
+.cm-cmp-legend-inline {
+  margin: 0 auto;
 }
 .cm-cmp-legend-item {
   display: inline-flex;
