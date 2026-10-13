@@ -2521,77 +2521,298 @@
   color: #263047;
   font-weight: 500;
 }
-/* ── Learner role progression panel ─────────────────────────────────────── */
-.cm-learner-progression {
+/* ── My Career Path panel ────────────────────────────────────────────────── */
+.cm-lp-career {
   margin: 16px 0;
-}
-.cm-learner-progression-header {
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cm-lp-panel {
+  border: 1px solid #bed5ff;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+/* Panel header */
+.cm-lp-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px 14px;
+  background: linear-gradient(110deg, #f0f6ff 0%, #eaf2ff 100%);
+  border-bottom: 1px solid #d4e4ff;
+}
+.cm-lp-panel-icon {
+  color: #2463d6;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.cm-lp-panel-head strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e3a5f;
+  display: block;
+}
+.cm-lp-panel-head span {
+  font-size: 13px;
+  color: #526176;
+  margin-top: 2px;
+  display: block;
+}
+/* Hero 3-col */
+.cm-lp-hero {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 7px;
-  font-size: 12px;
+  gap: 20px;
+  padding: 20px 24px;
+  background: linear-gradient(110deg, #f7faff 0%, #f0f6ff 100%);
+  border-bottom: 1px solid #e0ebff;
+}
+.cm-lp-hero-role {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.cm-lp-hero-role:last-child {
+  align-items: center;
+}
+.cm-lp-hero-role-label {
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  color: #7a8198;
-  margin-bottom: 10px;
+  color: #8a96aa;
 }
-.cm-learner-progression-header svg {
-  color: #2463d6;
-}
-.cm-learner-cp-card {
-  border: 1px solid #bed5ff;
-  border-radius: 12px;
-  background: linear-gradient(110deg, #f0f6ff 0%, #edf4ff 100%);
-  padding: 16px 18px;
-  margin-bottom: 10px;
-}
-.cm-learner-cp-card:last-child {
-  margin-bottom: 0;
-}
-.cm-learner-cp-name {
+.cm-lp-hero-role-chip {
   font-size: 14px;
   font-weight: 650;
+  border-radius: 20px;
+  padding: 6px 16px;
+  white-space: nowrap;
+}
+.cm-lp-hero-role-chip.current {
+  background: #2463d6;
+  color: #fff;
+}
+.cm-lp-hero-role-chip.next {
+  background: #f0f4ff;
+  border: 1.5px solid #c0d0f8;
   color: #1e3a5f;
+}
+.cm-lp-hero-role-chip.next.ready {
+  background: #e6f7ee;
+  border-color: #86d4a8;
+  color: #1a6b3d;
+}
+/* Donut */
+.cm-lp-hero-donut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.cm-lp-hero-donut svg {
+  width: 80px;
+  height: 80px;
+}
+.cm-lp-donut-txt {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #1e3a5f;
+  font-family: inherit;
+}
+.cm-lp-hero-donut > span {
+  font-size: 11px;
+  color: #7a8198;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-align: center;
+}
+/* Chain */
+.cm-lp-chain-wrap {
+  padding: 14px 20px;
+  border-bottom: 1px solid #e8f0ff;
+  background: #f8fbff;
+}
+.cm-lp-chain-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #8a96aa;
+  margin-bottom: 10px;
+}
+/* Phase cards */
+.cm-lp-phase {
+  padding: 18px 20px;
+  border-bottom: 1px solid #eef2ff;
+}
+.cm-lp-phase:last-child {
+  border-bottom: none;
+}
+.cm-lp-phase.locked {
+  background: #fafafa;
+}
+.cm-lp-phase-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
 }
-.cm-learner-cp-progress {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid #d4e4ff;
+.cm-lp-phase-num {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: #2463d6;
+  color: #fff;
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  margin-top: 2px;
+  flex-shrink: 0;
 }
-.cm-learner-cp-progress-row {
+.cm-lp-phase.locked .cm-lp-phase-num {
+  background: #9ca3af;
+}
+.cm-lp-phase-head > div {
+  flex: 1;
+  min-width: 0;
+}
+.cm-lp-phase-head > div > strong {
+  font-size: 15px;
+  font-weight: 650;
+  color: #1e3a5f;
+  display: block;
+}
+.cm-lp-phase.locked .cm-lp-phase-head > div > strong {
+  color: #6b7280;
+}
+.cm-lp-phase-head > div > span {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+  display: block;
+}
+/* Phase progress bar */
+.cm-lp-phase-bar-wrap {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  color: #526176;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
-.cm-learner-cp-progress-row strong {
-  color: #1e3a5f;
-}
-.cm-learner-cp-bar {
+.cm-lp-phase-bar {
+  flex: 1;
   height: 8px;
   border-radius: 99px;
-  background: #dce8ff;
+  background: #e5eaff;
   overflow: hidden;
-  margin-bottom: 6px;
 }
-.cm-learner-cp-bar > div {
+.cm-lp-phase-bar > div {
+  height: 100%;
+  border-radius: 99px;
+  background: #2463d6;
+  transition: width 0.4s ease;
+}
+.cm-lp-phase-bar > div.done {
+  background: #1ca85e;
+}
+.cm-lp-phase-bar-wrap > span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2463d6;
+  min-width: 36px;
+  text-align: right;
+}
+/* Competency sub-group */
+.cm-lp-comp-group {
+  margin-bottom: 12px;
+}
+.cm-lp-comp-group:last-child {
+  margin-bottom: 0;
+}
+.cm-lp-comp-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #8a96aa;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #eef2ff;
+}
+/* Skill rows */
+.cm-lp-skill-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f5ff;
+}
+.cm-lp-skill-row:last-child {
+  border-bottom: none;
+}
+.cm-lp-skill-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #263047;
+  min-width: 130px;
+  flex-shrink: 0;
+}
+.cm-lp-skill-bar-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cm-lp-skill-bar {
+  flex: 1;
+  height: 7px;
+  border-radius: 99px;
+  background: #e5eaff;
+  overflow: hidden;
+}
+.cm-lp-skill-bar > div {
   height: 100%;
   border-radius: 99px;
   background: #2463d6;
   transition: width 0.3s ease;
 }
-.cm-learner-cp-bar > div.ready {
+.cm-lp-skill-bar > div.done {
   background: #1ca85e;
 }
-.cm-learner-cp-stats {
+.cm-lp-skill-pct {
   font-size: 12px;
-  color: #7a8198;
+  font-weight: 700;
+  color: #526176;
+  min-width: 32px;
+  text-align: right;
+}
+/* Smaller badge variant */
+.cm-badge.sm {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+/* Locked phase overlay */
+.cm-lp-locked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #f4f5f8;
+  border: 1px dashed #c9cdd8;
+  border-radius: 10px;
+  color: #6b7280;
+  font-size: 13px;
+  margin-top: 4px;
+}
+.cm-lp-locked svg {
+  flex-shrink: 0;
+  color: #9ca3af;
 }
 @media (max-width: 700px) {
   .cm-skill-widget {
