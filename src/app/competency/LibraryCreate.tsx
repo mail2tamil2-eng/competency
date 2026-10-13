@@ -659,7 +659,7 @@ export function LibraryCreate({
                                           <>
                                             <div className="cm-course-list">
                                               {mapped.map((c) => {
-                                                const w = courseWeightages[selectedSkill.id]?.[l.id]?.[c.id] ?? 0;
+                                                const w = courseWeightages[selectedSkill.id]?.[l.id]?.[c.id];
                                                 return (
                                                   <div key={c.id} className="cm-course-row">
                                                     <span className="cm-course-row-name">{c.name}</span>
@@ -668,7 +668,8 @@ export function LibraryCreate({
                                                         type="number"
                                                         min={0}
                                                         max={100}
-                                                        value={w}
+                                                        value={w ?? ""}
+                                                        placeholder="0"
                                                         aria-label={`Weightage for ${c.name}`}
                                                         onChange={(e) => setWeightage(selectedSkill.id, l.id, c.id, e.target.value)}
                                                       />
