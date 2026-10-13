@@ -107,7 +107,7 @@ export function CourseMapping({ data, work, save }: Props) {
             <tr>
               <th>Course</th>
               <th>Mapped skills & levels</th>
-              <th>Action</th>
+              <th style={{ textAlign: "right" }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -537,7 +537,7 @@ export function RoleMapping({ data, work, save }: Props) {
                 <th>Audience</th>
                 <th>Skills</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
