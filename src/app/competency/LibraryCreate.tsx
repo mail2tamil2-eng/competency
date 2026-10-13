@@ -57,6 +57,7 @@ export function LibraryCreate({
   const [pickerKey, setPickerKey] = useState<{ skillId: string; levelId: string } | null>(null);
   const [pickerDraft, setPickerDraft] = useState<string[]>([]);
   const [pickerOriginal, setPickerOriginal] = useState<string[]>([]);
+  const [pickerWeightages, setPickerWeightages] = useState<Record<string, number>>({});
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerShowSelected, setPickerShowSelected] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -93,13 +94,8 @@ export function LibraryCreate({
     }));
     setCourseWeightages((prev) => {
       const existing = prev[skillId]?.[levelId] ?? {};
-      const n = ids.length;
-      const base = n > 0 ? Math.floor(100 / n) : 0;
-      const rem = n > 0 ? 100 - base * n : 0;
       const next: Record<string, number> = {};
-      ids.forEach((id, i) => {
-        next[id] = id in existing ? existing[id] : base + (i === n - 1 ? rem : 0);
-      });
+      ids.forEach((id) => { if (id in existing) next[id] = existing[id]; });
       return { ...prev, [skillId]: { ...prev[skillId], [levelId]: next } };
     });
   }
@@ -147,6 +143,7 @@ export function LibraryCreate({
     const existing = [...(courseMappings[skillId]?.[levelId] ?? [])];
     setPickerDraft(existing);
     setPickerOriginal(existing);
+    setPickerWeightages(courseWeightages[skillId]?.[levelId] ?? {});
     setPickerSearch("");
     setPickerShowSelected(false);
     setPickerKey({ skillId, levelId });
@@ -154,7 +151,18 @@ export function LibraryCreate({
 
   function applyPicker() {
     if (!pickerKey) return;
-    setLevelCourses(pickerKey.skillId, pickerKey.levelId, pickerDraft);
+    const { skillId, levelId } = pickerKey;
+    setCourseMappings((prev) => ({
+      ...prev,
+      [skillId]: { ...prev[skillId], [levelId]: pickerDraft },
+    }));
+    setCourseWeightages((prev) => ({
+      ...prev,
+      [skillId]: {
+        ...prev[skillId],
+        [levelId]: Object.fromEntries(pickerDraft.map((id) => [id, pickerWeightages[id] ?? 0])),
+      },
+    }));
     setPickerKey(null);
   }
 
@@ -360,17 +368,40 @@ export function LibraryCreate({
                     }}
                   />
                   <span className="cm-picker-name">{course.name}</span>
+                  {checked && (
+                    <div className="cm-picker-weight" onClick={(e) => e.preventDefault()}>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={pickerWeightages[course.id] ?? ""}
+                        placeholder="0"
+                        aria-label={`Weightage for ${course.name}`}
+                        onChange={(e) => {
+                          const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                          setPickerWeightages((prev) => ({ ...prev, [course.id]: v }));
+                        }}
+                      />
+                      <span>%</span>
+                    </div>
+                  )}
                 </label>
               );
             })}
           </div>
 
           <div className="cm-dialog-actions cm-picker-footer">
-            <span className="cm-picker-count">
-              {pickerDraft.length === 0
-                ? "None selected"
-                : `${pickerDraft.length} course${pickerDraft.length !== 1 ? "s" : ""} selected`}
-            </span>
+            {(() => {
+              const total = pickerDraft.reduce((s, id) => s + (pickerWeightages[id] ?? 0), 0);
+              const cls = pickerDraft.length === 0 ? "" : total === 100 ? " ok" : total > 100 ? " over" : " warn";
+              return (
+                <span className={`cm-picker-count${cls}`}>
+                  {pickerDraft.length === 0
+                    ? "None selected"
+                    : `${pickerDraft.length} course${pickerDraft.length !== 1 ? "s" : ""} · Total: ${total}%`}
+                </span>
+              );
+            })()}
             <button type="button" className="cm-button" onClick={() => setPickerKey(null)}>
               Cancel
             </button>
