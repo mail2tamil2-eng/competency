@@ -238,8 +238,14 @@ export function LearnerProgress({
           </span>
         </div>
         <div className="cm-lp-expand-btns">
-          <button className="cm-button" onClick={expandAll}>Expand all</button>
-          <button className="cm-button" onClick={collapseAll}>Collapse all</button>
+          {(() => {
+            const allExpanded = pageGroups.length > 0 && pageGroups.every(([k]) => expanded.has(k));
+            return (
+              <button className="cm-button" onClick={allExpanded ? collapseAll : expandAll}>
+                {allExpanded ? "Collapse all" : "Extend"}
+              </button>
+            );
+          })()}
         </div>
       </div>
 
