@@ -2587,10 +2587,10 @@
   color: #8a96aa;
 }
 .cm-lp-hero-role-chip {
-  font-size: 14px;
-  font-weight: 650;
-  border-radius: 20px;
-  padding: 6px 16px;
+  font-size: 17px;
+  font-weight: 700;
+  border-radius: 24px;
+  padding: 9px 24px;
   white-space: nowrap;
 }
 .cm-lp-hero-role-chip.current {
@@ -2615,12 +2615,12 @@
   gap: 6px;
 }
 .cm-lp-hero-donut svg {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
 }
 .cm-lp-donut-txt {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   fill: #1e3a5f;
   font-family: inherit;
 }
@@ -2654,7 +2654,7 @@
   border-bottom: none;
 }
 .cm-lp-phase.locked {
-  background: #fafafa;
+  background: #f3f4f8;
 }
 .cm-lp-phase-head {
   display: flex;
@@ -2802,18 +2802,135 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 16px;
-  background: #f4f5f8;
-  border: 1px dashed #c9cdd8;
+  padding: 16px;
+  background: #ebebf0;
+  border: 1.5px dashed #9ca3af;
   border-radius: 10px;
-  color: #6b7280;
+  color: #4b5563;
   font-size: 13px;
-  margin-top: 4px;
+  font-weight: 500;
+  margin-top: 8px;
 }
 .cm-lp-locked svg {
   flex-shrink: 0;
-  color: #9ca3af;
+  color: #6b7280;
 }
+/* ── Career path: body grid (main + sidebar) ───────────────────────────── */
+.cm-lp-body-grid {
+  display: grid;
+  grid-template-columns: 1fr 264px;
+  align-items: start;
+}
+.cm-lp-main {
+  border-right: 1px solid #eef2ff;
+  min-width: 0;
+}
+.cm-lp-sidebar {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f7faff;
+  border-radius: 0 0 14px 0;
+}
+.cm-lp-sidebar-card {
+  border: 1px solid #e2eaff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #fff;
+}
+.cm-lp-sidebar-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: #8a96aa;
+  margin-bottom: 12px;
+}
+.cm-lp-stats {
+  display: flex;
+  gap: 6px;
+}
+.cm-lp-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px 8px;
+  border-radius: 8px;
+  text-align: center;
+}
+.cm-lp-stat--green { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.cm-lp-stat--blue  { background: #eff6ff; border: 1px solid #bfdbfe; }
+.cm-lp-stat--gray  { background: #f9fafb; border: 1px solid #e5e7eb; }
+.cm-lp-stat-num {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.cm-lp-stat--green .cm-lp-stat-num { color: #16a34a; }
+.cm-lp-stat--blue  .cm-lp-stat-num { color: #2463d6; }
+.cm-lp-stat--gray  .cm-lp-stat-num { color: #6b7280; }
+.cm-lp-stat-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.cm-lp-stat--green .cm-lp-stat-label { color: #16a34a; }
+.cm-lp-stat--blue  .cm-lp-stat-label { color: #2463d6; }
+.cm-lp-stat--gray  .cm-lp-stat-label { color: #9ca3af; }
+.cm-lp-unlock-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: #e5eaff;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.cm-lp-unlock-bar > div {
+  height: 100%;
+  border-radius: 99px;
+  background: #2463d6;
+  transition: width 0.4s;
+}
+.cm-lp-unlock-bar > div.done { background: #1ca85e; }
+.cm-lp-unlock-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #7a8198;
+  margin-bottom: 8px;
+}
+.cm-lp-unlock-ready {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1ca85e;
+}
+.cm-lp-unlock-hint { font-size: 12px; color: #7a8198; }
+.cm-lp-focus { display: flex; flex-direction: column; gap: 5px; }
+.cm-lp-focus-verb {
+  font-size: 10px;
+  color: #8590aa;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+}
+.cm-lp-focus-skill {
+  font-size: 14px;
+  font-weight: 650;
+  color: #1e3a5f;
+  line-height: 1.35;
+}
+@media (max-width: 860px) {
+  .cm-lp-body-grid { grid-template-columns: 1fr; }
+  .cm-lp-main { border-right: none; border-bottom: 1px solid #eef2ff; }
+  .cm-lp-sidebar { border-radius: 0 0 14px 14px; }
+}
+
 @media (max-width: 700px) {
   .cm-skill-widget {
     gap: 8px;

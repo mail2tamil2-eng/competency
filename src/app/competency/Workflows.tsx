@@ -992,6 +992,10 @@ export function Learning({
               const nextRoleSkillIds = [...new Set(nextRolePlans.flatMap((p) => p.skills.map((s) => s.skillId)))];
               const mySkillIds = new Set(assignments.map((a) => a.skillId));
               const phase1Status = completedCount === assignments.length ? "Complete" : pct > 0 ? "In Progress" : "Not Started";
+              const inProgressCount = assignments.filter((a) => progress(data, a) === "In Progress").length;
+              const notStartedCount = assignments.filter((a) => progress(data, a) === "Yet to Start").length;
+              const firstActiveSkill = assignments.find((a) => progress(data, a) === "In Progress")
+                ?? assignments.find((a) => progress(data, a) === "Yet to Start");
               return (
                 <div key={cp.id} className="cm-lp-panel">
                   {/* Header */}
@@ -1012,14 +1016,16 @@ export function Learning({
                     <div className="cm-lp-hero-donut">
                       <svg viewBox="0 0 64 64" aria-hidden="true">
                         <circle cx="32" cy="32" r="26" fill="none" stroke="#dce8ff" strokeWidth="7" />
-                        <circle
-                          cx="32" cy="32" r="26" fill="none"
-                          stroke={meetsThreshold ? "#1ca85e" : "#2463d6"}
-                          strokeWidth="7"
-                          strokeDasharray={`${circumference * pct / 100} ${circumference}`}
-                          strokeLinecap="round"
-                          transform="rotate(-90 32 32)"
-                        />
+                        {pct > 0 && (
+                          <circle
+                            cx="32" cy="32" r="26" fill="none"
+                            stroke={meetsThreshold ? "#1ca85e" : "#2463d6"}
+                            strokeWidth="7"
+                            strokeDasharray={`${circumference * pct / 100} ${circumference}`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 32 32)"
+                          />
+                        )}
                         <text x="32" y="37" textAnchor="middle" className="cm-lp-donut-txt">{pct}%</text>
                       </svg>
                       <span>Role Competency Progress</span>
@@ -1037,6 +1043,8 @@ export function Learning({
                     )}
                   </div>
 
+                  <div className="cm-lp-body-grid">
+                  <div className="cm-lp-main">
                   {/* Career path chain */}
                   <div className="cm-lp-chain-wrap">
                     <div className="cm-lp-chain-label">{cp.name}</div>
@@ -1167,6 +1175,53 @@ export function Learning({
                       )}
                     </div>
                   )}
+                  </div>{/* /cm-lp-main */}
+                  <aside className="cm-lp-sidebar">
+                    <div className="cm-lp-sidebar-card">
+                      <div className="cm-lp-sidebar-title">Progress Summary</div>
+                      <div className="cm-lp-stats">
+                        <div className="cm-lp-stat cm-lp-stat--green">
+                          <span className="cm-lp-stat-num">{completedCount}</span>
+                          <span className="cm-lp-stat-label">Done</span>
+                        </div>
+                        <div className="cm-lp-stat cm-lp-stat--blue">
+                          <span className="cm-lp-stat-num">{inProgressCount}</span>
+                          <span className="cm-lp-stat-label">Active</span>
+                        </div>
+                        <div className="cm-lp-stat cm-lp-stat--gray">
+                          <span className="cm-lp-stat-num">{notStartedCount}</span>
+                          <span className="cm-lp-stat-label">Pending</span>
+                        </div>
+                      </div>
+                    </div>
+                    {threshold !== null && (
+                      <div className="cm-lp-sidebar-card">
+                        <div className="cm-lp-sidebar-title">Next Role Unlock</div>
+                        <div className="cm-lp-unlock-bar">
+                          <div style={{ width: Math.min(100, threshold ? Math.round(pct / threshold * 100) : 0) + "%" }} className={meetsThreshold ? "done" : ""} />
+                        </div>
+                        <div className="cm-lp-unlock-meta">
+                          <span>{pct}% complete</span>
+                          <span>Target {threshold}%</span>
+                        </div>
+                        {meetsThreshold ? (
+                          <div className="cm-lp-unlock-ready"><CheckCircle2 size={14} /> Ready for {nextRole}</div>
+                        ) : (
+                          <div className="cm-lp-unlock-hint">{threshold! - pct}% more to unlock {nextRole}</div>
+                        )}
+                      </div>
+                    )}
+                    {firstActiveSkill && (
+                      <div className="cm-lp-sidebar-card">
+                        <div className="cm-lp-sidebar-title">Focus Next</div>
+                        <div className="cm-lp-focus">
+                          <span className="cm-lp-focus-verb">{progress(data, firstActiveSkill) === "In Progress" ? "Continue" : "Start"}</span>
+                          <strong className="cm-lp-focus-skill">{data.skills.find((s) => s.id === firstActiveSkill.skillId)?.name}</strong>
+                        </div>
+                      </div>
+                    )}
+                  </aside>
+                  </div>{/* /cm-lp-body-grid */}
                 </div>
               );
             })}
