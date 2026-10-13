@@ -377,6 +377,7 @@ export function LibraryCreate({
                         value={pickerWeightages[course.id] ?? ""}
                         placeholder="0"
                         aria-label={`Weightage for ${course.name}`}
+                        onInput={(e) => { if (e.currentTarget.value.length > 3) e.currentTarget.value = e.currentTarget.value.slice(0, 3); }}
                         onChange={(e) => {
                           const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
                           setPickerWeightages((prev) => ({ ...prev, [course.id]: v }));
@@ -671,6 +672,7 @@ export function LibraryCreate({
                                                         value={w ?? ""}
                                                         placeholder="0"
                                                         aria-label={`Weightage for ${c.name}`}
+                                                        onInput={(e) => { if (e.currentTarget.value.length > 3) e.currentTarget.value = e.currentTarget.value.slice(0, 3); }}
                                                         onChange={(e) => setWeightage(selectedSkill.id, l.id, c.id, e.target.value)}
                                                       />
                                                       <span>%</span>
