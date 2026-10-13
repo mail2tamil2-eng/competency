@@ -20,6 +20,7 @@ import {
 } from "../components/ui/dialog";
 
 type CourseMappings = Record<string, Record<string, string[]>>;
+type CourseWeightages = Record<string, Record<string, Record<string, number>>>;
 
 const blankSkill = (): RecordItem => ({
   id: uid(),
@@ -51,6 +52,7 @@ export function LibraryCreate({
   const [skills, setSkills] = useState<RecordItem[]>(() => [blankSkill()]);
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const [courseMappings, setCourseMappings] = useState<CourseMappings>({});
+  const [courseWeightages, setCourseWeightages] = useState<CourseWeightages>({});
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
   const [pickerKey, setPickerKey] = useState<{ skillId: string; levelId: string } | null>(null);
   const [pickerDraft, setPickerDraft] = useState<string[]>([]);
@@ -88,6 +90,28 @@ export function LibraryCreate({
     setCourseMappings((prev) => ({
       ...prev,
       [skillId]: { ...prev[skillId], [levelId]: ids },
+    }));
+    setCourseWeightages((prev) => {
+      const existing = prev[skillId]?.[levelId] ?? {};
+      const n = ids.length;
+      const base = n > 0 ? Math.floor(100 / n) : 0;
+      const rem = n > 0 ? 100 - base * n : 0;
+      const next: Record<string, number> = {};
+      ids.forEach((id, i) => {
+        next[id] = id in existing ? existing[id] : base + (i === n - 1 ? rem : 0);
+      });
+      return { ...prev, [skillId]: { ...prev[skillId], [levelId]: next } };
+    });
+  }
+
+  function setWeightage(skillId: string, levelId: string, courseId: string, raw: string) {
+    const v = Math.max(0, Math.min(100, parseInt(raw, 10) || 0));
+    setCourseWeightages((prev) => ({
+      ...prev,
+      [skillId]: {
+        ...prev[skillId],
+        [levelId]: { ...prev[skillId]?.[levelId], [courseId]: v },
+      },
     }));
   }
 
@@ -207,14 +231,18 @@ export function LibraryCreate({
     if (issues.length) return;
     if (onSaveWork && data.workflow) {
       const updatedCourses = data.workflow.courses.map((course) => {
-        const newMaps: { skillId: string; levelId: string }[] = [];
+        const newMaps: { skillId: string; levelId: string; weightage?: number }[] = [];
         for (const skill of linked) {
           for (const [levelId, ids] of Object.entries(courseMappings[skill.id] ?? {})) {
             if (
               ids.includes(course.id) &&
               !course.mappings.some((m) => m.skillId === skill.id && m.levelId === levelId)
             )
-              newMaps.push({ skillId: skill.id, levelId });
+              newMaps.push({
+                skillId: skill.id,
+                levelId,
+                weightage: courseWeightages[skill.id]?.[levelId]?.[course.id],
+              });
           }
         }
         return newMaps.length ? { ...course, mappings: [...course.mappings, ...newMaps] } : course;
@@ -332,9 +360,6 @@ export function LibraryCreate({
                     }}
                   />
                   <span className="cm-picker-name">{course.name}</span>
-                  {course.duration && (
-                    <span className="cm-picker-meta">{course.duration}</span>
-                  )}
                 </label>
               );
             })}
@@ -596,34 +621,56 @@ export function LibraryCreate({
                                     </div>
                                     {mapped.length === 0 ? (
                                       <p className="cm-level-no-courses">No courses mapped.</p>
-                                    ) : (
-                                      <div className="cm-course-list">
-                                        {mapped.map((c) => (
-                                          <div key={c.id} className="cm-course-row">
-                                            <span className="cm-course-row-name">{c.name}</span>
-                                            {c.duration && (
-                                              <span className="cm-course-row-meta">{c.duration}</span>
-                                            )}
-                                            <button
-                                              type="button"
-                                              aria-label={`Remove ${c.name}`}
-                                              className="cm-course-row-remove"
-                                              onClick={() =>
-                                                setLevelCourses(
-                                                  selectedSkill.id,
-                                                  l.id,
-                                                  (courseMappings[selectedSkill.id]?.[l.id] ?? []).filter(
-                                                    (id) => id !== c.id
-                                                  )
-                                                )
-                                              }
-                                            >
-                                              <X size={12} />
-                                            </button>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
+                                    ) : (() => {
+                                        const total = mapped.reduce((sum, c) => sum + (courseWeightages[selectedSkill.id]?.[l.id]?.[c.id] ?? 0), 0);
+                                        const cls = total === 100 ? "ok" : total > 100 ? "over" : "warn";
+                                        return (
+                                          <>
+                                            <div className="cm-course-list">
+                                              {mapped.map((c) => {
+                                                const w = courseWeightages[selectedSkill.id]?.[l.id]?.[c.id] ?? 0;
+                                                return (
+                                                  <div key={c.id} className="cm-course-row">
+                                                    <span className="cm-course-row-name">{c.name}</span>
+                                                    <div className="cm-course-row-weight">
+                                                      <input
+                                                        type="number"
+                                                        min={0}
+                                                        max={100}
+                                                        value={w}
+                                                        aria-label={`Weightage for ${c.name}`}
+                                                        onChange={(e) => setWeightage(selectedSkill.id, l.id, c.id, e.target.value)}
+                                                      />
+                                                      <span>%</span>
+                                                    </div>
+                                                    <button
+                                                      type="button"
+                                                      aria-label={`Remove ${c.name}`}
+                                                      className="cm-course-row-remove"
+                                                      onClick={() =>
+                                                        setLevelCourses(
+                                                          selectedSkill.id,
+                                                          l.id,
+                                                          (courseMappings[selectedSkill.id]?.[l.id] ?? []).filter(
+                                                            (id) => id !== c.id
+                                                          )
+                                                        )
+                                                      }
+                                                    >
+                                                      <X size={12} />
+                                                    </button>
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                            <div className={`cm-course-weight-total ${cls}`}>
+                                              Total weightage: <strong>{total}%</strong>
+                                              {total === 100 && <span className="cm-course-weight-check">✓</span>}
+                                            </div>
+                                          </>
+                                        );
+                                      })()
+                                    }
                                   </div>
                                 </div>
                               )}
