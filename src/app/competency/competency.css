@@ -2925,25 +2925,6 @@
   z-index: 200;
 }
 
-/* Side panel */
-.cm-lp-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 820px;
-  max-width: 100vw;
-  height: 100vh;
-  background: #fff;
-  z-index: 201;
-  display: flex;
-  flex-direction: column;
-  box-shadow: -4px 0 40px rgba(15, 23, 42, 0.16);
-  animation: cm-lp-slide-in 0.22s ease-out;
-}
-@keyframes cm-lp-slide-in {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
-}
 
 .cm-lp-panel-header {
   flex-shrink: 0;
@@ -3048,28 +3029,6 @@
 .cm-lp-skill-row td:last-child  { padding-right: 24px; }
 .cm-lp-skill-row.open > td { border-bottom: none; }
 
-.cm-lp-skill-name {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #2463d6;
-  cursor: pointer;
-  text-align: left;
-  display: block;
-  margin-bottom: 3px;
-  text-underline-offset: 2px;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  transition: text-decoration-color 0.12s;
-}
-.cm-lp-skill-name:hover { text-decoration-color: #2463d6; }
-.cm-lp-skill-name:focus-visible {
-  outline: 2px solid #2463d6;
-  outline-offset: 2px;
-  border-radius: 3px;
-}
 
 .cm-lp-skill-comp {
   font-size: 12px;
@@ -3173,10 +3132,6 @@
   justify-content: flex-end;
 }
 
-/* Mobile: full-screen panel */
-@media (max-width: 860px) {
-  .cm-lp-panel { width: 100vw; }
-}
 
 /* ── Multi-learner inline comparison redesign ── */
 
