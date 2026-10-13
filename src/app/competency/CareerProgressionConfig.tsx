@@ -23,6 +23,7 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
   const [draft, setDraft] = useState<CareerPath | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<CareerPath | null>(null);
+  const [deactivating, setDeactivating] = useState<CareerPath | null>(null);
 
   const allRoles = [...new Set(work.employees.map((e) => e.role).filter(Boolean))].sort();
   const paths = work.careerPaths ?? [];
@@ -108,12 +109,20 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
   }
 
   function toggleStatus(path: CareerPath) {
+    if (path.status === "Active") { setDeactivating(path); return; }
     const updatedPaths = paths.map((p) =>
-      p.id === path.id
-        ? { ...p, status: p.status === "Active" ? ("Inactive" as const) : ("Active" as const) }
-        : p,
+      p.id === path.id ? { ...p, status: "Active" as const } : p,
     );
-    save(data, syncProgressions({ ...work, careerPaths: updatedPaths }), "Career path status updated");
+    save(data, syncProgressions({ ...work, careerPaths: updatedPaths }), "Career path activated");
+  }
+
+  function confirmDeactivate() {
+    if (!deactivating) return;
+    const updatedPaths = paths.map((p) =>
+      p.id === deactivating.id ? { ...p, status: "Inactive" as const } : p,
+    );
+    save(data, syncProgressions({ ...work, careerPaths: updatedPaths }), "Career path deactivated");
+    setDeactivating(null);
   }
 
   function confirmDelete() {
@@ -305,6 +314,25 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
             <div className="cm-dialog-actions">
               <button className="cm-button" onClick={() => setDraft(null)}>Cancel</button>
               <button className="cm-button primary" onClick={savePath}>Save career path</button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Deactivate confirmation */}
+      {deactivating && (
+        <Dialog open onOpenChange={(open) => { if (!open) setDeactivating(null); }}>
+          <DialogContent className="cm-dialog">
+            <DialogHeader>
+              <DialogTitle>Deactivate career path?</DialogTitle>
+              <DialogDescription>
+                &ldquo;{deactivating.name}&rdquo; will no longer appear in progression recommendations.
+                You can reactivate it at any time.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="cm-dialog-actions">
+              <button className="cm-button" onClick={() => setDeactivating(null)}>Cancel</button>
+              <button className="cm-button destructive" onClick={confirmDeactivate}>Deactivate</button>
             </div>
           </DialogContent>
         </Dialog>

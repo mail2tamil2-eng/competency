@@ -343,7 +343,8 @@ export function RoleMapping({ data, work, save }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<Plan | null>(null),
     [step, setStep] = useState(1),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [deactivatingPlan, setDeactivatingPlan] = useState<Plan | null>(null);
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: 0 });
   }, [step, error]);
@@ -596,20 +597,14 @@ export function RoleMapping({ data, work, save }: Props) {
                             : p.status === "Active" ? "Deactivate" : "Activate"
                         }
                         aria-label={(p.status === "Active" ? "Deactivate " : "Activate ") + p.name}
-                        onClick={() =>
+                        onClick={() => {
+                          if (p.status === "Active") { setDeactivatingPlan(p); return; }
                           save(
                             data,
-                            {
-                              ...work,
-                              plans: work.plans.map((x) =>
-                                x.id === p.id
-                                  ? { ...x, status: x.status === "Active" ? "Inactive" : "Active" }
-                                  : x,
-                              ),
-                            },
-                            "Assignment status updated",
-                          )
-                        }
+                            { ...work, plans: work.plans.map((x) => x.id === p.id ? { ...x, status: "Active" } : x) },
+                            "Assignment activated",
+                          );
+                        }}
                       >
                         <span className="cm-toggle-thumb" />
                       </button>
@@ -712,6 +707,37 @@ export function RoleMapping({ data, work, save }: Props) {
               >
                 {step === 1 ? "Review assignment" : "Save & assign"}
                 <ArrowRight size={16} />
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Deactivate assignment confirmation */}
+      {deactivatingPlan && (
+        <Dialog open onOpenChange={(open) => { if (!open) setDeactivatingPlan(null); }}>
+          <DialogContent className="cm-dialog">
+            <DialogHeader>
+              <DialogTitle>Deactivate assignment?</DialogTitle>
+              <DialogDescription>
+                &ldquo;{deactivatingPlan.name}&rdquo; will be paused — learners will no longer see new
+                tasks from this assignment. You can reactivate it at any time.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="cm-dialog-actions">
+              <button className="cm-button" onClick={() => setDeactivatingPlan(null)}>Cancel</button>
+              <button
+                className="cm-button destructive"
+                onClick={() => {
+                  save(
+                    data,
+                    { ...work, plans: work.plans.map((x) => x.id === deactivatingPlan.id ? { ...x, status: "Inactive" } : x) },
+                    "Assignment deactivated",
+                  );
+                  setDeactivatingPlan(null);
+                }}
+              >
+                Deactivate
               </button>
             </div>
           </DialogContent>
