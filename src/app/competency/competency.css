@@ -2521,6 +2521,78 @@
   color: #263047;
   font-weight: 500;
 }
+/* ── Learner role progression panel ─────────────────────────────────────── */
+.cm-learner-progression {
+  margin: 16px 0;
+}
+.cm-learner-progression-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #7a8198;
+  margin-bottom: 10px;
+}
+.cm-learner-progression-header svg {
+  color: #2463d6;
+}
+.cm-learner-cp-card {
+  border: 1px solid #bed5ff;
+  border-radius: 12px;
+  background: linear-gradient(110deg, #f0f6ff 0%, #edf4ff 100%);
+  padding: 16px 18px;
+  margin-bottom: 10px;
+}
+.cm-learner-cp-card:last-child {
+  margin-bottom: 0;
+}
+.cm-learner-cp-name {
+  font-size: 14px;
+  font-weight: 650;
+  color: #1e3a5f;
+  margin-bottom: 12px;
+}
+.cm-learner-cp-progress {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #d4e4ff;
+}
+.cm-learner-cp-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #526176;
+  margin-bottom: 8px;
+}
+.cm-learner-cp-progress-row strong {
+  color: #1e3a5f;
+}
+.cm-learner-cp-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: #dce8ff;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.cm-learner-cp-bar > div {
+  height: 100%;
+  border-radius: 99px;
+  background: #2463d6;
+  transition: width 0.3s ease;
+}
+.cm-learner-cp-bar > div.ready {
+  background: #1ca85e;
+}
+.cm-learner-cp-stats {
+  font-size: 12px;
+  color: #7a8198;
+}
 @media (max-width: 700px) {
   .cm-skill-widget {
     gap: 8px;

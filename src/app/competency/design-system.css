@@ -1700,6 +1700,30 @@
   font-weight: 600;
   line-height: 1;
 }
+.cm-cp-role.current {
+  background: #2463d6;
+  border-color: #1d52b8;
+}
+.cm-cp-role.current .cm-cp-role-num {
+  background: rgba(255,255,255,0.25);
+}
+.cm-cp-role.current .cm-cp-role-name {
+  color: #fff;
+  font-weight: 600;
+}
+.cm-cp-role.past {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+}
+.cm-cp-role.past .cm-cp-role-num {
+  background: #43a047;
+}
+.cm-cp-role.past .cm-cp-role-name {
+  color: #2e7d32;
+}
+.cm-cp-role.future {
+  opacity: 0.55;
+}
 
 /* ── Career path builder (modal) ─────────────────────────────────────────── */
 .cm-cp-dialog {

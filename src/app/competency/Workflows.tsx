@@ -2,7 +2,7 @@ import { AssignmentConfiguration } from "./AssignmentConfiguration";
 export { Reports } from "./AdminReports";
 import { AssignmentSkills } from "./AssignmentSkills";
 import { personKey } from "./managerModel";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   Plus,
   BookOpen,
@@ -17,6 +17,8 @@ import {
   Layers,
   AlertTriangle,
   Target,
+  ChevronRight,
+  Route,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Data, uid, progress, contentMissing, download } from "./model";
@@ -954,7 +956,7 @@ export function Learning({
         </div>
       )}
 
-      {/* Career path — learner only, shown when a matching active progression exists */}
+      {/* Career progression — learner only, shows full multi-step career paths */}
       {!manager && (() => {
         const firstA = assignments[0];
         if (!firstA) return null;
@@ -962,57 +964,105 @@ export function Learning({
           (e) => e.id === firstA.employeeId || (e.name === firstA.name && e.department === firstA.department),
         );
         if (!emp?.role) return null;
-        const completed = assignments.filter((a) => progress(data, a) === "Completed").length;
-        const pct = assignments.length ? Math.round((completed / assignments.length) * 100) : 0;
-        const rp = (work.roleProgressions || []).find(
-          (r) => r.status === "Active" && r.currentRole === emp.role,
+        const matchingPaths = (work.careerPaths ?? []).filter(
+          (cp) => cp.status === "Active" && cp.roles.includes(emp.role),
         );
-        if (!rp) return null;
-        const meetsThreshold = pct >= rp.threshold;
-        const nextRolePlans = work.plans.filter(
-          (p) => p.status === "Active" &&
-            (p.roles?.includes(rp.nextRole) || p.role === rp.nextRole),
-        );
-        const nextRoleSkillIds = [...new Set(nextRolePlans.flatMap((p) => p.skills.map((s) => s.skillId)))];
+        if (matchingPaths.length === 0) return null;
+        const completedCount = assignments.filter((a) => progress(data, a) === "Completed").length;
+        const pct = assignments.length ? Math.round((completedCount / assignments.length) * 100) : 0;
         const mySkillIds = new Set(assignments.map((a) => a.skillId));
         return (
-          <div className="cm-career-path">
-            <div className="cm-career-path-header">
-              <Target size={18} />
-              <div>
-                <strong>Career path: {rp.currentRole} → {rp.nextRole}</strong>
-                <span>Current role {pct}% complete ({completed}/{assignments.length} skills achieved)</span>
-              </div>
-              {meetsThreshold ? (
-                <span className="cm-badge active">Ready to prepare</span>
-              ) : (
-                <span className="cm-badge">Reach {rp.threshold}% to unlock</span>
-              )}
+          <div className="cm-learner-progression">
+            <div className="cm-learner-progression-header">
+              <Route size={16} />
+              <span>Role progression</span>
             </div>
-            {meetsThreshold && nextRoleSkillIds.length > 0 && (
-              <div className="cm-career-path-skills">
-                <p>Skills needed for {rp.nextRole}</p>
-                {nextRoleSkillIds.map((skillId) => {
-                  const skill = data.skills.find((s) => s.id === skillId);
-                  if (!skill) return null;
-                  const assignment = assignments.find((a) => a.skillId === skillId);
-                  const st = assignment ? progress(data, assignment) : "Not yet assigned";
-                  return (
-                    <div key={skillId} className="cm-career-skill-row">
-                      <span>{skill.name}</span>
-                      <span className={`cm-badge ${st === "Completed" ? "active" : mySkillIds.has(skillId) ? "draft" : ""}`}>
-                        {st === "Completed" ? "Achieved" : st}
-                      </span>
+            {matchingPaths.map((cp) => {
+              const roleIdx = cp.roles.indexOf(emp.role);
+              const isLast = roleIdx === cp.roles.length - 1;
+              const nextRole = isLast ? null : cp.roles[roleIdx + 1];
+              const threshold = isLast ? null : cp.thresholds[roleIdx];
+              const meetsThreshold = threshold !== null && pct >= threshold!;
+              const nextRolePlans = nextRole
+                ? work.plans.filter(
+                    (p) => p.status === "Active" &&
+                      (p.roles?.includes(nextRole) || p.role === nextRole),
+                  )
+                : [];
+              const nextRoleSkillIds = [...new Set(nextRolePlans.flatMap((p) => p.skills.map((s) => s.skillId)))];
+              return (
+                <div key={cp.id} className="cm-learner-cp-card">
+                  <div className="cm-learner-cp-name">{cp.name}</div>
+                  <div className="cm-cp-chain">
+                    {cp.roles.map((role, i) => (
+                      <Fragment key={i}>
+                        <div className={`cm-cp-role${i < roleIdx ? " past" : i === roleIdx ? " current" : " future"}`}>
+                          <span className="cm-cp-role-num">
+                            {i < roleIdx ? <CheckCircle2 size={10} /> : i + 1}
+                          </span>
+                          <span className="cm-cp-role-name">{role}</span>
+                        </div>
+                        {i < cp.roles.length - 1 && (
+                          <div className="cm-cp-connector" aria-hidden="true">
+                            <ChevronRight size={13} className="cm-cp-arrow" />
+                            <span className="cm-cp-pct">{cp.thresholds[i]}%</span>
+                          </div>
+                        )}
+                      </Fragment>
+                    ))}
+                  </div>
+
+                  {!isLast && (
+                    <div className="cm-learner-cp-progress">
+                      <div className="cm-learner-cp-progress-row">
+                        <span>Progress toward <strong>{nextRole}</strong></span>
+                        {meetsThreshold ? (
+                          <span className="cm-badge active">Ready to advance</span>
+                        ) : (
+                          <span className="cm-badge">Need {threshold}% to advance</span>
+                        )}
+                      </div>
+                      <div className="cm-learner-cp-bar">
+                        <div style={{ width: pct + "%" }} className={meetsThreshold ? "ready" : ""} />
+                      </div>
+                      <div className="cm-learner-cp-stats">
+                        {completedCount} of {assignments.length} skills completed · {pct}%
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-            {meetsThreshold && nextRoleSkillIds.length === 0 && (
-              <p className="cm-hint" style={{ marginTop: 12 }}>
-                No skills have been assigned for the {rp.nextRole} role yet. Contact your administrator to set up next-role learning.
-              </p>
-            )}
+                  )}
+                  {isLast && (
+                    <p className="cm-hint" style={{ marginTop: 10 }}>
+                      You are at the top of this career path.
+                    </p>
+                  )}
+
+                  {meetsThreshold && nextRoleSkillIds.length > 0 && (
+                    <div className="cm-career-path-skills">
+                      <p>Skills to prepare for {nextRole}</p>
+                      {nextRoleSkillIds.map((skillId) => {
+                        const skill = data.skills.find((s) => s.id === skillId);
+                        if (!skill) return null;
+                        const assignment = assignments.find((a) => a.skillId === skillId);
+                        const st = assignment ? progress(data, assignment) : "Not yet assigned";
+                        return (
+                          <div key={skillId} className="cm-career-skill-row">
+                            <span>{skill.name}</span>
+                            <span className={`cm-badge ${st === "Completed" ? "active" : mySkillIds.has(skillId) ? "draft" : ""}`}>
+                              {st === "Completed" ? "Achieved" : st}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {meetsThreshold && nextRoleSkillIds.length === 0 && nextRole && (
+                    <p className="cm-hint" style={{ marginTop: 12 }}>
+                      No skills have been assigned for the {nextRole} role yet.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
       })()}
