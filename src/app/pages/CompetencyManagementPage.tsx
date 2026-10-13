@@ -8,7 +8,6 @@ import {
   Layers,
   Users,
   ListChecks,
-  BookOpen,
   Settings2,
   BarChart2,
   GraduationCap,
@@ -34,7 +33,6 @@ import "../competency/competency.css";
 import "../competency/design-system.css";
 import "../competency/platform-theme.css";
 import {
-  CourseMapping,
   RoleMapping,
   Learning,
   Reports,
@@ -49,7 +47,6 @@ const tabs = [
   ["library", "Competency framework", Layers],
   ["roles", "Role mapping", Map],
   ["assignments", "Progress", BarChart2],
-  ["courses", "Course mapping", BookOpen],
   ["career-progression", "Role progression", Route],
   ["reports", "Reports", ListChecks],
   ["learner", "My learning", GraduationCap],
@@ -231,9 +228,6 @@ export function CompetencyManagementPage() {
           />
         )}
 
-        {tab === "courses" && (
-          <CourseMapping data={data} work={work} save={saveWorkflow} />
-        )}
         {tab === "roles" && (
           <RoleMapping data={data} work={work} save={saveWorkflow} />
         )}
