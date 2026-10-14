@@ -47,7 +47,7 @@
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 18px 20px;
+  padding: 14px 16px;
 }
 .cm-manager-stats article > div {
   display: flex;
@@ -55,7 +55,7 @@
   justify-content: space-between;
   gap: 10px;
   color: #6b7280;
-  font-size: 14px;
+  font-size: 12px;
 }
 .cm-manager-stats article svg {
   color: #526176;
@@ -63,13 +63,13 @@
 }
 .cm-manager-stats article > strong {
   display: block;
-  font-size: 28px;
-  letter-spacing: -0.6px;
-  margin: 8px 0 2px;
+  font-size: 22px;
+  letter-spacing: -0.3px;
+  margin: 6px 0 2px;
 }
 .cm-manager-stats small {
   color: #6b7280;
-  font-size: 14px;
+  font-size: 12px;
 }
 .cm-manager-person {
   display: flex;
@@ -90,14 +90,14 @@
 .cm-manager-avatar {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
   border-radius: 50%;
   color: #2463d6;
   background: #dfe4ff;
   font-weight: 700;
-  font-size: 20px;
+  font-size: 15px;
 }
 .cm-manager-filters {
   display: flex;
@@ -317,11 +317,11 @@
   border-bottom: 1px solid #e5e7eb;
 }
 .cm-manager-navigation a {
-  padding: 12px 18px;
-  border-bottom: 3px solid transparent;
-  border-radius: 8px 8px 0 0;
+  padding: 10px 14px;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
   color: #6b7280;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
 }
 .cm-manager-navigation a.active {
@@ -337,8 +337,8 @@
   outline-offset: 2px;
 }
 .cm-skill-dates {
-  margin-top: 8px;
-  font-size: 14px;
+  margin-top: 6px;
+  font-size: 13px;
 }
 .cm-skill-dates summary {
   color: #2463d6;

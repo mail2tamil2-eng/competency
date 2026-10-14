@@ -5,23 +5,23 @@
 /* Readability scale: supporting 14, table 15, body/control 16, headings 20/24/28. */
 .cm,
 .cm-dialog {
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.5;
   --cm-action: #2463d6;
 }
 .cm h1 {
-  font-size: 28px;
-  line-height: 1.25;
+  font-size: 18px;
+  line-height: 1.3;
 }
 .cm h2,
 .cm-dialog h2 {
-  font-size: 24px;
-  line-height: 1.3;
+  font-size: 15px;
+  line-height: 1.4;
 }
 .cm h3,
 .cm-dialog h3 {
-  font-size: 20px;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.5;
 }
 body {
   font-family: "Nunito Sans", sans-serif;
@@ -60,9 +60,9 @@ body {
 }
 .cm .cm-manager-navigation a {
   color: #526176;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
-  border-bottom-width: 3px;
+  border-bottom-width: 2px;
   border-radius: 0;
 }
 .cm .cm-manager-navigation a.active {
@@ -128,28 +128,28 @@ body {
   background: #fff;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 400;
   color: #526176;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 .cm .cm-manager-table td {
-  font-size: 14px;
-  padding: 12px;
+  font-size: 13px;
+  padding: 10px 12px;
   border-color: #d9dfe7;
 }
 .cm .cm-manager-table td strong {
   font-weight: 600;
 }
 .cm .cm-manager-table td small {
-  font-size: 14px;
+  font-size: 12px;
 }
 .cm .cm-manager .cm-button {
   font-weight: 400;
 }
 .cm .cm-manager-status {
-  border-radius: 20px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 400;
 }
 .cm .cm-manager-status::before {
@@ -174,46 +174,46 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 400;
   color: #111827;
   white-space: nowrap;
 }
 .cm .cm-entry-count select {
-  min-height: 34px;
-  padding: 4px 7px;
+  min-height: 30px;
+  padding: 3px 7px;
   width: auto;
-  border-radius: 3px;
+  border-radius: 6px;
   border-color: #a9a9a9;
-  font-size: 16px;
+  font-size: 13px;
 }
 .cm .cm-table-controls .cm-manager-caption {
   margin: 0;
 }
 .cm .cm-platform-pagination {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 400;
   color: #111827;
-  margin-top: 8px;
-  gap: 16px;
+  margin-top: 6px;
+  gap: 12px;
 }
 .cm .cm-platform-pagination nav {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 6px;
   margin-left: auto;
 }
 .cm .cm-platform-pagination .cm-button {
   font-family: "Nunito Sans", sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  min-height: 42px;
-  min-width: 42px;
-  padding: 8px 14px;
+  font-size: 13px;
+  line-height: 18px;
+  min-height: 32px;
+  min-width: 32px;
+  padding: 4px 10px;
   font-weight: 400;
-  border: 1px solid #939393;
-  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   color: #111827;
   background: #fff;
 }
@@ -252,12 +252,12 @@ body {
 .cm-dialog .cm-button,
 .cm .cm-pagination .cm-button,
 .cm .cm-manager .cm-button {
-  min-height: 44px;
-  font-size: 16px;
-  line-height: 24px;
+  min-height: 36px;
+  font-size: 13px;
+  line-height: 20px;
   font-weight: 600;
-  border-color: #7a8799;
-  color: #263447;
+  border-color: #d1d5db;
+  color: #374151;
 }
 .cm .cm-button.primary,
 .cm-dialog .cm-button.primary {
@@ -293,11 +293,11 @@ body {
 .cm-dialog input:not([type="checkbox"]):not([type="radio"]),
 .cm-dialog select,
 .cm-dialog textarea {
-  font-size: 16px;
-  line-height: 24px;
-  min-height: 44px;
-  border-color: #7a8799;
-  color: #263447;
+  font-size: 14px;
+  line-height: 20px;
+  min-height: 36px;
+  border-color: #d1d5db;
+  color: #374151;
 }
 .cm input::placeholder,
 .cm textarea::placeholder,
@@ -308,14 +308,14 @@ body {
   opacity: 1;
 }
 .cm-dialog label {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
 }
 .cm .cm-tabs button,
 .cm .cm-manager-navigation a,
 .cm .cm-settings-tabs button {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 }
 .cm .cm-text-button,
 .cm .cm-link,
@@ -331,19 +331,19 @@ body {
 }
 .cm .cm-text-button,
 .cm-dialog .cm-text-button {
-  font-size: 16px;
-  min-height: 44px;
+  font-size: 13px;
+  min-height: 36px;
 }
 .cm .cm-manager-table td,
 .cm td,
 .cm-dialog td {
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.5;
 }
 .cm th,
 .cm-dialog th,
 .cm .cm-manager-table th {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   color: #526176;
   text-transform: none;
@@ -351,26 +351,26 @@ body {
 }
 .cm small,
 .cm-dialog small {
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .cm .cm-manager-table td small,
 .cm td small {
-  font-size: 14px;
+  font-size: 12px;
 }
 .cm .cm-section-head p,
 .cm .cm-welcome p,
 .cm .cm-library-explainer p {
-  font-size: 16px;
+  font-size: 13px;
 }
 .cm .cm-heading p,
 .cm .cm-manager-caption,
 .cm .cm-manager-stats small {
-  font-size: 14px;
+  font-size: 12px;
 }
 .cm .cm-manager-status,
 .cm .cm-badge {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
 }
 .cm .cm-badge.active,
@@ -384,7 +384,7 @@ body {
   background: #fef9c3;
 }
 .cm .cm-pagination {
-  font-size: 16px;
+  font-size: 13px;
 }
 .cm .cm-platform-pagination .cm-button.is-current {
   background: var(--cm-action);
@@ -393,8 +393,8 @@ body {
 }
 .cm .cm-icon-button,
 .cm-dialog .cm-icon-button {
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 36px;
+  min-height: 36px;
 }
 .cm .cm-welcome {
   background: #edf4ff;
@@ -412,12 +412,12 @@ body {
 }
 .app-header .text-xs,
 .app-sidebar .text-xs {
-  font-size: 14px;
-  line-height: 21px;
+  font-size: 12px;
+  line-height: 18px;
   color: #526176;
 }
 .app-header input {
-  font-size: 16px;
+  font-size: 14px;
 }
 .app-header input:focus {
   border-color: #2d74fa;
@@ -426,11 +426,11 @@ body {
 }
 @media (max-width: 700px) {
   .cm h1 {
-    font-size: 24px;
+    font-size: 16px;
   }
   .cm h2,
   .cm-dialog h2 {
-    font-size: 22px;
+    font-size: 14px;
   }
 }
 .cm .cm-eyebrow,
