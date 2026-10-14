@@ -435,8 +435,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 12px 0 14px;
-  border-bottom: 1px solid var(--cm-border);
+  padding: 6px 0 8px;
   max-width: 640px;
   margin-left: auto;
   margin-right: auto;
@@ -522,8 +521,7 @@
 }
 .cm-stepper-mobile {
   display: none;
-  padding: 12px 0 16px;
-  border-bottom: 1px solid var(--cm-border);
+  padding: 6px 0 10px;
   margin-bottom: 4px;
   font-size: 13px;
   font-weight: 600;
@@ -619,7 +617,10 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 16px 0 8px;
+  padding: 10px 0 8px;
+}
+.cm-create-step1 label {
+  margin: 0;
 }
 .cm-create-step1 input,
 .cm-create-step1 select,
@@ -1183,11 +1184,11 @@
   max-height: 90dvh;
   max-width: min(1040px, calc(100vw - 32px)) !important;
   width: calc(100vw - 32px);
-  gap: 6px;
-  padding-top: 20px;
+  gap: 0;
+  padding-top: 16px;
 }
 .cm-create-dialog > [data-slot="dialog-header"] {
-  padding-bottom: 6px;
+  padding-bottom: 4px;
 }
 .cm-create-dialog [data-slot="dialog-title"] {
   font-size: 22px;
