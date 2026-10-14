@@ -341,15 +341,23 @@ export function CourseMapping({ data, work, save }: Props) {
     </section>
   );
 }
+type AssignSection = "details" | "skills" | "audience" | "schedule";
+const ASSIGN_SECTIONS: { id: AssignSection; label: string }[] = [
+  { id: "details",  label: "Details"  },
+  { id: "skills",   label: "Skills"   },
+  { id: "audience", label: "Audience" },
+  { id: "schedule", label: "Schedule" },
+];
+
 export function RoleMapping({ data, work, save }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<Plan | null>(null),
-    [step, setStep] = useState(1),
+    [activeSection, setActiveSection] = useState<AssignSection>("details"),
     [error, setError] = useState(""),
     [deactivatingPlan, setDeactivatingPlan] = useState<Plan | null>(null);
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: 0 });
-  }, [step, error]);
+  }, [activeSection, error]);
   const today = new Date().toLocaleDateString("en-CA");
   const started = (p: Plan) =>
     data.assignments.some(
@@ -361,7 +369,7 @@ export function RoleMapping({ data, work, save }: Props) {
         !!a.current,
     );
   function begin(p?: Plan) {
-    setStep(1);
+    setActiveSection("details");
     setError("");
     setDraft(
       p
@@ -394,38 +402,16 @@ export function RoleMapping({ data, work, save }: Props) {
     );
   }
   const audience = draft ? matching(work, draft) : [];
-  const CONFIG_STEPS = ["Details & skills", "Audience", "Schedule", "Review"] as const;
-
-  function advanceStep() {
-    if (!draft) return;
-    if (step === 1) {
-      if (!draft.name.trim() || !draft.skills.length || draft.skills.some((s) => !s.expected)) {
-        setError("Enter a name, select at least one skill, and set an expected level for each.");
-        return;
-      }
-      const old = work.plans.find((p) => p.id === draft.id);
-      if (old && started(old) && old.skills.some((s) => !draft.skills.some((x) => x.skillId === s.skillId && x.expected === s.expected))) {
-        setError("Learning has started. Existing skill mappings must remain unchanged; you can add more skills.");
-        return;
-      }
-      setError(""); setStep(2);
-    } else if (step === 2) {
-      if (draft.method === "Manual" && !draft.employeeIds.length) {
-        setError("Select at least one learner."); return;
-      }
-      if (draft.method === "Auto" && !draft.departments?.length && !draft.roles?.length && !draft.cohorts?.length) {
-        setError("Choose at least one audience criterion (department, role, or cohort)."); return;
-      }
-      setError(""); setStep(3);
-    } else if (step === 3) {
-      if (!draft.start) { setError("Choose a start date."); return; }
-      if (draft.hasEndDate && !draft.end) { setError("Enter an end date."); return; }
-      if (draft.end && draft.end < draft.start) { setError("End date must be on or after start date."); return; }
-      setError(""); setStep(4);
-    } else {
-      assign();
-    }
-  }
+  const sectionDone: Record<AssignSection, boolean> = {
+    details:  !!(draft?.name.trim()),
+    skills:   !!(draft?.skills.length && !draft.skills.some((s) => !s.expected)),
+    audience: draft
+      ? draft.method === "Manual"
+        ? draft.employeeIds.length > 0
+        : !!(draft.departments?.length || draft.roles?.length || draft.cohorts?.length)
+      : false,
+    schedule: !!(draft?.start),
+  };
 
   function validate() {
     if (!draft) return false;
@@ -616,116 +602,59 @@ export function RoleMapping({ data, work, save }: Props) {
         </div>
       )}
       {draft && (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setDraft(null);
-          }}
-        >
-          <DialogContent className="cm-dialog cm-wide cm-config-dialog">
+        <Dialog open onOpenChange={(open) => { if (!open) setDraft(null); }}>
+          <DialogContent className="cm-dialog cm-config-dialog cm-config-split-dialog">
             <DialogHeader>
               <DialogTitle>Configure assignment</DialogTitle>
               <DialogDescription>
-                {step === 1 && "Name the assignment and choose which skills to assign."}
-                {step === 2 && "Choose who should be enrolled and how."}
-                {step === 3 && "Set the learning order and assignment dates."}
-                {step === 4 && "Review everything before saving."}
+                Fill in each section on the left, then save when ready.
               </DialogDescription>
             </DialogHeader>
 
-            <nav aria-label="Progress" className="cm-stepper cm-config-stepper">
-              {CONFIG_STEPS.map((label, i) => {
-                const stepNum = i + 1;
-                const isDone = step > stepNum;
-                const isCurrent = step === stepNum;
-                return (
-                  <Fragment key={label}>
-                    {i > 0 && <div className={`cm-stepper-line${step > i ? " done" : ""}`} aria-hidden />}
+            <div className="cm-config-split-body">
+              <nav className="cm-config-nav" aria-label="Sections">
+                {ASSIGN_SECTIONS.map(({ id, label }) => {
+                  const done = sectionDone[id];
+                  const active = activeSection === id;
+                  return (
                     <button
+                      key={id}
                       type="button"
-                      className={["cm-stepper-step", isCurrent ? "current" : "", isDone ? "done" : ""].filter(Boolean).join(" ")}
-                      aria-current={isCurrent ? "step" : undefined}
-                      aria-label={`Step ${stepNum} of 4: ${label}${isDone ? ", completed" : ""}`}
-                      disabled={!isDone}
-                      onClick={() => { if (isDone) { setError(""); setStep(stepNum); } }}
+                      className={["cm-config-nav-item", active ? "active" : "", done ? "done" : ""].filter(Boolean).join(" ")}
+                      aria-current={active ? "true" : undefined}
+                      onClick={() => { setError(""); setActiveSection(id); }}
                     >
-                      <span className="cm-stepper-circle" aria-hidden>
-                        {isDone ? <CheckCircle2 size={14} /> : stepNum}
+                      <span className="cm-config-nav-status" aria-hidden>
+                        {done
+                          ? <CheckCircle2 size={14} />
+                          : <span className="cm-config-nav-dot" />}
                       </span>
-                      <span className="cm-stepper-label">{label}</span>
+                      {label}
                     </button>
-                  </Fragment>
-                );
-              })}
-            </nav>
-
-            <div className="cm-config-body" ref={bodyRef}>
-              {error && (
-                <div className="cm-error" role="alert">
-                  {error}
+                  );
+                })}
+                <div className="cm-config-nav-summary">
+                  <span>{audience.length} learner{audience.length !== 1 ? "s" : ""}</span>
+                  <span>{draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}</span>
                 </div>
-              )}
-              {step < 4 ? (
+              </nav>
+
+              <div className="cm-config-panel" ref={bodyRef}>
+                {error && <div className="cm-error" role="alert">{error}</div>}
                 <AssignmentConfiguration
                   data={data}
                   work={work}
                   draft={draft}
                   onChange={setDraft}
-                  configStep={step as 1 | 2 | 3}
+                  activeSection={activeSection}
                 />
-              ) : (
-                <>
-                  <h3>{draft.name}</h3>
-                  <div className="cm-summary">
-                    <p>
-                      <strong>{audience.length}</strong> learners ·{" "}
-                      <strong>{draft.skills.length}</strong> skills
-                    </p>
-                    <p>
-                      {draft.method} enrolment · {draft.type} audience
-                    </p>
-                    <p>
-                      {draft.start} to {draft.end || "No end date"}
-                    </p>
-                    <p>
-                      {audience
-                        .slice(0, 20)
-                        .map((e) => e.name)
-                        .join(", ") || "No current matching learners"}
-                      {audience.length > 20 &&
-                        ` and ${audience.length - 20} more learners`}
-                    </p>
-                  </div>
-                  <AssignmentSkills
-                    data={data}
-                    selected={draft.skills}
-                    onChange={() => {}}
-                    readOnly
-                  />
-                  {!audience.length && (
-                    <p className="cm-hint">
-                      No learners currently match. A static assignment will
-                      remain empty; a dynamic assignment can include future
-                      matching employees.
-                    </p>
-                  )}
-                </>
-              )}
+              </div>
             </div>
 
             <div className="cm-dialog-actions">
-              <button
-                className="cm-button"
-                onClick={() => step > 1 ? (setError(""), setStep(step - 1)) : setDraft(null)}
-              >
-                {step > 1 ? "Back" : "Cancel"}
-              </button>
-              <button className="cm-button primary" onClick={advanceStep}>
-                {step < 4 ? (
-                  <>Next <ArrowRight size={16} /></>
-                ) : (
-                  <>Save &amp; assign <ArrowRight size={16} /></>
-                )}
+              <button className="cm-button" onClick={() => setDraft(null)}>Cancel</button>
+              <button className="cm-button primary" onClick={assign}>
+                Save &amp; assign
               </button>
             </div>
           </DialogContent>
