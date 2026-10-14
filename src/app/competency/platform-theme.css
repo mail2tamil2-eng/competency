@@ -520,23 +520,83 @@ body {
 .cm-inline-form .cm-assignment-group-toggle > span > span {
   font-size: 13px;
 }
-/* Inline create competency form */
+/* ── Create Competency & Skills – compact layout ── */
+
+/* Cards: 20px padding, no margin (gaps are explicit) */
 .cm-create-inline .cm-config-section {
-  padding: 24px;
+  padding: 20px;
   margin: 0;
 }
+/* 20px gap between the two section cards */
+.cm-create-inline .cm-config-section + .cm-config-section {
+  margin-top: 20px;
+}
+/* Section heading → content gap */
+.cm-create-inline .cm-config-section > h3 {
+  margin-bottom: 16px;
+}
+/* Override platform margin-8px on labels inside the create form */
+.cm-create-inline .cm-config-section label {
+  margin: 0;
+}
+
+/* ── Competency details (step 1) ── */
+.cm-create-inline .cm-create-step1 {
+  gap: 16px;
+  padding: 0;
+}
+.cm-create-inline .cm-create-step1 label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cm-create-inline .cm-create-step1 input,
+.cm-create-inline .cm-create-step1 select {
+  height: 40px;
+  min-height: 40px;
+}
+.cm-create-inline .cm-create-step1 textarea {
+  height: 72px;
+  min-height: 72px;
+  resize: vertical;
+}
+.cm-create-inline .cm-create-step1 .cm-field-hint {
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
+/* ── Skills & courses (step 2) ── */
+.cm-create-inline .cm-create-step2 {
+  margin: 0;
+}
+/* Right panel: 16px between groups, 6px label-to-input */
+.cm-create-inline .cm-skill-panel-right {
+  gap: 16px;
+  padding: 16px 20px;
+}
+.cm-create-inline .cm-skill-panel-right label {
+  gap: 6px;
+}
+.cm-create-inline .cm-skill-panel-right input {
+  height: 40px;
+  min-height: 40px;
+}
+.cm-create-inline .cm-skill-panel-right textarea {
+  height: 72px;
+  min-height: 72px;
+}
+/* Error banner spacing */
+.cm-create-inline > .cm-error {
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+/* Overflow fix (no dialog constraint) */
 .cm-create-inline .cm-create-content {
   overflow-y: visible;
   padding: 0;
 }
 .cm-create-inline form {
   overflow: visible;
-}
-.cm-create-inline .cm-stepper {
-  margin-bottom: 20px;
-}
-.cm-create-inline .cm-stepper-mobile {
-  margin-bottom: 16px;
 }
 
 /* Assignment setup: numbered sections, aligned controls, persistent footer. */
