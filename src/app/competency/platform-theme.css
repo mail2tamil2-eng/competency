@@ -686,6 +686,12 @@ body {
 .cm-create-add-skill:hover {
   color: var(--cm-primary-hover);
 }
+/* Prevent the full-width + min-height overrides from bloating the course weightage number input */
+.cm-create-skill-card-body .cm-course-row-weight input {
+  width: 56px;
+  min-height: unset;
+  height: auto;
+}
 
 /* Assignment setup: numbered sections, aligned controls, persistent footer. */
 .cm-dialog.cm-config-dialog {
