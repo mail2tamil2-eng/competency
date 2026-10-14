@@ -99,6 +99,37 @@ export function CompetencyManagementPage() {
     window.addEventListener("competency-search", search);
     return () => window.removeEventListener("competency-search", search);
   }, []);
+
+  // Sync current view to global header
+  useEffect(() => {
+    const view = isLearner ? "learner" : tab === "manager" ? "manager" : "admin";
+    window.dispatchEvent(new CustomEvent("competency-view-update", { detail: { view } }));
+  }, [tab, isLearner]);
+
+  // Listen for view changes from global header
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const v = (e as CustomEvent).detail?.view as string;
+      if (!v) return;
+      setLibraryIntent(null);
+      setQuery("");
+      setTab(v === "manager" ? "library" : v as Tab);
+      routeNavigate(
+        v === "manager" ? "/competency-management/manager" :
+        v === "learner" ? "/competency-management/learner" :
+        "/competency-management",
+      );
+    };
+    window.addEventListener("competency-set-view", handler);
+    return () => window.removeEventListener("competency-set-view", handler);
+  }, [routeNavigate]);
+
+  // Listen for reset trigger from global header
+  useEffect(() => {
+    const handler = () => setConfirmReset(true);
+    window.addEventListener("competency-reset", handler);
+    return () => window.removeEventListener("competency-reset", handler);
+  }, []);
   const work = data.workflow || workflowSeed;
   const saveWorkflow = (next: Data, workflow: WorkflowData, message: string) =>
     commit({ ...next, workflow }, message);
@@ -155,32 +186,6 @@ export function CompetencyManagementPage() {
         <div>
           <h1>Competency Management</h1>
           <p>Build capabilities. Close skill gaps. Help your people grow.</p>
-        </div>
-        <div className="cm-view-select">
-          <select
-            aria-label="Workspace view"
-            value={
-              isLearner ? "learner" : tab === "manager" ? "manager" : "admin"
-            }
-            onChange={(e) =>
-              navigate(
-                e.target.value === "admin"
-                  ? "library"
-                  : (e.target.value as Tab),
-              )
-            }
-          >
-            <option value="admin">Administrator</option>
-            <option value="learner">Learner preview</option>
-            <option value="manager">Manager preview</option>
-          </select>
-          <button
-            className="cm-button cm-reset-demo-btn"
-            title="Reset all data back to demo defaults"
-            onClick={() => setConfirmReset(true)}
-          >
-            Reset demo data
-          </button>
         </div>
       </div>
 

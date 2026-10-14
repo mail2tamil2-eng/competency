@@ -1,7 +1,7 @@
 import { Search, Bell, ChevronDown, User, LogOut } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 import { readData } from "../competency/model";
@@ -13,9 +13,21 @@ interface HeaderProps {
 
 export function Header({ userName, isCollapsed = false }: HeaderProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [competencyView, setCompetencyView] = useState<"admin" | "learner" | "manager">("admin");
   const profileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
+  const isCompetencyPage = location.pathname.startsWith("/competency-management");
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const view = (e as CustomEvent).detail?.view;
+      if (view) setCompetencyView(view);
+    };
+    window.addEventListener("competency-view-update", handler);
+    return () => window.removeEventListener("competency-view-update", handler);
+  }, []);
 
   // Use authenticated user or fallback to prop
   const displayName = user?.name || userName || "User";
@@ -80,7 +92,33 @@ export function Header({ userName, isCollapsed = false }: HeaderProps) {
       </div>
 
       {/* Right Section */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3">
+        {/* Competency controls */}
+        {isCompetencyPage && (
+          <>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent("competency-reset"))}
+              className="text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors whitespace-nowrap"
+            >
+              Reset demo data
+            </button>
+            <select
+              aria-label="Workspace view"
+              value={competencyView}
+              onChange={(e) =>
+                window.dispatchEvent(
+                  new CustomEvent("competency-set-view", { detail: { view: e.target.value } }),
+                )
+              }
+              className="text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+            >
+              <option value="admin">Administrator</option>
+              <option value="learner">Learner preview</option>
+              <option value="manager">Manager preview</option>
+            </select>
+            <div className="w-px h-6 bg-gray-200" />
+          </>
+        )}
         {/* Notifications */}
         <button
           aria-label="Review notifications"
