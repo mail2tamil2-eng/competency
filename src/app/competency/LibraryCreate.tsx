@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Trash2,
-  ArrowRight,
   ChevronDown,
   ChevronRight,
-  CheckCircle2,
   Search,
   X,
 } from "lucide-react";
@@ -41,7 +39,6 @@ export function LibraryCreate({
   onSave: (competency: RecordItem, skills: RecordItem[]) => void;
   onSaveWork?: (work: WorkflowData, msg: string) => boolean;
 }) {
-  const [step, setStep] = useState(1);
   const [competency, setCompetency] = useState<RecordItem>(() => ({
     id: uid(),
     name: "",
@@ -74,7 +71,6 @@ export function LibraryCreate({
   function selectSkill(id: string) {
     setSelectedSkillId(id);
     setExpandedLevels(new Set());
-    setErrors([]);
   }
 
   function updateSkill(id: string, patch: Partial<RecordItem>) {
@@ -121,14 +117,9 @@ export function LibraryCreate({
     const idx = skills.findIndex((s) => s.id === id);
     const remaining = skills.filter((s) => s.id !== id);
     setSkills(remaining);
-    if (selectedSkillId === id) {
+    if (selectedSkillId === id)
       selectSkill(remaining[Math.max(0, idx - 1)]?.id ?? remaining[0]?.id ?? "");
-    }
-    setCourseMappings((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
+    setCourseMappings((prev) => { const next = { ...prev }; delete next[id]; return next; });
   }
 
   function toggleLevel(levelId: string) {
@@ -187,9 +178,7 @@ export function LibraryCreate({
     if (name.length > 120) issues.push(`${label}: use 120 characters or fewer.`);
     if (
       name &&
-      (skills.some(
-        (x) => x.id !== s.id && x.name.trim().toLowerCase() === name.toLowerCase()
-      ) ||
+      (skills.some((x) => x.id !== s.id && x.name.trim().toLowerCase() === name.toLowerCase()) ||
         data.skills.some((x) => x.name.trim().toLowerCase() === name.toLowerCase()))
     )
       issues.push(`${label}: this skill name already exists.`);
@@ -199,44 +188,33 @@ export function LibraryCreate({
     return issues;
   }
 
-  function issuesFor(stage: number) {
-    const issues = validate(clean, "competencies", data);
-    if (stage >= 2) {
-      if (!linked.length) issues.push("Add at least one skill, or save as draft.");
-      for (const [i, s] of linked.entries()) issues.push(...skillIssues(s, i));
-    }
-    return [...new Set(issues)];
-  }
-
-  function advance() {
-    const issues = issuesFor(step);
-    setErrors(issues);
-    if (!issues.length) { setStep(step + 1); return; }
-    if (step === 2) {
-      const bad = skills.find((s, i) => skillIssues(s, i).length);
-      if (bad) selectSkill(bad.id);
-    }
-  }
-
   function saveDraft() {
     const kept = linked.filter(
-      (s) => s.name || s.description || Object.values(s.levels ?? {}).some((v) => v.trim())
+      (s) => s.name || s.description || Object.values(s.levels ?? {}).some((v) => v.trim()),
     );
     const issues = [
-      ...issuesFor(1),
-      ...kept.flatMap((s) =>
-        skillIssues(s, skills.findIndex((x) => x.id === s.id), false)
-      ),
+      ...validate(clean, "competencies", data),
+      ...kept.flatMap((s) => skillIssues(s, skills.findIndex((x) => x.id === s.id), false)),
     ];
-    setErrors(issues);
-    if (!issues.length)
+    const deduped = [...new Set(issues)];
+    setErrors(deduped);
+    if (!deduped.length)
       onSave({ ...clean, status: "Draft" }, kept.map((s) => ({ ...s, status: "Draft" })));
   }
 
   function handleFinalSave() {
-    const issues = issuesFor(3);
-    setErrors(issues);
-    if (issues.length) return;
+    const issues = [
+      ...validate(clean, "competencies", data),
+      ...(linked.length === 0 ? ["Add at least one skill, or save as draft."] : []),
+      ...linked.flatMap((s, i) => skillIssues(s, i)),
+    ];
+    const deduped = [...new Set(issues)];
+    setErrors(deduped);
+    if (deduped.length) {
+      const bad = skills.find((s, i) => skillIssues(s, i).length);
+      if (bad) selectSkill(bad.id);
+      return;
+    }
     if (onSaveWork && data.workflow) {
       const updatedCourses = data.workflow.courses.map((course) => {
         const newMaps: { skillId: string; levelId: string; weightage?: number }[] = [];
@@ -270,13 +248,11 @@ export function LibraryCreate({
         (s) =>
           s.name.trim() ||
           s.description.trim() ||
-          Object.values(s.levels ?? {}).some((v) => v.trim())
+          Object.values(s.levels ?? {}).some((v) => v.trim()),
       );
     if (dirty && !window.confirm("Discard unsaved changes and close?")) return;
     onClose();
   }
-
-  const completeCount = skills.filter((s, i) => !skillIssues(s, i).length).length;
 
   const pickerFiltered = allCourses.filter((c) => {
     if (pickerShowSelected && !pickerDraft.includes(c.id)) return false;
@@ -296,7 +272,6 @@ export function LibraryCreate({
     return (
       <Dialog open onOpenChange={(open) => { if (!open) setPickerKey(null); }}>
         <DialogContent className="cm-dialog cm-picker-dialog">
-
           <DialogHeader className="cm-picker-header">
             <DialogTitle>Map courses</DialogTitle>
             <DialogDescription>{subtitle}</DialogDescription>
@@ -314,29 +289,16 @@ export function LibraryCreate({
                 onChange={(e) => setPickerSearch(e.target.value)}
               />
               {pickerSearch && (
-                <button
-                  type="button"
-                  className="cm-picker-clear-btn"
-                  onClick={() => setPickerSearch("")}
-                  aria-label="Clear search"
-                >
+                <button type="button" className="cm-picker-clear-btn" onClick={() => setPickerSearch("")} aria-label="Clear search">
                   <X size={13} />
                 </button>
               )}
             </div>
             <div className="cm-picker-filter-row">
-              <button
-                type="button"
-                className={`cm-picker-filter-btn${!pickerShowSelected ? " active" : ""}`}
-                onClick={() => setPickerShowSelected(false)}
-              >
+              <button type="button" className={`cm-picker-filter-btn${!pickerShowSelected ? " active" : ""}`} onClick={() => setPickerShowSelected(false)}>
                 All courses ({allCourses.length})
               </button>
-              <button
-                type="button"
-                className={`cm-picker-filter-btn${pickerShowSelected ? " active" : ""}`}
-                onClick={() => setPickerShowSelected(true)}
-              >
+              <button type="button" className={`cm-picker-filter-btn${pickerShowSelected ? " active" : ""}`} onClick={() => setPickerShowSelected(true)}>
                 Selected ({pickerDraft.length})
               </button>
             </div>
@@ -345,20 +307,13 @@ export function LibraryCreate({
           <div className="cm-picker-list" role="list">
             {pickerFiltered.length === 0 && (
               <p className="cm-picker-empty">
-                {pickerShowSelected
-                  ? "No courses selected yet."
-                  : pickerSearch
-                  ? `No results for "${pickerSearch}".`
-                  : "No courses available."}
+                {pickerShowSelected ? "No courses selected yet." : pickerSearch ? `No results for "${pickerSearch}".` : "No courses available."}
               </p>
             )}
             {pickerFiltered.map((course) => {
               const checked = pickerDraft.includes(course.id);
               return (
-                <label
-                  key={course.id}
-                  className={`cm-picker-row${checked ? " checked" : ""}`}
-                >
+                <label key={course.id} className={`cm-picker-row${checked ? " checked" : ""}`}>
                   <input
                     type="checkbox"
                     checked={checked}
@@ -403,25 +358,17 @@ export function LibraryCreate({
                 </span>
               );
             })()}
-            <button type="button" className="cm-button" onClick={() => setPickerKey(null)}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="cm-button primary"
-              disabled={!hasChanged}
-              onClick={applyPicker}
-            >
+            <button type="button" className="cm-button" onClick={() => setPickerKey(null)}>Cancel</button>
+            <button type="button" className="cm-button primary" disabled={!hasChanged} onClick={applyPicker}>
               Apply selection
             </button>
           </div>
-
         </DialogContent>
       </Dialog>
     );
   }
 
-  // ── MAIN WIZARD ────────────────────────────────────────────────────────────
+  // ── MAIN FORM ────────────────────────────────────────────────────────────
   return (
     <section className="cm-inline-form cm-create-inline">
       <div className="cm-inline-form-head">
@@ -429,402 +376,243 @@ export function LibraryCreate({
           ← Competency framework
         </button>
         <h2>Create competency &amp; skills</h2>
-        <p className="cm-inline-form-meta">Fill in skills and proficiency descriptions, then save to the library.</p>
       </div>
-      <div className="cm-config-section">
-        <nav aria-label="Progress" className="cm-stepper">
-          {(["Competency details", "Skills & courses", "Review"] as const).map((label, i) => {
-            const stepNum = i + 1;
-            const isDone = step > stepNum;
-            const isCurrent = step === stepNum;
-            return (
-              <Fragment key={label}>
-                {i > 0 && (
-                  <div
-                    className={`cm-stepper-line${step > i ? " done" : ""}`}
-                    aria-hidden="true"
-                  />
-                )}
-                <button
-                  type="button"
-                  className={["cm-stepper-step", isCurrent ? "current" : "", isDone ? "done" : ""].filter(Boolean).join(" ")}
-                  aria-current={isCurrent ? "step" : undefined}
-                  aria-label={`Step ${stepNum} of 3: ${label}${isDone ? ", completed" : ""}`}
-                  disabled={!isDone}
-                  onClick={() => { setErrors([]); setStep(stepNum); }}
-                >
-                  <span className="cm-stepper-circle" aria-hidden="true">
-                    {isDone ? <CheckCircle2 size={14} /> : stepNum}
-                  </span>
-                  <span className="cm-stepper-label">{label}</span>
-                </button>
-              </Fragment>
-            );
-          })}
-        </nav>
-        <div className="cm-stepper-mobile" aria-hidden="true">
-          <span>Step {step} of 3 · {["Competency details", "Skills & courses", "Review"][step - 1]}</span>
-          <div className="cm-stepper-mobile-bar">
-            <div className="cm-stepper-mobile-progress" style={{ width: `${(step / 3) * 100}%` }} />
-          </div>
+
+      {errors.length > 0 && (
+        <div className="cm-error" role="alert" ref={errorRef} tabIndex={-1}>
+          {errors.map((e) => <div key={e}>{e}</div>)}
         </div>
+      )}
 
-        <form
-          noValidate
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (step < 3) { advance(); return; }
-            handleFinalSave();
-          }}
-        >
-          <div className="cm-create-content">
-            {errors.length > 0 && (
-              <div className="cm-error" role="alert" ref={errorRef} tabIndex={-1}>
-                {errors.map((e) => <div key={e}>{e}</div>)}
+      <div className="cm-config-section">
+        <h3>Competency details</h3>
+        <div className="cm-create-step1">
+          <label>
+            <span className="cm-req-label">Competency name <span className="req">*</span></span>
+            <input
+              autoFocus
+              aria-label="Competency name"
+              maxLength={120}
+              value={competency.name}
+              onChange={(e) => setCompetency({ ...competency, name: e.target.value })}
+              placeholder="e.g. Communication"
+            />
+          </label>
+          <label>
+            <span className="cm-req-label">Category <span className="req">*</span></span>
+            <select
+              aria-label="Category"
+              value={competency.categoryId}
+              onChange={(e) => setCompetency({ ...competency, categoryId: e.target.value })}
+            >
+              <option value="">Select a category</option>
+              {data.categories
+                .filter((c) => c.status === "Active")
+                .map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+            </select>
+            <p className="cm-field-hint">Manage categories in Library settings.</p>
+          </label>
+          <label>
+            <span>Description <span className="cm-field-optional">optional</span></span>
+            <textarea
+              value={competency.description}
+              onChange={(e) => setCompetency({ ...competency, description: e.target.value })}
+              placeholder="What broad capability does this describe?"
+              rows={3}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="cm-config-section">
+        <h3>Skills &amp; courses</h3>
+        <div className="cm-create-step2">
+          <div className="cm-skill-panel-left">
+            <button type="button" className="cm-add-skill-btn" onClick={addSkill}>
+              <Plus size={13} /> Add skill
+            </button>
+            {skills.map((s, i) => (
+              <div
+                key={s.id}
+                role="button"
+                tabIndex={0}
+                className={`cm-skill-list-item${selectedSkill?.id === s.id ? " selected" : ""}`}
+                onClick={() => selectSkill(s.id)}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && selectSkill(s.id)}
+              >
+                <span className="cm-skill-list-name">{s.name.trim() || `Skill ${i + 1}`}</span>
+                <span className={`cm-skill-list-status${skillIssues(s, i).length ? " needs" : " ready"}`}>
+                  {skillIssues(s, i).length ? "Needs details" : "Ready"}
+                </span>
               </div>
-            )}
+            ))}
+          </div>
 
-            {/* ── STEP 1 ── */}
-            {step === 1 && (
-              <div className="cm-create-step1">
+          <div className="cm-skill-panel-right">
+            {selectedSkill && (
+              <>
+                <div className="cm-skill-editor-header">
+                  <span className="cm-skill-editor-title">
+                    {selectedSkill.name.trim() || `Skill ${skills.indexOf(selectedSkill) + 1}`}
+                  </span>
+                  {skills.length > 1 && (
+                    <button type="button" className="cm-text-button" onClick={() => removeSkill(selectedSkill.id)}>
+                      <Trash2 size={13} /> Remove
+                    </button>
+                  )}
+                </div>
+
                 <label>
-                  <span className="cm-req-label">Competency name <span className="req">*</span></span>
+                  <span className="cm-req-label">Skill name <span className="req">*</span></span>
                   <input
-                    autoFocus
-                    aria-label="Competency name"
+                    aria-label="Skill name"
                     maxLength={120}
-                    value={competency.name}
-                    onChange={(e) => setCompetency({ ...competency, name: e.target.value })}
-                    placeholder="e.g. Communication"
+                    value={selectedSkill.name}
+                    onChange={(e) => updateSkill(selectedSkill.id, { name: e.target.value })}
+                    placeholder="e.g. Active Listening"
                   />
                 </label>
-                <label>
-                  <span className="cm-req-label">Category <span className="req">*</span></span>
-                  <select
-                    aria-label="Category"
-                    value={competency.categoryId}
-                    onChange={(e) => setCompetency({ ...competency, categoryId: e.target.value })}
-                  >
-                    <option value="">Select a category</option>
-                    {data.categories
-                      .filter((c) => c.status === "Active")
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                  </select>
-                  <p className="cm-field-hint">Manage categories in Library settings.</p>
-                </label>
+
                 <label>
                   <span>Description <span className="cm-field-optional">optional</span></span>
                   <textarea
-                    value={competency.description}
-                    onChange={(e) => setCompetency({ ...competency, description: e.target.value })}
-                    placeholder="What broad capability does this describe?"
                     rows={3}
+                    value={selectedSkill.description}
+                    onChange={(e) => updateSkill(selectedSkill.id, { description: e.target.value })}
+                    placeholder="What will the learner be able to do?"
                   />
                 </label>
-              </div>
-            )}
 
-            {/* ── STEP 2 ── */}
-            {step === 2 && (
-              <div className="cm-create-step2">
-                <div className="cm-skill-panel-left">
-                  <button type="button" className="cm-add-skill-btn" onClick={addSkill}>
-                    <Plus size={13} /> Add skill
-                  </button>
-                  {skills.map((s, i) => (
-                    <div
-                      key={s.id}
-                      role="button"
-                      tabIndex={0}
-                      className={`cm-skill-list-item${selectedSkill?.id === s.id ? " selected" : ""}`}
-                      onClick={() => selectSkill(s.id)}
-                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && selectSkill(s.id)}
-                    >
-                      <span className="cm-skill-list-name">
-                        {s.name.trim() || `Skill ${i + 1}`}
-                      </span>
-                      <span className={`cm-skill-list-status${skillIssues(s, i).length ? " needs" : " ready"}`}>
-                        {skillIssues(s, i).length ? "Needs details" : "Ready"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="cm-skill-panel-right">
-                  {selectedSkill && (
-                    <>
-                      <div className="cm-skill-editor-header">
-                        <span className="cm-skill-editor-title">
-                          {selectedSkill.name.trim() ||
-                            `Skill ${skills.indexOf(selectedSkill) + 1}`}
-                        </span>
-                        {skills.length > 1 && (
-                          <button
-                            type="button"
-                            className="cm-text-button"
-                            onClick={() => removeSkill(selectedSkill.id)}
-                          >
-                            <Trash2 size={13} /> Remove
-                          </button>
-                        )}
-                      </div>
-
-                      <label>
-                        <span className="cm-req-label">Skill name <span className="req">*</span></span>
-                        <input
-                          aria-label="Skill name"
-                          maxLength={120}
-                          value={selectedSkill.name}
-                          onChange={(e) =>
-                            updateSkill(selectedSkill.id, { name: e.target.value })
-                          }
-                          placeholder="e.g. Active Listening"
-                        />
-                      </label>
-
-                      <label>
-                        <span>Description <span className="cm-field-optional">optional</span></span>
-                        <textarea
-                          rows={3}
-                          value={selectedSkill.description}
-                          onChange={(e) =>
-                            updateSkill(selectedSkill.id, { description: e.target.value })
-                          }
-                          placeholder="What will the learner be able to do?"
-                        />
-                      </label>
-
-                      <div className="cm-proficiency-section">
-                        <p className="cm-proficiency-label">Proficiency levels</p>
-                        {levels.length === 0 && (
-                          <p className="cm-field-hint">No active levels — manage in Library settings.</p>
-                        )}
-                        {levels.map((l) => {
-                          const expanded = expandedLevels.has(l.id);
-                          const desc = selectedSkill.levels?.[l.id]?.trim() ?? "";
-                          const mapped = getLevelCourses(selectedSkill.id, l.id);
-                          return (
-                            <div key={l.id} className={`cm-level-row${expanded ? " expanded" : ""}`}>
-                              <button
-                                type="button"
-                                className="cm-level-row-toggle"
-                                aria-expanded={expanded}
-                                onClick={() => toggleLevel(l.id)}
-                              >
-                                {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                                <span className="cm-level-row-name">{l.name}</span>
-                                <span className="cm-level-row-preview">
-                                  {desc || <em>Description required</em>}
-                                </span>
-                                <span className="cm-level-row-meta">
-                                  {mapped.length > 0
-                                    ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}`
-                                    : ""}
-                                </span>
-                              </button>
-                              {expanded && (
-                                <div className="cm-level-row-body">
-                                  <label>
-                                    <span className="cm-req-label">Proficiency description <span className="req">*</span></span>
-                                    <textarea
-                                      rows={3}
-                                      aria-label={`${l.name} proficiency description`}
-                                      value={selectedSkill.levels?.[l.id] ?? ""}
-                                      onChange={(e) =>
-                                        updateSkill(selectedSkill.id, {
-                                          levels: { ...selectedSkill.levels, [l.id]: e.target.value },
-                                        })
-                                      }
-                                      placeholder={`What can someone do at ${l.name.toLowerCase()} level?`}
-                                    />
-                                  </label>
-                                  <div className="cm-level-courses">
-                                    <div className="cm-level-courses-hd">
-                                      <span>Mapped courses ({mapped.length})</span>
-                                      <button
-                                        type="button"
-                                        className="cm-map-courses-btn"
-                                        onClick={() => openPicker(selectedSkill.id, l.id)}
-                                      >
-                                        <Plus size={11} /> Map courses
-                                      </button>
-                                    </div>
-                                    {mapped.length === 0 ? (
-                                      <p className="cm-level-no-courses">No courses mapped.</p>
-                                    ) : (() => {
-                                        const total = mapped.reduce((sum, c) => sum + (courseWeightages[selectedSkill.id]?.[l.id]?.[c.id] ?? 0), 0);
-                                        const cls = total === 100 ? "ok" : total > 100 ? "over" : "warn";
-                                        return (
-                                          <>
-                                            <div className="cm-course-list">
-                                              {mapped.map((c) => {
-                                                const w = courseWeightages[selectedSkill.id]?.[l.id]?.[c.id];
-                                                return (
-                                                  <div key={c.id} className="cm-course-row">
-                                                    <span className="cm-course-row-name">{c.name}</span>
-                                                    <div className="cm-course-row-weight">
-                                                      <input
-                                                        type="number"
-                                                        min={0}
-                                                        max={100}
-                                                        value={w ?? ""}
-                                                        placeholder="0"
-                                                        aria-label={`Weightage for ${c.name}`}
-                                                        onInput={(e) => { if (e.currentTarget.value.length > 3) e.currentTarget.value = e.currentTarget.value.slice(0, 3); }}
-                                                        onChange={(e) => setWeightage(selectedSkill.id, l.id, c.id, e.target.value)}
-                                                      />
-                                                      <span>%</span>
-                                                    </div>
-                                                    <button
-                                                      type="button"
-                                                      aria-label={`Remove ${c.name}`}
-                                                      className="cm-course-row-remove"
-                                                      onClick={() =>
-                                                        setLevelCourses(
-                                                          selectedSkill.id,
-                                                          l.id,
-                                                          (courseMappings[selectedSkill.id]?.[l.id] ?? []).filter(
-                                                            (id) => id !== c.id
-                                                          )
-                                                        )
-                                                      }
-                                                    >
-                                                      <X size={12} />
-                                                    </button>
-                                                  </div>
-                                                );
-                                              })}
-                                            </div>
-                                            <div className={`cm-course-weight-total ${cls}`}>
-                                              Total weightage: <strong>{total}%</strong>
-                                              {total === 100 && <span className="cm-course-weight-check">✓</span>}
-                                            </div>
-                                          </>
-                                        );
-                                      })()
-                                    }
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
+                <div className="cm-proficiency-section">
+                  <p className="cm-proficiency-label">Proficiency levels</p>
+                  {levels.length === 0 && (
+                    <p className="cm-field-hint">No active levels — manage in Library settings.</p>
                   )}
+                  {levels.map((l) => {
+                    const expanded = expandedLevels.has(l.id);
+                    const desc = selectedSkill.levels?.[l.id]?.trim() ?? "";
+                    const mapped = getLevelCourses(selectedSkill.id, l.id);
+                    return (
+                      <div key={l.id} className={`cm-level-row${expanded ? " expanded" : ""}`}>
+                        <button
+                          type="button"
+                          className="cm-level-row-toggle"
+                          aria-expanded={expanded}
+                          onClick={() => toggleLevel(l.id)}
+                        >
+                          {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                          <span className="cm-level-row-name">{l.name}</span>
+                          <span className="cm-level-row-preview">
+                            {desc || <em>Description required</em>}
+                          </span>
+                          <span className="cm-level-row-meta">
+                            {mapped.length > 0 ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}` : ""}
+                          </span>
+                        </button>
+                        {expanded && (
+                          <div className="cm-level-row-body">
+                            <label>
+                              <span className="cm-req-label">Proficiency description <span className="req">*</span></span>
+                              <textarea
+                                rows={3}
+                                aria-label={`${l.name} proficiency description`}
+                                value={selectedSkill.levels?.[l.id] ?? ""}
+                                onChange={(e) =>
+                                  updateSkill(selectedSkill.id, {
+                                    levels: { ...selectedSkill.levels, [l.id]: e.target.value },
+                                  })
+                                }
+                                placeholder={`What can someone do at ${l.name.toLowerCase()} level?`}
+                              />
+                            </label>
+                            <div className="cm-level-courses">
+                              <div className="cm-level-courses-hd">
+                                <span>Mapped courses ({mapped.length})</span>
+                                <button type="button" className="cm-map-courses-btn" onClick={() => openPicker(selectedSkill.id, l.id)}>
+                                  <Plus size={11} /> Map courses
+                                </button>
+                              </div>
+                              {mapped.length === 0 ? (
+                                <p className="cm-level-no-courses">No courses mapped.</p>
+                              ) : (() => {
+                                  const total = mapped.reduce((sum, c) => sum + (courseWeightages[selectedSkill.id]?.[l.id]?.[c.id] ?? 0), 0);
+                                  const cls = total === 100 ? "ok" : total > 100 ? "over" : "warn";
+                                  return (
+                                    <>
+                                      <div className="cm-course-list">
+                                        {mapped.map((c) => {
+                                          const w = courseWeightages[selectedSkill.id]?.[l.id]?.[c.id];
+                                          return (
+                                            <div key={c.id} className="cm-course-row">
+                                              <span className="cm-course-row-name">{c.name}</span>
+                                              <div className="cm-course-row-weight">
+                                                <input
+                                                  type="number"
+                                                  min={0}
+                                                  max={100}
+                                                  value={w ?? ""}
+                                                  placeholder="0"
+                                                  aria-label={`Weightage for ${c.name}`}
+                                                  onInput={(e) => { if (e.currentTarget.value.length > 3) e.currentTarget.value = e.currentTarget.value.slice(0, 3); }}
+                                                  onChange={(e) => setWeightage(selectedSkill.id, l.id, c.id, e.target.value)}
+                                                />
+                                                <span>%</span>
+                                              </div>
+                                              <button
+                                                type="button"
+                                                aria-label={`Remove ${c.name}`}
+                                                className="cm-course-row-remove"
+                                                onClick={() =>
+                                                  setLevelCourses(
+                                                    selectedSkill.id,
+                                                    l.id,
+                                                    (courseMappings[selectedSkill.id]?.[l.id] ?? []).filter((id) => id !== c.id),
+                                                  )
+                                                }
+                                              >
+                                                <X size={12} />
+                                              </button>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                      <div className={`cm-course-weight-total ${cls}`}>
+                                        Total weightage: <strong>{total}%</strong>
+                                        {total === 100 && <span className="cm-course-weight-check">✓</span>}
+                                      </div>
+                                    </>
+                                  );
+                                })()
+                              }
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-            )}
-
-            {/* ── STEP 3 ── */}
-            {step === 3 && (
-              <div className="cm-create-step3">
-                <div className="cm-review-competency">
-                  <div className="cm-review-comp-header">
-                    <div>
-                      <h3>{clean.name}</h3>
-                      <span className="cm-review-cat">
-                        {data.categories.find((c) => c.id === competency.categoryId)?.name}
-                      </span>
-                      {clean.description && (
-                        <p className="cm-review-desc">{clean.description}</p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      className="cm-text-button"
-                      onClick={() => { setStep(1); setErrors([]); }}
-                    >
-                      Edit details
-                    </button>
-                  </div>
-                </div>
-
-                <p className="cm-review-skills-label">
-                  {skills.length} {skills.length === 1 ? "skill" : "skills"} · {completeCount} complete
-                </p>
-
-                {linked.map((s) => (
-                  <details key={s.id} className="cm-create-review">
-                    <summary>
-                      <span className="cm-review-skill-name">{s.name}</span>
-                      <span className="cm-review-skill-status">
-                        {levels.filter((l) => s.levels?.[l.id]?.trim()).length}/{levels.length} levels
-                      </span>
-                    </summary>
-                    {s.description && <p className="cm-review-desc">{s.description}</p>}
-                    <table className="cm-review-table">
-                      <thead>
-                        <tr>
-                          <th>Level</th>
-                          <th>Description</th>
-                          <th>Courses</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {levels.map((l) => {
-                          const mapped = getLevelCourses(s.id, l.id);
-                          return (
-                            <tr key={l.id}>
-                              <td>{l.name}</td>
-                              <td>{s.levels?.[l.id] || <em>—</em>}</td>
-                              <td>{mapped.length > 0 ? mapped.map((c) => c.name).join(", ") : "—"}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                    <button
-                      type="button"
-                      className="cm-text-button"
-                      onClick={() => { setStep(2); selectSkill(s.id); }}
-                    >
-                      Edit {s.name}
-                    </button>
-                  </details>
-                ))}
-
-                <p className="cm-field-hint">
-                  Adding 1 competency and {skills.length}{" "}
-                  {skills.length === 1 ? "skill" : "skills"}. Nothing is saved until you finish.
-                </p>
-              </div>
+              </>
             )}
           </div>
+        </div>
+      </div>
 
-          <div className="cm-inline-form-actions" style={{ borderTop: "1px solid #e5e7eb", marginTop: 0, paddingTop: 16 }}>
-            {step > 1 &&
-              skills.some(
-                (s) =>
-                  s.name.trim() ||
-                  s.description.trim() ||
-                  Object.values(s.levels ?? {}).some((v) => v.trim())
-              ) && (
-                <button type="button" className="cm-button" onClick={saveDraft}>
-                  Save as draft
-                </button>
-              )}
-            <button
-              type="button"
-              className="cm-button"
-              onClick={() =>
-                step === 1 ? onClose() : (setErrors([]), setStep(step - 1))
-              }
-            >
-              {step === 1 ? "Cancel" : "Back"}
-            </button>
-            <button type="submit" className="cm-button primary">
-              {step === 1
-                ? "Next: Skills & courses"
-                : step === 2
-                ? "Review"
-                : "Create competency"}
-              {step < 3 && <ArrowRight size={14} />}
-            </button>
-          </div>
-        </form>
+      <div className="cm-inline-form-actions" style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>
+        <button type="button" className="cm-button" onClick={handleClose}>
+          Cancel
+        </button>
+        {skills.some(
+          (s) => s.name.trim() || s.description.trim() || Object.values(s.levels ?? {}).some((v) => v.trim()),
+        ) && (
+          <button type="button" className="cm-button" onClick={saveDraft}>
+            Save as draft
+          </button>
+        )}
+        <button type="button" className="cm-button primary" onClick={handleFinalSave}>
+          Create competency
+        </button>
       </div>
     </section>
   );
