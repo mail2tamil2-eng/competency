@@ -303,31 +303,35 @@ export function CompetencyLibrary({
       setEditingSkill(null);
   }
 
+  /* Early return: inline create form */
+  if (creating) {
+    return (
+      <LibraryCreate
+        data={data}
+        onSaveWork={onSaveWork}
+        onClose={() => setCreating(false)}
+        onSave={(competency, skills) => {
+          if (
+            commit(
+              {
+                ...data,
+                competencies: [...data.competencies, competency],
+                skills: [...data.skills, ...skills],
+              },
+              `Created "${competency.name}" with ${skills.length} ${skills.length === 1 ? "skill" : "skills"}`,
+            )
+          ) {
+            setCreating(false);
+            setView({ kind: "skills", cId: competency.id });
+          }
+        }}
+      />
+    );
+  }
+
   /* shared modals */
   const sharedModals = (
     <>
-      {creating && (
-        <LibraryCreate
-          data={data}
-          onSaveWork={onSaveWork}
-          onClose={() => setCreating(false)}
-          onSave={(competency, skills) => {
-            if (
-              commit(
-                {
-                  ...data,
-                  competencies: [...data.competencies, competency],
-                  skills: [...data.skills, ...skills],
-                },
-                `Created "${competency.name}" with ${skills.length} ${skills.length === 1 ? "skill" : "skills"}`,
-              )
-            ) {
-              setCreating(false);
-              setView({ kind: "skills", cId: competency.id });
-            }
-          }}
-        />
-      )}
       {uploading && (
         <LibraryBulkUpload
           data={data}

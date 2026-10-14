@@ -520,6 +520,25 @@ body {
 .cm-inline-form .cm-assignment-group-toggle > span > span {
   font-size: 13px;
 }
+/* Inline create competency form */
+.cm-create-inline .cm-config-section {
+  padding: 24px;
+  margin: 0;
+}
+.cm-create-inline .cm-create-content {
+  overflow-y: visible;
+  padding: 0;
+}
+.cm-create-inline form {
+  overflow: visible;
+}
+.cm-create-inline .cm-stepper {
+  margin-bottom: 20px;
+}
+.cm-create-inline .cm-stepper-mobile {
+  margin-bottom: 16px;
+}
+
 /* Assignment setup: numbered sections, aligned controls, persistent footer. */
 .cm-dialog.cm-config-dialog {
   display: flex;

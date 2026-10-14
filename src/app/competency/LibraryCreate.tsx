@@ -423,15 +423,15 @@ export function LibraryCreate({
 
   // ── MAIN WIZARD ────────────────────────────────────────────────────────────
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) handleClose(); }}>
-      <DialogContent className="cm-dialog cm-wide cm-create-dialog">
-        <DialogHeader>
-          <DialogTitle>Create competency & skills</DialogTitle>
-          <DialogDescription>
-            Fill in skills and proficiency descriptions, then save to the library.
-          </DialogDescription>
-        </DialogHeader>
-
+    <section className="cm-inline-form cm-create-inline">
+      <div className="cm-inline-form-head">
+        <button type="button" className="cm-text-button cm-inline-back" onClick={handleClose}>
+          ← Competency framework
+        </button>
+        <h2>Create competency &amp; skills</h2>
+        <p className="cm-inline-form-meta">Fill in skills and proficiency descriptions, then save to the library.</p>
+      </div>
+      <div className="cm-config-section">
         <nav aria-label="Progress" className="cm-stepper">
           {(["Competency details", "Skills & courses", "Review"] as const).map((label, i) => {
             const stepNum = i + 1;
@@ -794,7 +794,7 @@ export function LibraryCreate({
             )}
           </div>
 
-          <div className="cm-dialog-actions">
+          <div className="cm-inline-form-actions" style={{ borderTop: "1px solid #e5e7eb", marginTop: 0, paddingTop: 16 }}>
             {step > 1 &&
               skills.some(
                 (s) =>
@@ -825,7 +825,7 @@ export function LibraryCreate({
             </button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </section>
   );
 }
