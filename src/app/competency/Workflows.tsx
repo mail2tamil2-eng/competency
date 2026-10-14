@@ -470,7 +470,7 @@ export function RoleMapping({ data, work, save }: Props) {
       setDraft(null);
   }
   if (draft) return (
-    <section className="cm-card cm-inline-form" ref={formRef}>
+    <section className="cm-inline-form" ref={formRef}>
       <div className="cm-inline-form-head">
         <button type="button" className="cm-text-button cm-inline-back" onClick={() => setDraft(null)}>
           ← Assignments

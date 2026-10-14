@@ -448,11 +448,13 @@ body {
 .cm-inline-form {
   display: flex;
   flex-direction: column;
+  background: #f3f4f6;
+  border-radius: 12px;
+  padding: 20px;
   gap: 0;
 }
 .cm-inline-form-head {
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--cm-border);
+  padding-bottom: 14px;
   margin-bottom: 4px;
 }
 .cm-inline-back {
@@ -471,9 +473,18 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--cm-border);
+  padding-top: 16px;
   margin-top: 4px;
+}
+/* Section cards inside the inline form */
+.cm-inline-form .cm-config-section {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+/* Remove the underline divider below section titles */
+.cm-config-section > h3 {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 14px;
 }
 /* Assignment setup: numbered sections, aligned controls, persistent footer. */
 .cm-dialog.cm-config-dialog {
@@ -507,9 +518,9 @@ body {
   background: #fff;
 }
 .cm-config-section > h3 {
-  margin: 0 0 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #d9dfe7;
+  margin: 0 0 14px;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 .cm-config-grid {
   display: grid;
