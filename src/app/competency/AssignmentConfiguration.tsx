@@ -135,26 +135,22 @@ function ChipSelectField({
   );
 }
 
-type AssignSection = "details" | "skills" | "audience" | "schedule";
-
 export function AssignmentConfiguration({
   data,
   work,
   draft,
   onChange,
-  activeSection,
 }: {
   data: Data;
   work: WorkflowData;
   draft: Plan;
   onChange: (plan: Plan) => void;
-  activeSection: AssignSection;
 }) {
   const allDepts   = [...new Set(work.employees.map((e) => e.department).filter(Boolean))].sort();
   const allRoles   = [...new Set(work.employees.map((e) => e.role).filter(Boolean))].sort();
   const allCohorts = [...new Set(work.employees.map((e) => e.cohort).filter((v): v is string => Boolean(v)))].sort();
 
-  if (activeSection === "details") return (
+  return (
     <div className="cm-assignment-config">
       <section className="cm-config-section">
         <h3>Assignment name</h3>
@@ -169,33 +165,7 @@ export function AssignmentConfiguration({
           />
         </label>
       </section>
-      <section className="cm-config-section">
-        <h3>Learning progression</h3>
-        <label>
-          Progression type
-          <select
-            aria-label="Learning progression type"
-            value={draft.progressionType || "level-wise"}
-            onChange={(e) => onChange({ ...draft, progressionType: e.target.value as Plan["progressionType"] })}
-          >
-            <option value="level-wise">Level-wise — L1 → L2 → L3 within each skill</option>
-            <option value="skill-wise">Skill-wise — Skill 1 → Skill 2 → Skill 3</option>
-            <option value="competency-wise">Competency-wise — Competency 1 → 2 → 3</option>
-            <option value="independent">Independent — no sequence between skills</option>
-          </select>
-          <small>
-            {(!draft.progressionType || draft.progressionType === "level-wise") && "Learner must complete each level before the next level unlocks within the same skill."}
-            {draft.progressionType === "skill-wise" && "Learner must complete a skill before the next skill is unlocked."}
-            {draft.progressionType === "competency-wise" && "Learner must complete each competency before the next competency is unlocked."}
-            {draft.progressionType === "independent" && "All applicable learning is available at once with no prerequisite sequence."}
-          </small>
-        </label>
-      </section>
-    </div>
-  );
 
-  if (activeSection === "skills") return (
-    <div className="cm-assignment-config">
       <section className="cm-config-section">
         <h3>Competencies &amp; skills</h3>
         <AssignmentSkills
@@ -204,13 +174,9 @@ export function AssignmentConfiguration({
           onChange={(skills) => onChange({ ...draft, skills })}
         />
       </section>
-    </div>
-  );
 
-  if (activeSection === "audience") return (
-    <div className="cm-assignment-config">
       <section className="cm-config-section">
-        <h3>Enrolment</h3>
+        <h3>Enrolment &amp; audience</h3>
         <div className="cm-config-grid">
           <label>
             Method
@@ -232,8 +198,8 @@ export function AssignmentConfiguration({
             </select>
             <small id="enrolment-method-help">
               {draft.method === "Auto"
-                ? "The system automatically enrols users based on the defined profile."
-                : "The admin manually selects and enrols users."}
+                ? "System automatically enrols users matching the profile below."
+                : "You manually select which users are enrolled."}
             </small>
           </label>
           <label>
@@ -250,15 +216,13 @@ export function AssignmentConfiguration({
             </select>
             <small id="enrolment-type-help">
               {draft.type === "Static"
-                ? "Skills are assigned to existing users only."
-                : "Skills are assigned to existing and new users who match the defined profile."}
-              {draft.method === "Manual" && " Manual enrolment uses a fixed selection, so Dynamic is unavailable."}
+                ? "Assigns to existing matching users only."
+                : "Assigns to current and future matching users."}
+              {draft.method === "Manual" && " Fixed to Static for manual enrolment."}
             </small>
           </label>
         </div>
-      </section>
-      <section className="cm-config-section">
-        <h3>Audience</h3>
+
         {draft.method === "Manual" ? (
           <ManualAudience
             employees={work.employees}
@@ -267,8 +231,8 @@ export function AssignmentConfiguration({
           />
         ) : (
           <div className="cm-auto-audience">
-            <h4>Define user profile</h4>
-            <p>Users matching <strong>any</strong> selection in each field will be enrolled. Leave a field empty to include all.</p>
+            <h4>User profile</h4>
+            <p>Users matching <strong>any</strong> value in each field will be enrolled. Leave empty to include all.</p>
             <div className="cm-audience-fields">
               <ChipSelectField label="Department" field="department" options={allDepts}
                 selected={draft.departments ?? []}
@@ -283,13 +247,9 @@ export function AssignmentConfiguration({
           </div>
         )}
       </section>
-    </div>
-  );
 
-  return (
-    <div className="cm-assignment-config">
       <section className="cm-config-section">
-        <h3>Assignment schedule</h3>
+        <h3>Schedule</h3>
         <div className="cm-config-grid cm-schedule-grid">
           <label>
             <span className="cm-req-label">Start date <span className="req">*</span></span>
@@ -325,10 +285,33 @@ export function AssignmentConfiguration({
                 onChange={(e) => onChange({ ...draft, end: e.target.value })}
               />
             ) : (
-              <p className="cm-field-help">No end date — assignment stays active until deactivated.</p>
+              <p className="cm-field-help">No end date — stays active until deactivated.</p>
             )}
           </div>
         </div>
+      </section>
+
+      <section className="cm-config-section">
+        <h3>Learning progression</h3>
+        <label>
+          Progression type
+          <select
+            aria-label="Learning progression type"
+            value={draft.progressionType || "level-wise"}
+            onChange={(e) => onChange({ ...draft, progressionType: e.target.value as Plan["progressionType"] })}
+          >
+            <option value="level-wise">Level-wise — L1 → L2 → L3 within each skill</option>
+            <option value="skill-wise">Skill-wise — complete one skill before the next</option>
+            <option value="competency-wise">Competency-wise — complete one competency before the next</option>
+            <option value="independent">Independent — all learning available at once</option>
+          </select>
+          <small>
+            {(!draft.progressionType || draft.progressionType === "level-wise") && "Each level must be completed before the next unlocks within the same skill."}
+            {draft.progressionType === "skill-wise" && "Each skill must be completed before the next skill is unlocked."}
+            {draft.progressionType === "competency-wise" && "Each competency must be completed before the next is unlocked."}
+            {draft.progressionType === "independent" && "No prerequisite sequence — learners can start any skill at any time."}
+          </small>
+        </label>
       </section>
     </div>
   );

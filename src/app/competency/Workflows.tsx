@@ -341,23 +341,14 @@ export function CourseMapping({ data, work, save }: Props) {
     </section>
   );
 }
-type AssignSection = "details" | "skills" | "audience" | "schedule";
-const ASSIGN_SECTIONS: { id: AssignSection; label: string }[] = [
-  { id: "details",  label: "Details"  },
-  { id: "skills",   label: "Skills"   },
-  { id: "audience", label: "Audience" },
-  { id: "schedule", label: "Schedule" },
-];
-
 export function RoleMapping({ data, work, save }: Props) {
-  const bodyRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<Plan | null>(null),
-    [activeSection, setActiveSection] = useState<AssignSection>("details"),
     [error, setError] = useState(""),
     [deactivatingPlan, setDeactivatingPlan] = useState<Plan | null>(null);
   useEffect(() => {
-    bodyRef.current?.scrollTo({ top: 0 });
-  }, [activeSection, error]);
+    if (error) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [error]);
   const today = new Date().toLocaleDateString("en-CA");
   const started = (p: Plan) =>
     data.assignments.some(
@@ -369,8 +360,8 @@ export function RoleMapping({ data, work, save }: Props) {
         !!a.current,
     );
   function begin(p?: Plan) {
-    setActiveSection("details");
     setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setDraft(
       p
         ? {
@@ -402,16 +393,6 @@ export function RoleMapping({ data, work, save }: Props) {
     );
   }
   const audience = draft ? matching(work, draft) : [];
-  const sectionDone: Record<AssignSection, boolean> = {
-    details:  !!(draft?.name.trim()),
-    skills:   !!(draft?.skills.length && !draft.skills.some((s) => !s.expected)),
-    audience: draft
-      ? draft.method === "Manual"
-        ? draft.employeeIds.length > 0
-        : !!(draft.departments?.length || draft.roles?.length || draft.cohorts?.length)
-      : false,
-    schedule: !!(draft?.start),
-  };
 
   function validate() {
     if (!draft) return false;
@@ -488,15 +469,32 @@ export function RoleMapping({ data, work, save }: Props) {
     )
       setDraft(null);
   }
+  if (draft) return (
+    <section className="cm-card cm-inline-form" ref={formRef}>
+      <div className="cm-inline-form-head">
+        <button type="button" className="cm-text-button cm-inline-back" onClick={() => setDraft(null)}>
+          ← Assignments
+        </button>
+        <h2>{draft.name.trim() || "New assignment"}</h2>
+        <p className="cm-inline-form-meta">
+          {audience.length} matching learner{audience.length !== 1 ? "s" : ""} · {draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+      {error && <div className="cm-error" role="alert">{error}</div>}
+      <AssignmentConfiguration data={data} work={work} draft={draft} onChange={setDraft} />
+      <div className="cm-inline-form-actions">
+        <button className="cm-button" onClick={() => setDraft(null)}>Cancel</button>
+        <button className="cm-button primary" onClick={assign}>Save &amp; assign</button>
+      </div>
+    </section>
+  );
+
   return (
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
           <h2>Competency → role mapping</h2>
-          <p>
-            Choose required skills, define expectations, and assign them to the
-            right people.
-          </p>
+          <p>Choose required skills, define expectations, and assign them to the right people.</p>
         </div>
         <button className="cm-button primary" onClick={() => begin()}>
           <Plus size={16} />
@@ -506,10 +504,7 @@ export function RoleMapping({ data, work, save }: Props) {
       {!work.plans.length ? (
         <div className="cm-empty">
           <h3>Give every role a clear growth path</h3>
-          <p>
-            Start with a competency, then choose skills and your target
-            audience.
-          </p>
+          <p>Start with a competency, then choose skills and your target audience.</p>
           <button className="cm-button" onClick={() => begin()}>
             Create your first assignment
           </button>
@@ -531,9 +526,7 @@ export function RoleMapping({ data, work, save }: Props) {
                 <tr key={p.id}>
                   <td>
                     <strong>{p.name}</strong>
-                    <small>
-                      {p.start} → {p.end}
-                    </small>
+                    <small>{p.start} → {p.end}</small>
                   </td>
                   <td>
                     {p.method} · {p.type}
@@ -541,34 +534,15 @@ export function RoleMapping({ data, work, save }: Props) {
                   </td>
                   <td>{p.skills.length}</td>
                   <td>
-                    <span className={"cm-badge " + p.status.toLowerCase()}>
-                      {p.status}
-                    </span>
+                    <span className={"cm-badge " + p.status.toLowerCase()}>{p.status}</span>
                   </td>
                   <td>
                     <div className="cm-row-actions">
-                      <button
-                        className="cm-icon-button"
-                        title="Edit"
-                        aria-label={"Edit " + p.name}
-                        onClick={() => begin(p)}
-                      >
+                      <button className="cm-icon-button" title="Edit" aria-label={"Edit " + p.name} onClick={() => begin(p)}>
                         <Pencil size={15} />
                       </button>
-                      <button
-                        className="cm-icon-button"
-                        title="Duplicate"
-                        aria-label={"Duplicate " + p.name}
-                        onClick={() =>
-                          begin({
-                            ...p,
-                            id: uid(),
-                            name: p.name + " (copy)",
-                            assignedNames: [],
-                            employeeIds: [],
-                          })
-                        }
-                      >
+                      <button className="cm-icon-button" title="Duplicate" aria-label={"Duplicate " + p.name}
+                        onClick={() => begin({ ...p, id: uid(), name: p.name + " (copy)", assignedNames: [], employeeIds: [] })}>
                         <Copy size={15} />
                       </button>
                       <button
@@ -576,19 +550,11 @@ export function RoleMapping({ data, work, save }: Props) {
                         aria-checked={p.status === "Active"}
                         className="cm-toggle-switch"
                         disabled={started(p)}
-                        title={
-                          started(p)
-                            ? "Learning has started; this assignment is protected"
-                            : p.status === "Active" ? "Deactivate" : "Activate"
-                        }
+                        title={started(p) ? "Learning has started; this assignment is protected" : p.status === "Active" ? "Deactivate" : "Activate"}
                         aria-label={(p.status === "Active" ? "Deactivate " : "Activate ") + p.name}
                         onClick={() => {
                           if (p.status === "Active") { setDeactivatingPlan(p); return; }
-                          save(
-                            data,
-                            { ...work, plans: work.plans.map((x) => x.id === p.id ? { ...x, status: "Active" } : x) },
-                            "Assignment activated",
-                          );
+                          save(data, { ...work, plans: work.plans.map((x) => x.id === p.id ? { ...x, status: "Active" } : x) }, "Assignment activated");
                         }}
                       >
                         <span className="cm-toggle-thumb" />
@@ -600,65 +566,6 @@ export function RoleMapping({ data, work, save }: Props) {
             </tbody>
           </table>
         </div>
-      )}
-      {draft && (
-        <Dialog open onOpenChange={(open) => { if (!open) setDraft(null); }}>
-          <DialogContent className="cm-dialog cm-config-dialog cm-config-split-dialog">
-            <DialogHeader>
-              <DialogTitle>Configure assignment</DialogTitle>
-              <DialogDescription>
-                Fill in each section on the left, then save when ready.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="cm-config-split-body">
-              <nav className="cm-config-nav" aria-label="Sections">
-                {ASSIGN_SECTIONS.map(({ id, label }) => {
-                  const done = sectionDone[id];
-                  const active = activeSection === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      className={["cm-config-nav-item", active ? "active" : "", done ? "done" : ""].filter(Boolean).join(" ")}
-                      aria-current={active ? "true" : undefined}
-                      onClick={() => { setError(""); setActiveSection(id); }}
-                    >
-                      <span className="cm-config-nav-status" aria-hidden>
-                        {done
-                          ? <CheckCircle2 size={14} />
-                          : <span className="cm-config-nav-dot" />}
-                      </span>
-                      {label}
-                    </button>
-                  );
-                })}
-                <div className="cm-config-nav-summary">
-                  <span>{audience.length} learner{audience.length !== 1 ? "s" : ""}</span>
-                  <span>{draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}</span>
-                </div>
-              </nav>
-
-              <div className="cm-config-panel" ref={bodyRef}>
-                {error && <div className="cm-error" role="alert">{error}</div>}
-                <AssignmentConfiguration
-                  data={data}
-                  work={work}
-                  draft={draft}
-                  onChange={setDraft}
-                  activeSection={activeSection}
-                />
-              </div>
-            </div>
-
-            <div className="cm-dialog-actions">
-              <button className="cm-button" onClick={() => setDraft(null)}>Cancel</button>
-              <button className="cm-button primary" onClick={assign}>
-                Save &amp; assign
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
       )}
 
       {/* Deactivate assignment confirmation */}
