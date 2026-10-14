@@ -394,58 +394,55 @@ export function RoleMapping({ data, work, save }: Props) {
     );
   }
   const audience = draft ? matching(work, draft) : [];
+  const CONFIG_STEPS = ["Details & skills", "Audience", "Schedule", "Review"] as const;
+
+  function advanceStep() {
+    if (!draft) return;
+    if (step === 1) {
+      if (!draft.name.trim() || !draft.skills.length || draft.skills.some((s) => !s.expected)) {
+        setError("Enter a name, select at least one skill, and set an expected level for each.");
+        return;
+      }
+      const old = work.plans.find((p) => p.id === draft.id);
+      if (old && started(old) && old.skills.some((s) => !draft.skills.some((x) => x.skillId === s.skillId && x.expected === s.expected))) {
+        setError("Learning has started. Existing skill mappings must remain unchanged; you can add more skills.");
+        return;
+      }
+      setError(""); setStep(2);
+    } else if (step === 2) {
+      if (draft.method === "Manual" && !draft.employeeIds.length) {
+        setError("Select at least one learner."); return;
+      }
+      if (draft.method === "Auto" && !draft.departments?.length && !draft.roles?.length && !draft.cohorts?.length) {
+        setError("Choose at least one audience criterion (department, role, or cohort)."); return;
+      }
+      setError(""); setStep(3);
+    } else if (step === 3) {
+      if (!draft.start) { setError("Choose a start date."); return; }
+      if (draft.hasEndDate && !draft.end) { setError("Enter an end date."); return; }
+      if (draft.end && draft.end < draft.start) { setError("End date must be on or after start date."); return; }
+      setError(""); setStep(4);
+    } else {
+      assign();
+    }
+  }
+
   function validate() {
     if (!draft) return false;
-    if (
-      !draft.name.trim() ||
-      !draft.skills.length ||
-      draft.skills.some((s) => !s.expected) ||
-      !draft.start ||
-      (draft.hasEndDate && !draft.end)
-    ) {
-      setError(
-        "Enter a name, select skills and their expected levels, and choose dates.",
-      );
+    if (!draft.name.trim() || !draft.skills.length || draft.skills.some((s) => !s.expected) || !draft.start || (draft.hasEndDate && !draft.end)) {
+      setError("Enter a name, select skills and their expected levels, and choose dates.");
       return false;
     }
-    if (draft.end && draft.end < draft.start) {
-      setError("End date must be on or after start date.");
-      return false;
-    }
-    if (draft.method === "Manual" && !draft.employeeIds.length) {
-      setError("Select at least one learner.");
-      return false;
-    }
-    if (
-      draft.method === "Auto" &&
-      !draft.department &&
-      !draft.role &&
-      !draft.cohort &&
-      !draft.departments?.length &&
-      !draft.roles?.length &&
-      !draft.cohorts?.length
-    ) {
-      setError("Choose at least one audience criterion (department, role, or cohort).");
-      return false;
+    if (draft.end && draft.end < draft.start) { setError("End date must be on or after start date."); return false; }
+    if (draft.method === "Manual" && !draft.employeeIds.length) { setError("Select at least one learner."); return false; }
+    if (draft.method === "Auto" && !draft.department && !draft.role && !draft.cohort && !draft.departments?.length && !draft.roles?.length && !draft.cohorts?.length) {
+      setError("Choose at least one audience criterion (department, role, or cohort)."); return false;
     }
     const old = work.plans.find((p) => p.id === draft.id);
-    if (
-      old &&
-      started(old) &&
-      old.skills.some(
-        (s) =>
-          !draft.skills.some(
-            (x) => x.skillId === s.skillId && x.expected === s.expected,
-          ),
-      )
-    ) {
-      setError(
-        "Learning has started. Existing skill mappings must remain unchanged; you can add more skills.",
-      );
-      return false;
+    if (old && started(old) && old.skills.some((s) => !draft.skills.some((x) => x.skillId === s.skillId && x.expected === s.expected))) {
+      setError("Learning has started. Existing skill mappings must remain unchanged; you can add more skills."); return false;
     }
-    setError("");
-    return true;
+    setError(""); return true;
   }
   function assign() {
     if (!draft || !validate()) return;
@@ -627,34 +624,55 @@ export function RoleMapping({ data, work, save }: Props) {
         >
           <DialogContent className="cm-dialog cm-wide cm-config-dialog">
             <DialogHeader>
-              <DialogTitle>
-                {step === 1 ? "Configure assignment" : "Review assignment"}
-              </DialogTitle>
+              <DialogTitle>Configure assignment</DialogTitle>
               <DialogDescription>
-                {step === 1
-                  ? "Define the skills and audience. You can review everything before saving."
-                  : "Check the learner count, skill requirements, and dates."}
+                {step === 1 && "Name the assignment and choose which skills to assign."}
+                {step === 2 && "Choose who should be enrolled and how."}
+                {step === 3 && "Set the learning order and assignment dates."}
+                {step === 4 && "Review everything before saving."}
               </DialogDescription>
             </DialogHeader>
+
+            <nav aria-label="Progress" className="cm-stepper cm-config-stepper">
+              {CONFIG_STEPS.map((label, i) => {
+                const stepNum = i + 1;
+                const isDone = step > stepNum;
+                const isCurrent = step === stepNum;
+                return (
+                  <Fragment key={label}>
+                    {i > 0 && <div className={`cm-stepper-line${step > i ? " done" : ""}`} aria-hidden />}
+                    <button
+                      type="button"
+                      className={["cm-stepper-step", isCurrent ? "current" : "", isDone ? "done" : ""].filter(Boolean).join(" ")}
+                      aria-current={isCurrent ? "step" : undefined}
+                      aria-label={`Step ${stepNum} of 4: ${label}${isDone ? ", completed" : ""}`}
+                      disabled={!isDone}
+                      onClick={() => { if (isDone) { setError(""); setStep(stepNum); } }}
+                    >
+                      <span className="cm-stepper-circle" aria-hidden>
+                        {isDone ? <CheckCircle2 size={14} /> : stepNum}
+                      </span>
+                      <span className="cm-stepper-label">{label}</span>
+                    </button>
+                  </Fragment>
+                );
+              })}
+            </nav>
+
             <div className="cm-config-body" ref={bodyRef}>
               {error && (
                 <div className="cm-error" role="alert">
                   {error}
                 </div>
               )}
-              {step === 1 ? (
-                <>
-                  <AssignmentConfiguration
-                    data={data}
-                    work={work}
-                    draft={draft}
-                    onChange={setDraft}
-                  />
-                  <p className="cm-hint">
-                    {audience.length} matching learners · {draft.skills.length}{" "}
-                    selected skills
-                  </p>
-                </>
+              {step < 4 ? (
+                <AssignmentConfiguration
+                  data={data}
+                  work={work}
+                  draft={draft}
+                  onChange={setDraft}
+                  configStep={step as 1 | 2 | 3}
+                />
               ) : (
                 <>
                   <h3>{draft.name}</h3>
@@ -694,21 +712,20 @@ export function RoleMapping({ data, work, save }: Props) {
                 </>
               )}
             </div>
+
             <div className="cm-dialog-actions">
               <button
                 className="cm-button"
-                onClick={() => (step === 2 ? setStep(1) : setDraft(null))}
+                onClick={() => step > 1 ? (setError(""), setStep(step - 1)) : setDraft(null)}
               >
-                {step === 2 ? "Back" : "Cancel"}
+                {step > 1 ? "Back" : "Cancel"}
               </button>
-              <button
-                className="cm-button primary"
-                onClick={() =>
-                  step === 1 ? validate() && setStep(2) : assign()
-                }
-              >
-                {step === 1 ? "Review assignment" : "Save & assign"}
-                <ArrowRight size={16} />
+              <button className="cm-button primary" onClick={advanceStep}>
+                {step < 4 ? (
+                  <>Next <ArrowRight size={16} /></>
+                ) : (
+                  <>Save &amp; assign <ArrowRight size={16} /></>
+                )}
               </button>
             </div>
           </DialogContent>

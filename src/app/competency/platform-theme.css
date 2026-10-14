@@ -444,6 +444,11 @@ body {
   color: var(--cm-action);
 }
 
+/* Stepper inside config dialog */
+.cm-config-stepper {
+  flex-shrink: 0;
+  margin: 0 0 2px;
+}
 /* Assignment setup: numbered sections, aligned controls, persistent footer. */
 .cm-dialog.cm-config-dialog {
   display: flex;
