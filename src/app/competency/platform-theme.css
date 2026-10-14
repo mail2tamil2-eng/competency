@@ -5,22 +5,22 @@
 /* Readability scale: supporting 14, table 15, body/control 16, headings 20/24/28. */
 .cm,
 .cm-dialog {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
   --cm-action: #2463d6;
 }
 .cm h1 {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.3;
 }
 .cm h2,
 .cm-dialog h2 {
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.4;
 }
 .cm h3,
 .cm-dialog h3 {
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.5;
 }
 body {
@@ -60,7 +60,7 @@ body {
 }
 .cm .cm-manager-navigation a {
   color: #526176;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   border-bottom-width: 2px;
   border-radius: 0;
@@ -128,13 +128,13 @@ body {
   background: #fff;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   color: #526176;
   padding: 8px 12px;
 }
 .cm .cm-manager-table td {
-  font-size: 13px;
+  font-size: 14px;
   padding: 10px 12px;
   border-color: #d9dfe7;
 }
@@ -142,14 +142,14 @@ body {
   font-weight: 600;
 }
 .cm .cm-manager-table td small {
-  font-size: 12px;
+  font-size: 13px;
 }
 .cm .cm-manager .cm-button {
   font-weight: 400;
 }
 .cm .cm-manager-status {
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
 }
 .cm .cm-manager-status::before {
@@ -174,7 +174,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   color: #111827;
   white-space: nowrap;
@@ -185,13 +185,13 @@ body {
   width: auto;
   border-radius: 6px;
   border-color: #a9a9a9;
-  font-size: 13px;
+  font-size: 14px;
 }
 .cm .cm-table-controls .cm-manager-caption {
   margin: 0;
 }
 .cm .cm-platform-pagination {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   color: #111827;
   margin-top: 6px;
@@ -206,7 +206,7 @@ body {
 }
 .cm .cm-platform-pagination .cm-button {
   font-family: "Nunito Sans", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 18px;
   min-height: 32px;
   min-width: 32px;
@@ -253,7 +253,7 @@ body {
 .cm .cm-pagination .cm-button,
 .cm .cm-manager .cm-button {
   min-height: 36px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 20px;
   font-weight: 600;
   border-color: #d1d5db;
@@ -308,13 +308,13 @@ body {
   opacity: 1;
 }
 .cm-dialog label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 .cm .cm-tabs button,
 .cm .cm-manager-navigation a,
 .cm .cm-settings-tabs button {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 .cm .cm-text-button,
@@ -331,19 +331,19 @@ body {
 }
 .cm .cm-text-button,
 .cm-dialog .cm-text-button {
-  font-size: 13px;
+  font-size: 14px;
   min-height: 36px;
 }
 .cm .cm-manager-table td,
 .cm td,
 .cm-dialog td {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
 }
 .cm th,
 .cm-dialog th,
 .cm .cm-manager-table th {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #526176;
   text-transform: none;
@@ -351,26 +351,26 @@ body {
 }
 .cm small,
 .cm-dialog small {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
 }
 .cm .cm-manager-table td small,
 .cm td small {
-  font-size: 12px;
+  font-size: 13px;
 }
 .cm .cm-section-head p,
 .cm .cm-welcome p,
 .cm .cm-library-explainer p {
-  font-size: 13px;
+  font-size: 14px;
 }
 .cm .cm-heading p,
 .cm .cm-manager-caption,
 .cm .cm-manager-stats small {
-  font-size: 12px;
+  font-size: 13px;
 }
 .cm .cm-manager-status,
 .cm .cm-badge {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 .cm .cm-badge.active,
@@ -384,7 +384,7 @@ body {
   background: #fef9c3;
 }
 .cm .cm-pagination {
-  font-size: 13px;
+  font-size: 14px;
 }
 .cm .cm-platform-pagination .cm-button.is-current {
   background: var(--cm-action);
@@ -426,11 +426,11 @@ body {
 }
 @media (max-width: 700px) {
   .cm h1 {
-    font-size: 16px;
+    font-size: 17px;
   }
   .cm h2,
   .cm-dialog h2 {
-    font-size: 14px;
+    font-size: 15px;
   }
 }
 .cm .cm-eyebrow,
@@ -458,14 +458,14 @@ body {
   margin-bottom: 4px;
 }
 .cm-inline-back {
-  font-size: 13px;
+  font-size: 14px;
   margin-bottom: 8px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 .cm-inline-form-meta {
-  font-size: 12px;
+  font-size: 13px;
   color: #526176;
   margin: 2px 0 0;
 }
@@ -509,16 +509,16 @@ body {
 }
 .cm-inline-form .cm-assignment-columns {
   padding: 6px 12px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .cm-inline-form .cm-assignment-group-toggle {
   padding: 10px 14px;
 }
 .cm-inline-form .cm-assignment-group-toggle strong {
-  font-size: 13px;
+  font-size: 14px;
 }
 .cm-inline-form .cm-assignment-group-toggle > span > span {
-  font-size: 12px;
+  font-size: 13px;
 }
 /* Assignment setup: numbered sections, aligned controls, persistent footer. */
 .cm-dialog.cm-config-dialog {
@@ -905,7 +905,7 @@ body {
   justify-content: flex-end;
 }
 .cm-table-count {
-  font-size: 13px;
+  font-size: 14px;
   color: #526176;
   margin-left: auto;
 }
