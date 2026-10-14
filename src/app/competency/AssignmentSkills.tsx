@@ -258,10 +258,7 @@ function SkillGroup({
                         )
                       }
                     />
-                    <span>
-                      <strong>{s.name}</strong>
-                      {s.description && <small>{s.description}</small>}
-                    </span>
+                    <strong>{s.name}</strong>
                   </label>
                 )}
                 {readOnly ? (
