@@ -1,12 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  Plus,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  Search,
-  X,
-} from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Search, X } from "lucide-react";
 import { Data, RecordItem, uid, validate } from "./model";
 import { WorkflowData, Course } from "./workflowModel";
 import {
@@ -28,6 +21,214 @@ const blankSkill = (): RecordItem => ({
   levels: {},
 });
 
+/* ── Skill accordion card ─────────────────────────────────────────────────── */
+function SkillAccordionCard({
+  skill,
+  index,
+  isOpen,
+  canRemove,
+  levels,
+  hasIssues,
+  expandedLevels,
+  onToggle,
+  onRemove,
+  onUpdate,
+  onToggleLevel,
+  getLevelCourses,
+  courseWeightages,
+  onOpenPicker,
+  onSetLevelCourses,
+  onSetWeightage,
+  courseMappings,
+}: {
+  skill: RecordItem;
+  index: number;
+  isOpen: boolean;
+  canRemove: boolean;
+  levels: RecordItem[];
+  hasIssues: boolean;
+  expandedLevels: Set<string>;
+  onToggle: () => void;
+  onRemove: () => void;
+  onUpdate: (patch: Partial<RecordItem>) => void;
+  onToggleLevel: (levelId: string) => void;
+  getLevelCourses: (levelId: string) => Course[];
+  courseWeightages: CourseWeightages;
+  onOpenPicker: (levelId: string) => void;
+  onSetLevelCourses: (levelId: string, ids: string[]) => void;
+  onSetWeightage: (levelId: string, courseId: string, raw: string) => void;
+  courseMappings: CourseMappings;
+}) {
+  const label = skill.name.trim() || `Skill ${index + 1}`;
+
+  return (
+    <div className={`cm-create-skill-card${isOpen ? " is-open" : ""}`}>
+      <button
+        type="button"
+        className="cm-create-skill-card-header"
+        aria-expanded={isOpen}
+        onClick={onToggle}
+      >
+        <ChevronDown
+          size={16}
+          className={isOpen ? "cm-rotated" : ""}
+          style={{ flexShrink: 0, color: "#526176", transition: "transform 0.15s" }}
+        />
+        <span className="cm-create-skill-card-name">{label}</span>
+        <span className={`cm-create-skill-status${hasIssues ? " needs" : " ready"}`}>
+          {hasIssues ? "Needs details" : "Ready"}
+        </span>
+        {canRemove && (
+          <button
+            type="button"
+            className="cm-icon-button danger"
+            aria-label={`Remove ${label}`}
+            style={{ marginLeft: 4 }}
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="cm-create-skill-card-body">
+          <label>
+            <span className="cm-req-label">Skill name <span className="req">*</span></span>
+            <input
+              autoFocus
+              aria-label="Skill name"
+              maxLength={120}
+              value={skill.name}
+              onChange={(e) => onUpdate({ name: e.target.value })}
+              placeholder="e.g. Active Listening"
+            />
+          </label>
+
+          <label>
+            <span>Description <span className="cm-field-optional">optional</span></span>
+            <textarea
+              rows={2}
+              value={skill.description}
+              onChange={(e) => onUpdate({ description: e.target.value })}
+              placeholder="What will the learner be able to do?"
+            />
+          </label>
+
+          {levels.length > 0 && (
+            <div className="cm-proficiency-section">
+              <p className="cm-proficiency-label">Proficiency levels</p>
+              {levels.map((l) => {
+                const key = `${skill.id}:${l.id}`;
+                const expanded = expandedLevels.has(key);
+                const desc = skill.levels?.[l.id]?.trim() ?? "";
+                const mapped = getLevelCourses(l.id);
+                return (
+                  <div key={l.id} className={`cm-level-row${expanded ? " expanded" : ""}`}>
+                    <button
+                      type="button"
+                      className="cm-level-row-toggle"
+                      aria-expanded={expanded}
+                      onClick={() => onToggleLevel(l.id)}
+                    >
+                      {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                      <span className="cm-level-row-name">{l.name}</span>
+                      <span className="cm-level-row-preview">
+                        {desc || <em>Description required</em>}
+                      </span>
+                      <span className="cm-level-row-meta">
+                        {mapped.length > 0 ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}` : ""}
+                      </span>
+                    </button>
+                    {expanded && (
+                      <div className="cm-level-row-body">
+                        <label>
+                          <span className="cm-req-label">Proficiency description <span className="req">*</span></span>
+                          <textarea
+                            rows={3}
+                            aria-label={`${l.name} proficiency description`}
+                            value={skill.levels?.[l.id] ?? ""}
+                            onChange={(e) =>
+                              onUpdate({ levels: { ...skill.levels, [l.id]: e.target.value } })
+                            }
+                            placeholder={`What can someone do at ${l.name.toLowerCase()} level?`}
+                          />
+                        </label>
+                        <div className="cm-level-courses">
+                          <div className="cm-level-courses-hd">
+                            <span>Mapped courses ({mapped.length})</span>
+                            <button type="button" className="cm-map-courses-btn" onClick={() => onOpenPicker(l.id)}>
+                              <Plus size={11} /> Map courses
+                            </button>
+                          </div>
+                          {mapped.length === 0 ? (
+                            <p className="cm-level-no-courses">No courses mapped.</p>
+                          ) : (() => {
+                              const total = mapped.reduce(
+                                (sum, c) => sum + (courseWeightages[skill.id]?.[l.id]?.[c.id] ?? 0), 0,
+                              );
+                              const cls = total === 100 ? "ok" : total > 100 ? "over" : "warn";
+                              return (
+                                <>
+                                  <div className="cm-course-list">
+                                    {mapped.map((c) => {
+                                      const w = courseWeightages[skill.id]?.[l.id]?.[c.id];
+                                      return (
+                                        <div key={c.id} className="cm-course-row">
+                                          <span className="cm-course-row-name">{c.name}</span>
+                                          <div className="cm-course-row-weight">
+                                            <input
+                                              type="number" min={0} max={100}
+                                              value={w ?? ""} placeholder="0"
+                                              aria-label={`Weightage for ${c.name}`}
+                                              onInput={(e) => { if (e.currentTarget.value.length > 3) e.currentTarget.value = e.currentTarget.value.slice(0, 3); }}
+                                              onChange={(e) => onSetWeightage(l.id, c.id, e.target.value)}
+                                            />
+                                            <span>%</span>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            aria-label={`Remove ${c.name}`}
+                                            className="cm-course-row-remove"
+                                            onClick={() =>
+                                              onSetLevelCourses(
+                                                l.id,
+                                                (courseMappings[skill.id]?.[l.id] ?? []).filter((id) => id !== c.id),
+                                              )
+                                            }
+                                          >
+                                            <X size={12} />
+                                          </button>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <div className={`cm-course-weight-total ${cls}`}>
+                                    Total weightage: <strong>{total}%</strong>
+                                    {total === 100 && <span className="cm-course-weight-check">✓</span>}
+                                  </div>
+                                </>
+                              );
+                            })()
+                          }
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {levels.length === 0 && (
+            <p className="cm-field-hint">No active levels — manage in Library settings.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Main component ───────────────────────────────────────────────────────── */
 export function LibraryCreate({
   data,
   onClose,
@@ -47,9 +248,10 @@ export function LibraryCreate({
     status: "Active",
   }));
   const [skills, setSkills] = useState<RecordItem[]>(() => [blankSkill()]);
-  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
+  const [openSkillId, setOpenSkillId] = useState<string | null>(null); // null = first skill
   const [courseMappings, setCourseMappings] = useState<CourseMappings>({});
   const [courseWeightages, setCourseWeightages] = useState<CourseWeightages>({});
+  // Keys are `${skillId}:${levelId}` so each skill tracks its own expanded levels
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
   const [pickerKey, setPickerKey] = useState<{ skillId: string; levelId: string } | null>(null);
   const [pickerDraft, setPickerDraft] = useState<string[]>([]);
@@ -66,12 +268,6 @@ export function LibraryCreate({
 
   const levels = data.levels.filter((l) => l.status === "Active");
   const allCourses = data.workflow?.courses ?? [];
-  const selectedSkill = skills.find((s) => s.id === selectedSkillId) ?? skills[0];
-
-  function selectSkill(id: string) {
-    setSelectedSkillId(id);
-    setExpandedLevels(new Set());
-  }
 
   function updateSkill(id: string, patch: Partial<RecordItem>) {
     setSkills((cur) => cur.map((s) => (s.id === id ? { ...s, ...patch } : s)));
@@ -84,10 +280,7 @@ export function LibraryCreate({
   }
 
   function setLevelCourses(skillId: string, levelId: string, ids: string[]) {
-    setCourseMappings((prev) => ({
-      ...prev,
-      [skillId]: { ...prev[skillId], [levelId]: ids },
-    }));
+    setCourseMappings((prev) => ({ ...prev, [skillId]: { ...prev[skillId], [levelId]: ids } }));
     setCourseWeightages((prev) => {
       const existing = prev[skillId]?.[levelId] ?? {};
       const next: Record<string, number> = {};
@@ -100,32 +293,31 @@ export function LibraryCreate({
     const v = Math.max(0, Math.min(100, parseInt(raw, 10) || 0));
     setCourseWeightages((prev) => ({
       ...prev,
-      [skillId]: {
-        ...prev[skillId],
-        [levelId]: { ...prev[skillId]?.[levelId], [courseId]: v },
-      },
+      [skillId]: { ...prev[skillId], [levelId]: { ...prev[skillId]?.[levelId], [courseId]: v } },
     }));
   }
 
   function addSkill() {
     const s = blankSkill();
     setSkills((cur) => [...cur, s]);
-    selectSkill(s.id);
+    setOpenSkillId(s.id);
+    setErrors([]);
   }
 
   function removeSkill(id: string) {
     const idx = skills.findIndex((s) => s.id === id);
     const remaining = skills.filter((s) => s.id !== id);
     setSkills(remaining);
-    if (selectedSkillId === id)
-      selectSkill(remaining[Math.max(0, idx - 1)]?.id ?? remaining[0]?.id ?? "");
+    if (openSkillId === id)
+      setOpenSkillId(remaining[Math.max(0, idx - 1)]?.id ?? null);
     setCourseMappings((prev) => { const next = { ...prev }; delete next[id]; return next; });
   }
 
-  function toggleLevel(levelId: string) {
+  function toggleLevel(skillId: string, levelId: string) {
+    const key = `${skillId}:${levelId}`;
     setExpandedLevels((prev) => {
       const next = new Set(prev);
-      next.has(levelId) ? next.delete(levelId) : next.add(levelId);
+      next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
   }
@@ -143,10 +335,7 @@ export function LibraryCreate({
   function applyPicker() {
     if (!pickerKey) return;
     const { skillId, levelId } = pickerKey;
-    setCourseMappings((prev) => ({
-      ...prev,
-      [skillId]: { ...prev[skillId], [levelId]: pickerDraft },
-    }));
+    setCourseMappings((prev) => ({ ...prev, [skillId]: { ...prev[skillId], [levelId]: pickerDraft } }));
     setCourseWeightages((prev) => ({
       ...prev,
       [skillId]: {
@@ -212,7 +401,7 @@ export function LibraryCreate({
     setErrors(deduped);
     if (deduped.length) {
       const bad = skills.find((s, i) => skillIssues(s, i).length);
-      if (bad) selectSkill(bad.id);
+      if (bad) setOpenSkillId(bad.id);
       return;
     }
     if (onSaveWork && data.workflow) {
@@ -277,16 +466,12 @@ export function LibraryCreate({
             <DialogDescription>{subtitle}</DialogDescription>
             <p className="cm-picker-hint">Select courses to support this proficiency level.</p>
           </DialogHeader>
-
           <div className="cm-picker-controls">
             <div className="cm-picker-search">
               <Search size={15} className="cm-picker-search-icon" />
               <input
-                autoFocus
-                type="text"
-                placeholder="Search courses…"
-                value={pickerSearch}
-                onChange={(e) => setPickerSearch(e.target.value)}
+                autoFocus type="text" placeholder="Search courses…"
+                value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)}
               />
               {pickerSearch && (
                 <button type="button" className="cm-picker-clear-btn" onClick={() => setPickerSearch("")} aria-label="Clear search">
@@ -303,7 +488,6 @@ export function LibraryCreate({
               </button>
             </div>
           </div>
-
           <div className="cm-picker-list" role="list">
             {pickerFiltered.length === 0 && (
               <p className="cm-picker-empty">
@@ -315,8 +499,7 @@ export function LibraryCreate({
               return (
                 <label key={course.id} className={`cm-picker-row${checked ? " checked" : ""}`}>
                   <input
-                    type="checkbox"
-                    checked={checked}
+                    type="checkbox" checked={checked}
                     onChange={(e) => {
                       if (e.target.checked) setPickerDraft((d) => [...d, course.id]);
                       else setPickerDraft((d) => d.filter((id) => id !== course.id));
@@ -326,11 +509,8 @@ export function LibraryCreate({
                   {checked && (
                     <div className="cm-picker-weight" onClick={(e) => e.preventDefault()}>
                       <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={pickerWeightages[course.id] ?? ""}
-                        placeholder="0"
+                        type="number" min={0} max={100}
+                        value={pickerWeightages[course.id] ?? ""} placeholder="0"
                         aria-label={`Weightage for ${course.name}`}
                         onInput={(e) => { if (e.currentTarget.value.length > 3) e.currentTarget.value = e.currentTarget.value.slice(0, 3); }}
                         onChange={(e) => {
@@ -345,7 +525,6 @@ export function LibraryCreate({
               );
             })}
           </div>
-
           <div className="cm-dialog-actions cm-picker-footer">
             {(() => {
               const total = pickerDraft.reduce((s, id) => s + (pickerWeightages[id] ?? 0), 0);
@@ -384,6 +563,7 @@ export function LibraryCreate({
         </div>
       )}
 
+      {/* ── Competency details ── */}
       <div className="cm-config-section">
         <h3>Competency details</h3>
         <div className="cm-create-step1">
@@ -406,11 +586,9 @@ export function LibraryCreate({
               onChange={(e) => setCompetency({ ...competency, categoryId: e.target.value })}
             >
               <option value="">Select a category</option>
-              {data.categories
-                .filter((c) => c.status === "Active")
-                .map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
+              {data.categories.filter((c) => c.status === "Active").map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </select>
             <p className="cm-field-hint">Manage categories in Library settings.</p>
           </label>
@@ -426,179 +604,43 @@ export function LibraryCreate({
         </div>
       </div>
 
+      {/* ── Skills & courses ── */}
       <div className="cm-config-section">
         <h3>Skills &amp; courses</h3>
-        <div className="cm-create-step2">
-          <div className="cm-skill-panel-left">
-            <button type="button" className="cm-add-skill-btn" onClick={addSkill}>
-              <Plus size={13} /> Add skill
-            </button>
-            {skills.map((s, i) => (
-              <div
-                key={s.id}
-                role="button"
-                tabIndex={0}
-                className={`cm-skill-list-item${selectedSkill?.id === s.id ? " selected" : ""}`}
-                onClick={() => selectSkill(s.id)}
-                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && selectSkill(s.id)}
-              >
-                <span className="cm-skill-list-name">{s.name.trim() || `Skill ${i + 1}`}</span>
-                <span className={`cm-skill-list-status${skillIssues(s, i).length ? " needs" : " ready"}`}>
-                  {skillIssues(s, i).length ? "Needs details" : "Ready"}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="cm-skill-panel-right">
-            {selectedSkill && (
-              <>
-                <div className="cm-skill-editor-header">
-                  <span className="cm-skill-editor-title">
-                    {selectedSkill.name.trim() || `Skill ${skills.indexOf(selectedSkill) + 1}`}
-                  </span>
-                  {skills.length > 1 && (
-                    <button type="button" className="cm-text-button" onClick={() => removeSkill(selectedSkill.id)}>
-                      <Trash2 size={13} /> Remove
-                    </button>
-                  )}
-                </div>
-
-                <label>
-                  <span className="cm-req-label">Skill name <span className="req">*</span></span>
-                  <input
-                    aria-label="Skill name"
-                    maxLength={120}
-                    value={selectedSkill.name}
-                    onChange={(e) => updateSkill(selectedSkill.id, { name: e.target.value })}
-                    placeholder="e.g. Active Listening"
-                  />
-                </label>
-
-                <label>
-                  <span>Description <span className="cm-field-optional">optional</span></span>
-                  <textarea
-                    rows={3}
-                    value={selectedSkill.description}
-                    onChange={(e) => updateSkill(selectedSkill.id, { description: e.target.value })}
-                    placeholder="What will the learner be able to do?"
-                  />
-                </label>
-
-                <div className="cm-proficiency-section">
-                  <p className="cm-proficiency-label">Proficiency levels</p>
-                  {levels.length === 0 && (
-                    <p className="cm-field-hint">No active levels — manage in Library settings.</p>
-                  )}
-                  {levels.map((l) => {
-                    const expanded = expandedLevels.has(l.id);
-                    const desc = selectedSkill.levels?.[l.id]?.trim() ?? "";
-                    const mapped = getLevelCourses(selectedSkill.id, l.id);
-                    return (
-                      <div key={l.id} className={`cm-level-row${expanded ? " expanded" : ""}`}>
-                        <button
-                          type="button"
-                          className="cm-level-row-toggle"
-                          aria-expanded={expanded}
-                          onClick={() => toggleLevel(l.id)}
-                        >
-                          {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                          <span className="cm-level-row-name">{l.name}</span>
-                          <span className="cm-level-row-preview">
-                            {desc || <em>Description required</em>}
-                          </span>
-                          <span className="cm-level-row-meta">
-                            {mapped.length > 0 ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}` : ""}
-                          </span>
-                        </button>
-                        {expanded && (
-                          <div className="cm-level-row-body">
-                            <label>
-                              <span className="cm-req-label">Proficiency description <span className="req">*</span></span>
-                              <textarea
-                                rows={3}
-                                aria-label={`${l.name} proficiency description`}
-                                value={selectedSkill.levels?.[l.id] ?? ""}
-                                onChange={(e) =>
-                                  updateSkill(selectedSkill.id, {
-                                    levels: { ...selectedSkill.levels, [l.id]: e.target.value },
-                                  })
-                                }
-                                placeholder={`What can someone do at ${l.name.toLowerCase()} level?`}
-                              />
-                            </label>
-                            <div className="cm-level-courses">
-                              <div className="cm-level-courses-hd">
-                                <span>Mapped courses ({mapped.length})</span>
-                                <button type="button" className="cm-map-courses-btn" onClick={() => openPicker(selectedSkill.id, l.id)}>
-                                  <Plus size={11} /> Map courses
-                                </button>
-                              </div>
-                              {mapped.length === 0 ? (
-                                <p className="cm-level-no-courses">No courses mapped.</p>
-                              ) : (() => {
-                                  const total = mapped.reduce((sum, c) => sum + (courseWeightages[selectedSkill.id]?.[l.id]?.[c.id] ?? 0), 0);
-                                  const cls = total === 100 ? "ok" : total > 100 ? "over" : "warn";
-                                  return (
-                                    <>
-                                      <div className="cm-course-list">
-                                        {mapped.map((c) => {
-                                          const w = courseWeightages[selectedSkill.id]?.[l.id]?.[c.id];
-                                          return (
-                                            <div key={c.id} className="cm-course-row">
-                                              <span className="cm-course-row-name">{c.name}</span>
-                                              <div className="cm-course-row-weight">
-                                                <input
-                                                  type="number"
-                                                  min={0}
-                                                  max={100}
-                                                  value={w ?? ""}
-                                                  placeholder="0"
-                                                  aria-label={`Weightage for ${c.name}`}
-                                                  onInput={(e) => { if (e.currentTarget.value.length > 3) e.currentTarget.value = e.currentTarget.value.slice(0, 3); }}
-                                                  onChange={(e) => setWeightage(selectedSkill.id, l.id, c.id, e.target.value)}
-                                                />
-                                                <span>%</span>
-                                              </div>
-                                              <button
-                                                type="button"
-                                                aria-label={`Remove ${c.name}`}
-                                                className="cm-course-row-remove"
-                                                onClick={() =>
-                                                  setLevelCourses(
-                                                    selectedSkill.id,
-                                                    l.id,
-                                                    (courseMappings[selectedSkill.id]?.[l.id] ?? []).filter((id) => id !== c.id),
-                                                  )
-                                                }
-                                              >
-                                                <X size={12} />
-                                              </button>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                      <div className={`cm-course-weight-total ${cls}`}>
-                                        Total weightage: <strong>{total}%</strong>
-                                        {total === 100 && <span className="cm-course-weight-check">✓</span>}
-                                      </div>
-                                    </>
-                                  );
-                                })()
-                              }
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
+        <div className="cm-create-skills">
+          {skills.map((s, i) => (
+            <SkillAccordionCard
+              key={s.id}
+              skill={s}
+              index={i}
+              isOpen={openSkillId === s.id || (openSkillId === null && i === 0)}
+              canRemove={skills.length > 1}
+              levels={levels}
+              hasIssues={skillIssues(s, i).length > 0}
+              expandedLevels={expandedLevels}
+              onToggle={() =>
+                setOpenSkillId(
+                  (openSkillId === s.id || (openSkillId === null && i === 0)) ? "__none__" : s.id,
+                )
+              }
+              onRemove={() => removeSkill(s.id)}
+              onUpdate={(patch) => updateSkill(s.id, patch)}
+              onToggleLevel={(levelId) => toggleLevel(s.id, levelId)}
+              getLevelCourses={(levelId) => getLevelCourses(s.id, levelId)}
+              courseWeightages={courseWeightages}
+              onOpenPicker={(levelId) => openPicker(s.id, levelId)}
+              onSetLevelCourses={(levelId, ids) => setLevelCourses(s.id, levelId, ids)}
+              onSetWeightage={(levelId, courseId, raw) => setWeightage(s.id, levelId, courseId, raw)}
+              courseMappings={courseMappings}
+            />
+          ))}
+          <button type="button" className="cm-create-add-skill" onClick={addSkill}>
+            <Plus size={15} /> Add skill
+          </button>
         </div>
       </div>
 
+      {/* ── Actions ── */}
       <div className="cm-inline-form-actions" style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>
         <button type="button" className="cm-button" onClick={handleClose}>
           Cancel

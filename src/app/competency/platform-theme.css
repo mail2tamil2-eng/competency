@@ -599,6 +599,94 @@ body {
   overflow: visible;
 }
 
+/* ── Skill accordion cards ── */
+.cm-create-skills {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cm-create-skill-card {
+  border: 1px solid var(--cm-border);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.cm-create-skill-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  font-size: 14px;
+  color: inherit;
+}
+.cm-create-skill-card-header:hover,
+.cm-create-skill-card.is-open .cm-create-skill-card-header {
+  background: #f9fafb;
+}
+.cm-create-skill-card.is-open .cm-create-skill-card-header {
+  border-bottom: 1px solid var(--cm-border);
+}
+.cm-create-skill-card-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #111827;
+}
+.cm-create-skill-status {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cm-create-skill-status.ready { color: #16a34a; }
+.cm-create-skill-status.needs { color: #d97706; }
+.cm-create-skill-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 20px;
+}
+.cm-create-skill-card-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+.cm-create-skill-card-body input:not([type="checkbox"]):not([type="number"]),
+.cm-create-skill-card-body select {
+  height: 40px;
+  min-height: 40px;
+}
+.cm-create-skill-card-body textarea {
+  height: 72px;
+  min-height: 72px;
+  resize: vertical;
+}
+.cm-create-add-skill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cm-action);
+  cursor: pointer;
+}
+.cm-create-add-skill:hover {
+  color: var(--cm-primary-hover);
+}
+
 /* Assignment setup: numbered sections, aligned controls, persistent footer. */
 .cm-dialog.cm-config-dialog {
   display: flex;
