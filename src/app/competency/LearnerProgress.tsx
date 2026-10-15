@@ -7,6 +7,12 @@ const personKey = (a: Assignment) => JSON.stringify([a.name, a.department]);
 
 type GapStatus = "below" | "met" | "above" | "not-assessed" | "no-target";
 
+function csvStatus(s: GapStatus): string {
+  if (s === "below") return "In Progress";
+  if (s === "met" || s === "above") return "Completed";
+  return "Not Mapped";
+}
+
 function getGap(data: Data, a: Assignment): { status: GapStatus; gap: number | null } {
   const ci = data.levels.findIndex((l) => l.id === a.current);
   const ei = data.levels.findIndex((l) => l.id === a.expected);
@@ -200,7 +206,7 @@ export function LearnerProgress({
                     g.gap != null
                       ? String(g.gap)
                       : g.status === "not-assessed" ? "Not assessed" : "No target",
-                    g.status,
+                    csvStatus(g.status),
                   ];
                 }),
               ])
