@@ -721,7 +721,6 @@ export function CompetencyLibrary({
               const isOpen = openSkill === s.id;
               const isEditing = editingSkill === s.id;
               const definedLevels = data.levels.filter((l) => s.levels?.[l.id] && l.status === "Active");
-              const courses = coursesForSkill(s.id);
 
               return (
                 <div key={s.id} className={"cm-skill-accordion" + (isOpen ? " open" : "")}>
@@ -746,16 +745,7 @@ export function CompetencyLibrary({
                         </span>
                       </span>
                     </button>
-                    {courses.length > 0 && work && onSaveWork && (
-                      <button
-                        className="cm-course-count-badge"
-                        title={`${courses.length} mapped course${courses.length !== 1 ? "s" : ""} — click to view`}
-                        onClick={(e) => { e.stopPropagation(); setCoursePopup(s.id); }}
-                      >
-                        <BookOpen size={12} />
-                        {courses.length}
-                      </button>
-                    )}
+
                     <div className="cm-row-actions" style={{ padding: "0 12px", flexShrink: 0 }}>
                       <button
                         className="cm-icon-button"
