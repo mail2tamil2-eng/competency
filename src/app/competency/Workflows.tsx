@@ -14,6 +14,7 @@ import {
   Pencil,
   Copy,
   Trash2,
+  Ban,
   Layers,
   AlertTriangle,
   Target,
@@ -345,7 +346,8 @@ export function RoleMapping({ data, work, save }: Props) {
   const formRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<Plan | null>(null),
     [error, setError] = useState(""),
-    [deactivatingPlan, setDeactivatingPlan] = useState<Plan | null>(null);
+    [inactivatingPlan, setInactivatingPlan] = useState<Plan | null>(null),
+    [deletingPlan, setDeletingPlan] = useState<Plan | null>(null);
   useEffect(() => {
     if (error) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [error]);
@@ -358,6 +360,14 @@ export function RoleMapping({ data, work, save }: Props) {
           : p.assignedNames.includes(a.name)) &&
         p.skills.some((s) => s.skillId === a.skillId) &&
         !!a.current,
+    );
+  const planIsProtected = (p: Plan) =>
+    data.assignments.some(
+      (a) =>
+        (p.assignedEmployeeIds && a.employeeId
+          ? p.assignedEmployeeIds.includes(a.employeeId)
+          : p.assignedNames.includes(a.name)) &&
+        p.skills.some((s) => s.skillId === a.skillId),
     );
   function begin(p?: Plan) {
     setError("");
@@ -545,19 +555,15 @@ export function RoleMapping({ data, work, save }: Props) {
                         onClick={() => begin({ ...p, id: uid(), name: p.name + " (copy)", assignedNames: [], employeeIds: [] })}>
                         <Copy size={15} />
                       </button>
-                      <button
-                        role="switch"
-                        aria-checked={p.status === "Active"}
-                        className="cm-toggle-switch"
-                        disabled={started(p)}
-                        title={started(p) ? "Learning has started; this assignment is protected" : p.status === "Active" ? "Deactivate" : "Activate"}
-                        aria-label={(p.status === "Active" ? "Deactivate " : "Activate ") + p.name}
-                        onClick={() => {
-                          if (p.status === "Active") { setDeactivatingPlan(p); return; }
-                          save(data, { ...work, plans: work.plans.map((x) => x.id === p.id ? { ...x, status: "Active" } : x) }, "Assignment activated");
-                        }}
-                      >
-                        <span className="cm-toggle-thumb" />
+                      {p.status === "Active" && (
+                        <button className="cm-icon-button" title="Inactivate" aria-label={"Inactivate " + p.name}
+                          onClick={() => setInactivatingPlan(p)}>
+                          <Ban size={15} />
+                        </button>
+                      )}
+                      <button className="cm-icon-button danger" title="Delete" aria-label={"Delete " + p.name}
+                        onClick={() => setDeletingPlan(p)}>
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </td>
@@ -568,32 +574,69 @@ export function RoleMapping({ data, work, save }: Props) {
         </div>
       )}
 
-      {/* Deactivate assignment confirmation */}
-      {deactivatingPlan && (
-        <Dialog open onOpenChange={(open) => { if (!open) setDeactivatingPlan(null); }}>
+      {/* Inactivate assignment confirmation */}
+      {inactivatingPlan && (
+        <Dialog open onOpenChange={(open) => { if (!open) setInactivatingPlan(null); }}>
           <DialogContent className="cm-dialog">
             <DialogHeader>
-              <DialogTitle>Deactivate assignment?</DialogTitle>
+              <DialogTitle>Are you sure you want to inactivate {inactivatingPlan.name}?</DialogTitle>
               <DialogDescription>
-                &ldquo;{deactivatingPlan.name}&rdquo; will be paused — learners will no longer see new
-                tasks from this assignment. You can reactivate it at any time.
+                The assignment will no longer apply to new users or trigger new learning assignments.
               </DialogDescription>
             </DialogHeader>
             <div className="cm-dialog-actions">
-              <button className="cm-button" onClick={() => setDeactivatingPlan(null)}>Cancel</button>
+              <button className="cm-button" onClick={() => setInactivatingPlan(null)}>Cancel</button>
               <button
                 className="cm-button destructive"
                 onClick={() => {
                   save(
                     data,
-                    { ...work, plans: work.plans.map((x) => x.id === deactivatingPlan.id ? { ...x, status: "Inactive" } : x) },
-                    "Assignment deactivated",
+                    { ...work, plans: work.plans.map((x) => x.id === inactivatingPlan.id ? { ...x, status: "Inactive" } : x) },
+                    "Assignment inactivated",
                   );
-                  setDeactivatingPlan(null);
+                  setInactivatingPlan(null);
                 }}
               >
-                Deactivate
+                Inactivate
               </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete assignment confirmation */}
+      {deletingPlan && (
+        <Dialog open onOpenChange={(open) => { if (!open) setDeletingPlan(null); }}>
+          <DialogContent className="cm-dialog">
+            <DialogHeader>
+              <DialogTitle>
+                {planIsProtected(deletingPlan)
+                  ? `${deletingPlan.name} is assigned to learners or progress exists, so it cannot be deleted.`
+                  : `Are you sure you want to delete ${deletingPlan.name}?`}
+              </DialogTitle>
+              {!planIsProtected(deletingPlan) && (
+                <DialogDescription>
+                  This will permanently remove the skill-to-role assignment.
+                </DialogDescription>
+              )}
+            </DialogHeader>
+            <div className="cm-dialog-actions">
+              <button className="cm-button" onClick={() => setDeletingPlan(null)}>Cancel</button>
+              {!planIsProtected(deletingPlan) && (
+                <button
+                  className="cm-button destructive"
+                  onClick={() => {
+                    save(
+                      data,
+                      { ...work, plans: work.plans.filter((x) => x.id !== deletingPlan.id) },
+                      "Assignment deleted",
+                    );
+                    setDeletingPlan(null);
+                  }}
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
