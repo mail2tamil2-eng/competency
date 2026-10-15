@@ -177,14 +177,38 @@ function SkillInlineEdit({
                     else setPickerDraft((d) => d.filter((id) => id !== course.id));
                   }} />
                   <span className="cm-picker-name">{course.name}</span>
+                  {checked && (
+                    <div className="cm-picker-weight">
+                      <input
+                        type="number" min={0} max={100}
+                        value={pickerWeightages[course.id] ?? ""}
+                        placeholder="0"
+                        aria-label={`Weightage for ${course.name}`}
+                        onClick={(e) => e.preventDefault()}
+                        onChange={(e) => {
+                          const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                          setPickerWeightages((w) => ({ ...w, [course.id]: v }));
+                        }}
+                      />
+                      <span>%</span>
+                    </div>
+                  )}
                 </label>
               );
             })}
           </div>
           <div className="cm-dialog-actions cm-picker-footer">
-            <span className="cm-picker-count">
-              {pickerDraft.length === 0 ? "None selected" : `${pickerDraft.length} course${pickerDraft.length !== 1 ? "s" : ""} selected`}
-            </span>
+            {(() => {
+              const total = pickerDraft.reduce((s, id) => s + (pickerWeightages[id] ?? 0), 0);
+              const cls = pickerDraft.length === 0 ? "" : total === 100 ? " ok" : total > 100 ? " over" : " warn";
+              return (
+                <span className={`cm-picker-count${cls}`}>
+                  {pickerDraft.length === 0
+                    ? "None selected"
+                    : `${pickerDraft.length} course${pickerDraft.length !== 1 ? "s" : ""} · Total: ${total}%`}
+                </span>
+              );
+            })()}
             <button type="button" className="cm-button" onClick={() => setPickerLevelId(null)}>Cancel</button>
             <button type="button" className="cm-button primary" disabled={!hasChanged} onClick={applyPicker}>Apply selection</button>
           </div>
@@ -249,18 +273,38 @@ function SkillInlineEdit({
                           {mapped.length === 0 ? (
                             <p className="cm-level-no-courses">No courses mapped.</p>
                           ) : (() => {
+                            const total = mapped.reduce((sum, c) => sum + (levelWeightages[l.id]?.[c.id] ?? 0), 0);
+                            const cls = total === 100 ? "ok" : total > 100 ? "over" : "warn";
                             return (
-                              <div className="cm-course-list">
-                                {mapped.map((c) => (
-                                  <div key={c.id} className="cm-course-row">
-                                    <span className="cm-course-row-name">{c.name}</span>
-                                    <button type="button" aria-label={`Remove ${c.name}`} className="cm-course-row-remove"
-                                      onClick={() => setLevelMappings((prev) => ({ ...prev, [l.id]: (prev[l.id] ?? []).filter((id) => id !== c.id) }))}>
-                                      <X size={12} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
+                              <>
+                                <div className="cm-course-list">
+                                  {mapped.map((c) => {
+                                    const w = levelWeightages[l.id]?.[c.id];
+                                    return (
+                                      <div key={c.id} className="cm-course-row">
+                                        <span className="cm-course-row-name">{c.name}</span>
+                                        <div className="cm-course-row-weight">
+                                          <input
+                                            type="number" min={0} max={100}
+                                            value={w ?? ""} placeholder="0"
+                                            aria-label={`Weightage for ${c.name}`}
+                                            onChange={(e) => {
+                                              const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                                              setLevelWeightages((prev) => ({ ...prev, [l.id]: { ...prev[l.id], [c.id]: v } }));
+                                            }}
+                                          />
+                                          <span>%</span>
+                                        </div>
+                                        <button type="button" aria-label={`Remove ${c.name}`} className="cm-course-row-remove"
+                                          onClick={() => setLevelMappings((prev) => ({ ...prev, [l.id]: (prev[l.id] ?? []).filter((id) => id !== c.id) }))}>
+                                          <X size={12} />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <p className={`cm-course-total ${cls}`}>Total: {total}%</p>
+                              </>
                             );
                           })()}
                         </div>
