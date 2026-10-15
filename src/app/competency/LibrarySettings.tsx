@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Pencil, Trash2, Download } from "lucide-react";
-import { Data, RecordItem, used, download } from "./model";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Data, RecordItem, used } from "./model";
 import { Editor } from "./Editor";
 import {
   Dialog,
@@ -96,19 +96,6 @@ export function LibrarySettings({
           <option>Active</option>
           <option>Inactive</option>
         </select>
-        <button
-          className="cm-button"
-          style={{ marginLeft: "auto" }}
-          onClick={() =>
-            download(section + ".csv", [
-              ["Name", "Description", "Status"],
-              ...records.map((r) => [r.name, r.description, r.status]),
-            ])
-          }
-        >
-          <Download size={16} />
-          Export CSV
-        </button>
       </div>
       <div className="cm-table-wrap">
         <table>
