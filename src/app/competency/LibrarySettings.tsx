@@ -130,12 +130,6 @@ export function LibrarySettings({
                     </button>
                     <button
                       className="cm-icon-button danger"
-                      disabled={used(data, section, r.id)}
-                      title={
-                        used(data, section, r.id)
-                          ? "In use; remove mappings before deleting"
-                          : "Delete"
-                      }
                       aria-label={"Delete " + r.name}
                       onClick={() => setDeleting(r)}
                     >
@@ -187,35 +181,38 @@ export function LibrarySettings({
         >
           <DialogContent className="cm-dialog">
             <DialogHeader>
-              <DialogTitle>Delete {deleting.name}?</DialogTitle>
-              <DialogDescription>
-                This removes the unused item. This cannot be undone.
-              </DialogDescription>
+              <DialogTitle>
+                {used(data, section, deleting.id)
+                  ? `${deleting.name} is mapped to a competency and cannot be inactivated.`
+                  : `Are you sure you want to inactivate ${deleting.name}?`}
+              </DialogTitle>
+              <DialogDescription />
             </DialogHeader>
             <div className="cm-dialog-actions">
               <button className="cm-button" onClick={() => setDeleting(null)}>
-                Keep item
+                Cancel
               </button>
-              <button
-                className="cm-button destructive"
-                onClick={() => {
-                  if (used(data, section, deleting.id)) return;
-                  if (
-                    commit(
-                      {
-                        ...data,
-                        [section]: data[section].filter(
-                          (x) => x.id !== deleting.id,
-                        ),
-                      },
-                      "Item deleted",
+              {!used(data, section, deleting.id) && (
+                <button
+                  className="cm-button destructive"
+                  onClick={() => {
+                    if (
+                      commit(
+                        {
+                          ...data,
+                          [section]: data[section].filter(
+                            (x) => x.id !== deleting.id,
+                          ),
+                        },
+                        "Item deleted",
+                      )
                     )
-                  )
-                    setDeleting(null);
-                }}
-              >
-                Delete item
-              </button>
+                      setDeleting(null);
+                  }}
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
