@@ -851,18 +851,18 @@ export function CompetencyLibrary({
                                       <div className="cm-level-node-content">
                                         <strong>{l.name}</strong>
                                         <p>{s.levels?.[l.id]}</p>
-                                        {levelCourses.length > 0 && (
-                                          <button
-                                            type="button"
-                                            className="cm-course-count-badge"
-                                            title={`${levelCourses.length} mapped course${levelCourses.length !== 1 ? "s" : ""}`}
-                                            onClick={() => setLevelCourseView({ skillId: s.id, levelId: l.id })}
-                                          >
-                                            <BookOpen size={12} />
-                                            {levelCourses.length}
-                                          </button>
-                                        )}
                                       </div>
+                                      {levelCourses.length > 0 && (
+                                        <button
+                                          type="button"
+                                          className="cm-course-count-badge"
+                                          title={`View mapped courses for ${l.name}`}
+                                          onClick={() => setLevelCourseView({ skillId: s.id, levelId: l.id })}
+                                        >
+                                          <BookOpen size={12} />
+                                          Mapped courses · {levelCourses.length}
+                                        </button>
+                                      )}
                                     </div>
                                   );
                                 })}
