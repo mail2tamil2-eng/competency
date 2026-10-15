@@ -466,6 +466,7 @@ export function CompetencyLibrary({
   const [coursePopup, setCoursePopup] = useState<string | null>(null); // skill id
   const [levelCourseView, setLevelCourseView] = useState<{ skillId: string; levelId: string } | null>(null);
   const [inactivatingSkill, setInactivatingSkill] = useState<RecordItem | null>(null);
+  const [inactivatingComp, setInactivatingComp] = useState<RecordItem | null>(null);
   const [levelPicker, setLevelPicker] = useState<{ skillId: string; levelId: string } | null>(null);
   const [lPickerDraft, setLPickerDraft] = useState<string[]>([]);
   const [lPickerOriginal, setLPickerOriginal] = useState<string[]>([]);
@@ -505,6 +506,9 @@ export function CompetencyLibrary({
 
   const skillIsProtected = (sId: string) =>
     used(data, "skills", sId) || (work?.courses ?? []).some((c) => c.mappings.some((m) => m.skillId === sId));
+
+  const compIsProtected = (cId: string) =>
+    data.skills.some((s) => s.competencyId === cId);
 
   function openLevelPicker(skillId: string, levelId: string) {
     if (!work) return;
@@ -657,13 +661,15 @@ export function CompetencyLibrary({
                   ? skillIsProtected(deleting.item.id)
                     ? `${deleting.item.name} is mapped to courses or acquired by users, so cannot be deleted.`
                     : `Are you sure you want to delete ${deleting.item.name}?`
-                  : `Delete ${deleting.item.name}?`}
+                  : compIsProtected(deleting.item.id)
+                    ? `${deleting.item.name} is mapped to a skill and cannot be deleted.`
+                    : `Are you sure you want to delete ${deleting.item.name}?`}
               </DialogTitle>
               <DialogDescription />
             </DialogHeader>
             <div className="cm-dialog-actions">
               <button className="cm-button" onClick={() => setDeleting(null)}>Cancel</button>
-              {!skillIsProtected(deleting.item.id) && (
+              {!(deleting.kind === "skills" ? skillIsProtected(deleting.item.id) : compIsProtected(deleting.item.id)) && (
                 <button
                   className="cm-button destructive"
                   onClick={() => {
@@ -677,6 +683,39 @@ export function CompetencyLibrary({
                   }}
                 >
                   Delete
+                </button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      {inactivatingComp && (
+        <Dialog open onOpenChange={(open) => { if (!open) setInactivatingComp(null); }}>
+          <DialogContent className="cm-dialog">
+            <DialogHeader>
+              <DialogTitle>
+                {compIsProtected(inactivatingComp.id)
+                  ? `${inactivatingComp.name} is mapped to a skill and cannot be inactivated.`
+                  : `Are you sure you want to inactivate ${inactivatingComp.name}?`}
+              </DialogTitle>
+              <DialogDescription />
+            </DialogHeader>
+            <div className="cm-dialog-actions">
+              <button className="cm-button" onClick={() => setInactivatingComp(null)}>Cancel</button>
+              {!compIsProtected(inactivatingComp.id) && (
+                <button
+                  className="cm-button destructive"
+                  onClick={() => {
+                    if (
+                      commit(
+                        { ...data, competencies: data.competencies.map((x) => x.id === inactivatingComp.id ? { ...x, status: "Inactive" as const } : x) },
+                        `${inactivatingComp.name} inactivated`,
+                      )
+                    )
+                      setInactivatingComp(null);
+                  }}
+                >
+                  Inactivate
                 </button>
               )}
             </div>
@@ -1200,11 +1239,20 @@ export function CompetencyLibrary({
                           >
                             <Pencil size={16} />
                           </button>
+                          {c.status === "Active" && (
+                            <button
+                              className="cm-icon-button"
+                              aria-label={"Inactivate " + c.name}
+                              title="Inactivate competency"
+                              onClick={() => setInactivatingComp(c)}
+                            >
+                              <Ban size={16} />
+                            </button>
+                          )}
                           <button
                             className="cm-icon-button danger"
                             aria-label={"Delete " + c.name}
-                            disabled={used(data, "competencies", c.id)}
-                            title={used(data, "competencies", c.id) ? "Contains skills; remove unused skills first" : "Delete competency"}
+                            title="Delete competency"
                             onClick={() => setDeleting({ kind: "competencies", item: c })}
                           >
                             <Trash2 size={16} />
