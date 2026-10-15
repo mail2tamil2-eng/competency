@@ -464,6 +464,12 @@ export function CompetencyLibrary({
   const [editingSkill, setEditingSkill] = useState<string | null>(null);
   const [coursePopup, setCoursePopup] = useState<string | null>(null); // skill id
   const [levelCourseView, setLevelCourseView] = useState<{ skillId: string; levelId: string } | null>(null);
+  const [levelPicker, setLevelPicker] = useState<{ skillId: string; levelId: string } | null>(null);
+  const [lPickerDraft, setLPickerDraft] = useState<string[]>([]);
+  const [lPickerOriginal, setLPickerOriginal] = useState<string[]>([]);
+  const [lPickerWeightages, setLPickerWeightages] = useState<Record<string, number>>({});
+  const [lPickerSearch, setLPickerSearch] = useState("");
+  const [lPickerShowSelected, setLPickerShowSelected] = useState(false);
 
   useEffect(() => {
     if (intent?.action === "create") setCreating(true);
@@ -494,6 +500,43 @@ export function CompetencyLibrary({
     data.levels.find((l) => l.id === lId)?.name || lId;
   const coursesForSkill = (sId: string) =>
     (work?.courses ?? []).filter((c) => c.mappings.some((m) => m.skillId === sId));
+
+  function openLevelPicker(skillId: string, levelId: string) {
+    if (!work) return;
+    const ids = work.courses
+      .filter((c) => c.mappings.some((m) => m.skillId === skillId && m.levelId === levelId))
+      .map((c) => c.id);
+    const weights: Record<string, number> = {};
+    work.courses.forEach((c) => {
+      const m = c.mappings.find((m) => m.skillId === skillId && m.levelId === levelId);
+      if (m?.weightage != null) weights[c.id] = m.weightage;
+    });
+    setLPickerDraft(ids);
+    setLPickerOriginal(ids);
+    setLPickerWeightages(weights);
+    setLPickerSearch("");
+    setLPickerShowSelected(false);
+    setLevelPicker({ skillId, levelId });
+  }
+
+  function applyLevelPicker() {
+    if (!levelPicker || !work || !onSaveWork) return;
+    const { skillId, levelId } = levelPicker;
+    const updatedCourses = work.courses.map((course) => {
+      const others = course.mappings.filter(
+        (m) => !(m.skillId === skillId && m.levelId === levelId),
+      );
+      if (lPickerDraft.includes(course.id)) {
+        return {
+          ...course,
+          mappings: [...others, { skillId, levelId, weightage: lPickerWeightages[course.id] ?? 0 }],
+        };
+      }
+      return others.length !== course.mappings.length ? { ...course, mappings: others } : course;
+    });
+    if (onSaveWork({ ...work, courses: updatedCourses }, "Course mappings updated"))
+      setLevelPicker(null);
+  }
 
   function saveSkill(item: RecordItem) {
     const list = data.skills;
@@ -698,6 +741,108 @@ export function CompetencyLibrary({
           </Dialog>
         );
       })()}
+      {levelPicker && work && onSaveWork && (() => {
+        const skill = data.skills.find((sk) => sk.id === levelPicker.skillId);
+        const level = data.levels.find((lv) => lv.id === levelPicker.levelId);
+        const allCourses = work.courses;
+        const subtitle = `${skill?.name ?? ""} · ${level?.name ?? ""}`;
+        const hasChanged =
+          lPickerDraft.length !== lPickerOriginal.length ||
+          lPickerDraft.some((id) => !lPickerOriginal.includes(id)) ||
+          lPickerOriginal.some((id) => !lPickerDraft.includes(id));
+        const pickerFiltered = allCourses.filter((c) => {
+          if (lPickerShowSelected && !lPickerDraft.includes(c.id)) return false;
+          return !lPickerSearch || c.name.toLowerCase().includes(lPickerSearch.toLowerCase());
+        });
+        return (
+          <Dialog open onOpenChange={(open) => { if (!open) setLevelPicker(null); }}>
+            <DialogContent className="cm-dialog cm-picker-dialog">
+              <DialogHeader className="cm-picker-header">
+                <DialogTitle>Map courses</DialogTitle>
+                <DialogDescription>{subtitle}</DialogDescription>
+                <p className="cm-picker-hint">Select courses to support this proficiency level.</p>
+              </DialogHeader>
+              <div className="cm-picker-controls">
+                <div className="cm-picker-search">
+                  <Search size={15} className="cm-picker-search-icon" />
+                  <input
+                    autoFocus type="text" placeholder="Search courses…"
+                    value={lPickerSearch} onChange={(e) => setLPickerSearch(e.target.value)}
+                  />
+                  {lPickerSearch && (
+                    <button type="button" className="cm-picker-clear-btn" onClick={() => setLPickerSearch("")} aria-label="Clear search">
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+                <div className="cm-picker-filter-row">
+                  <button type="button" className={`cm-picker-filter-btn${!lPickerShowSelected ? " active" : ""}`} onClick={() => setLPickerShowSelected(false)}>
+                    All courses ({allCourses.length})
+                  </button>
+                  <button type="button" className={`cm-picker-filter-btn${lPickerShowSelected ? " active" : ""}`} onClick={() => setLPickerShowSelected(true)}>
+                    Selected ({lPickerDraft.length})
+                  </button>
+                </div>
+              </div>
+              <div className="cm-picker-list" role="list">
+                {pickerFiltered.length === 0 && (
+                  <p className="cm-picker-empty">
+                    {lPickerShowSelected ? "No courses selected yet." : lPickerSearch ? `No results for "${lPickerSearch}".` : "No courses available."}
+                  </p>
+                )}
+                {pickerFiltered.map((course) => {
+                  const checked = lPickerDraft.includes(course.id);
+                  return (
+                    <label key={course.id} className={`cm-picker-row${checked ? " checked" : ""}`}>
+                      <input
+                        type="checkbox" checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) setLPickerDraft((d) => [...d, course.id]);
+                          else setLPickerDraft((d) => d.filter((id) => id !== course.id));
+                        }}
+                      />
+                      <span className="cm-picker-name">{course.name}</span>
+                      {checked && (
+                        <div className="cm-picker-weight">
+                          <input
+                            type="number" min={0} max={100}
+                            value={lPickerWeightages[course.id] ?? ""}
+                            placeholder="0"
+                            aria-label={`Weightage for ${course.name}`}
+                            onClick={(e) => e.preventDefault()}
+                            onChange={(e) => {
+                              const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                              setLPickerWeightages((w) => ({ ...w, [course.id]: v }));
+                            }}
+                          />
+                          <span>%</span>
+                        </div>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="cm-dialog-actions cm-picker-footer">
+                {(() => {
+                  const total = lPickerDraft.reduce((s, id) => s + (lPickerWeightages[id] ?? 0), 0);
+                  const cls = lPickerDraft.length === 0 ? "" : total === 100 ? " ok" : total > 100 ? " over" : " warn";
+                  return (
+                    <span className={`cm-picker-count${cls}`}>
+                      {lPickerDraft.length === 0
+                        ? "None selected"
+                        : `${lPickerDraft.length} course${lPickerDraft.length !== 1 ? "s" : ""} · Total: ${total}%`}
+                    </span>
+                  );
+                })()}
+                <button type="button" className="cm-button" onClick={() => setLevelPicker(null)}>Cancel</button>
+                <button type="button" className="cm-button primary" disabled={!hasChanged} onClick={applyLevelPicker}>
+                  Apply selection
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </>
   );
 
@@ -852,17 +997,28 @@ export function CompetencyLibrary({
                                         <strong>{l.name}</strong>
                                         <p>{s.levels?.[l.id]}</p>
                                       </div>
-                                      {levelCourses.length > 0 && (
+                                      {work && onSaveWork ? (
+                                        <button
+                                          type="button"
+                                          className={levelCourses.length > 0 ? "cm-course-count-badge" : "cm-map-courses-btn"}
+                                          onClick={() => openLevelPicker(s.id, l.id)}
+                                        >
+                                          {levelCourses.length > 0 ? (
+                                            <><BookOpen size={12} /> Mapped courses · {levelCourses.length}</>
+                                          ) : (
+                                            <><Plus size={11} /> Map courses</>
+                                          )}
+                                        </button>
+                                      ) : levelCourses.length > 0 ? (
                                         <button
                                           type="button"
                                           className="cm-course-count-badge"
-                                          title={`View mapped courses for ${l.name}`}
                                           onClick={() => setLevelCourseView({ skillId: s.id, levelId: l.id })}
                                         >
                                           <BookOpen size={12} />
                                           Mapped courses · {levelCourses.length}
                                         </button>
-                                      )}
+                                      ) : null}
                                     </div>
                                   );
                                 })}
