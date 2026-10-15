@@ -463,6 +463,7 @@ export function CompetencyLibrary({
   const [openSkill, setOpenSkill] = useState<string | null>(null);
   const [editingSkill, setEditingSkill] = useState<string | null>(null);
   const [coursePopup, setCoursePopup] = useState<string | null>(null); // skill id
+  const [levelCourseView, setLevelCourseView] = useState<{ skillId: string; levelId: string } | null>(null);
 
   useEffect(() => {
     if (intent?.action === "create") setCreating(true);
@@ -646,6 +647,57 @@ export function CompetencyLibrary({
           />
         ) : null;
       })()}
+      {levelCourseView && work && (() => {
+        const skill = data.skills.find((sk) => sk.id === levelCourseView.skillId);
+        const level = data.levels.find((lv) => lv.id === levelCourseView.levelId);
+        const mappedCourses = (work.courses ?? [])
+          .filter((c) => c.mappings.some((m) => m.skillId === levelCourseView.skillId && m.levelId === levelCourseView.levelId))
+          .map((c) => ({
+            course: c,
+            mapping: c.mappings.find((m) => m.skillId === levelCourseView.skillId && m.levelId === levelCourseView.levelId)!,
+          }));
+        if (!skill || !level || mappedCourses.length === 0) return null;
+        return (
+          <Dialog open onOpenChange={(open) => { if (!open) setLevelCourseView(null); }}>
+            <DialogContent className="cm-dialog">
+              <DialogHeader>
+                <DialogTitle>Mapped courses</DialogTitle>
+                <DialogDescription>
+                  {skill.name} — {level.name} · {mappedCourses.length} course{mappedCourses.length !== 1 ? "s" : ""}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="cm-course-popup-body">
+                <div className="cm-course-popup-scroll">
+                  <table className="cm-course-popup-table">
+                    <thead>
+                      <tr>
+                        <th>Course</th>
+                        <th>Weightage&nbsp;(%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mappedCourses.map(({ course, mapping }) => (
+                        <tr key={course.id}>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                              <BookOpen size={13} style={{ color: "#526176", flexShrink: 0 }} />
+                              <span>{course.name}</span>
+                            </div>
+                          </td>
+                          <td>{mapping.weightage ?? 0}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="cm-dialog-actions">
+                <button className="cm-button primary" onClick={() => setLevelCourseView(null)}>Close</button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </>
   );
 
@@ -789,15 +841,31 @@ export function CompetencyLibrary({
                             <div className="cm-accordion-section">
                               <span className="cm-accordion-section-label">Proficiency levels</span>
                               <div className="cm-level-tree">
-                                {definedLevels.map((l, i) => (
-                                  <div key={l.id} className={"cm-level-node" + (i === definedLevels.length - 1 ? " last" : "")}>
-                                    <div className="cm-level-num-badge">{i + 1}</div>
-                                    <div className="cm-level-node-content">
-                                      <strong>{l.name}</strong>
-                                      <p>{s.levels?.[l.id]}</p>
+                                {definedLevels.map((l, i) => {
+                                  const levelCourses = (work?.courses ?? []).filter((c) =>
+                                    c.mappings.some((m) => m.skillId === s.id && m.levelId === l.id),
+                                  );
+                                  return (
+                                    <div key={l.id} className={"cm-level-node" + (i === definedLevels.length - 1 ? " last" : "")}>
+                                      <div className="cm-level-num-badge">{i + 1}</div>
+                                      <div className="cm-level-node-content">
+                                        <strong>{l.name}</strong>
+                                        <p>{s.levels?.[l.id]}</p>
+                                        {levelCourses.length > 0 && (
+                                          <button
+                                            type="button"
+                                            className="cm-course-count-badge"
+                                            title={`${levelCourses.length} mapped course${levelCourses.length !== 1 ? "s" : ""}`}
+                                            onClick={() => setLevelCourseView({ skillId: s.id, levelId: l.id })}
+                                          >
+                                            <BookOpen size={12} />
+                                            {levelCourses.length}
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           ) : (
