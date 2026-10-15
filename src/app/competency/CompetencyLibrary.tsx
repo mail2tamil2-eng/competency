@@ -9,7 +9,6 @@ import {
   Trash2,
   ArrowLeft,
   ChevronDown,
-  ChevronRight,
   BookOpen,
   X,
 } from "lucide-react";
@@ -41,241 +40,85 @@ function SkillInlineEdit({
   data,
   onSave,
   onCancel,
-  work,
-  onSaveWork,
 }: {
   skill: RecordItem;
   data: Data;
   onSave: (item: RecordItem) => void;
   onCancel: () => void;
-  work?: WorkflowData;
-  onSaveWork?: (work: WorkflowData, msg: string) => boolean;
 }) {
   const [draft, setDraft] = useState<RecordItem>(structuredClone(skill));
   const [errors, setErrors] = useState<string[]>([]);
-  const levels = data.levels.filter((l) => l.status === "Active");
-  const allCourses = work?.courses ?? [];
 
-  const [levelMappings, setLevelMappings] = useState<Record<string, string[]>>(() => {
-    const maps: Record<string, string[]> = {};
-    for (const course of (work?.courses ?? [])) {
-      for (const m of course.mappings) {
-        if (m.skillId !== skill.id) continue;
-        if (!maps[m.levelId]) maps[m.levelId] = [];
-        maps[m.levelId].push(course.id);
-      }
-    }
-    return maps;
-  });
-  const [levelWeightages, setLevelWeightages] = useState<Record<string, Record<string, number>>>(() => {
-    const weights: Record<string, Record<string, number>> = {};
-    for (const course of (work?.courses ?? [])) {
-      for (const m of course.mappings) {
-        if (m.skillId !== skill.id || m.weightage == null) continue;
-        if (!weights[m.levelId]) weights[m.levelId] = {};
-        weights[m.levelId][course.id] = m.weightage;
-      }
-    }
-    return weights;
-  });
-  const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
-  const [pickerLevelId, setPickerLevelId] = useState<string | null>(null);
-  const [pickerDraft, setPickerDraft] = useState<string[]>([]);
-  const [pickerOriginal, setPickerOriginal] = useState<string[]>([]);
-  const [pickerWeightages, setPickerWeightages] = useState<Record<string, number>>({});
-  const [pickerSearch, setPickerSearch] = useState("");
-  const [pickerShowSelected, setPickerShowSelected] = useState(false);
-
-  function getLevelCourses(levelId: string): Course[] {
-    return (levelMappings[levelId] ?? [])
-      .map((id) => allCourses.find((c) => c.id === id))
-      .filter((c): c is Course => c != null);
-  }
-
-  function openPicker(levelId: string) {
-    const existing = [...(levelMappings[levelId] ?? [])];
-    setPickerDraft(existing);
-    setPickerOriginal(existing);
-    setPickerWeightages(levelWeightages[levelId] ?? {});
-    setPickerSearch(""); setPickerShowSelected(false);
-    setPickerLevelId(levelId);
-  }
-
-  function applyPicker() {
-    if (!pickerLevelId) return;
-    setLevelMappings((prev) => ({ ...prev, [pickerLevelId]: pickerDraft }));
-    setLevelWeightages((prev) => ({
-      ...prev,
-      [pickerLevelId]: Object.fromEntries(pickerDraft.map((id) => [id, pickerWeightages[id] ?? 0])),
-    }));
-    setPickerLevelId(null);
+  function setLevel(levelId: string, desc: string) {
+    setDraft((d) => ({ ...d, levels: { ...d.levels, [levelId]: desc } }));
   }
 
   function save() {
-    const errs = validate(draft, "skills", data).filter(
-      (e) => e !== "Choose an active category." && e !== "Choose an active competency in this category.",
-    );
+    const errs = validate(draft, "skills", data);
     if (errs.length) { setErrors(errs); return; }
-    const saved = { ...draft, name: draft.name.trim(), description: draft.description.trim() };
-    if (onSaveWork && work) {
-      const updatedCourses = work.courses.map((course) => {
-        const others = course.mappings.filter((m) => m.skillId !== saved.id);
-        const newMaps: { skillId: string; levelId: string; weightage?: number }[] = [];
-        for (const [levelId, ids] of Object.entries(levelMappings)) {
-          if (ids.includes(course.id))
-            newMaps.push({ skillId: saved.id, levelId, weightage: levelWeightages[levelId]?.[course.id] });
-        }
-        const combined = [...others, ...newMaps];
-        return combined.length !== course.mappings.length ? { ...course, mappings: combined } : course;
-      });
-      if (updatedCourses.some((c, i) => c !== work.courses[i]))
-        onSaveWork({ ...work, courses: updatedCourses }, `Updated course mappings for "${saved.name}"`);
-    }
-    onSave(saved);
-  }
-
-  // Picker dialog — early return
-  if (pickerLevelId) {
-    const levelName = levels.find((l) => l.id === pickerLevelId)?.name ?? pickerLevelId;
-    const pickerFiltered = allCourses.filter((c) => {
-      if (pickerShowSelected && !pickerDraft.includes(c.id)) return false;
-      return !pickerSearch || c.name.toLowerCase().includes(pickerSearch.toLowerCase());
-    });
-    const hasChanged =
-      pickerDraft.length !== pickerOriginal.length ||
-      pickerDraft.some((id) => !pickerOriginal.includes(id)) ||
-      pickerOriginal.some((id) => !pickerDraft.includes(id));
-    return (
-      <Dialog open onOpenChange={(open) => { if (!open) setPickerLevelId(null); }}>
-        <DialogContent className="cm-dialog cm-picker-dialog">
-          <DialogHeader className="cm-picker-header">
-            <DialogTitle>Map courses</DialogTitle>
-            <DialogDescription>{draft.name.trim() || "New skill"} · {levelName}</DialogDescription>
-            <p className="cm-picker-hint">Select courses to support this proficiency level.</p>
-          </DialogHeader>
-          <div className="cm-picker-controls">
-            <div className="cm-picker-search">
-              <Search size={15} className="cm-picker-search-icon" />
-              <input autoFocus type="text" placeholder="Search courses…" value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} />
-              {pickerSearch && <button type="button" className="cm-picker-clear-btn" onClick={() => setPickerSearch("")} aria-label="Clear search"><X size={13} /></button>}
-            </div>
-            <div className="cm-picker-filter-row">
-              <button type="button" className={`cm-picker-filter-btn${!pickerShowSelected ? " active" : ""}`} onClick={() => setPickerShowSelected(false)}>All courses ({allCourses.length})</button>
-              <button type="button" className={`cm-picker-filter-btn${pickerShowSelected ? " active" : ""}`} onClick={() => setPickerShowSelected(true)}>Selected ({pickerDraft.length})</button>
-            </div>
-          </div>
-          <div className="cm-picker-list" role="list">
-            {pickerFiltered.length === 0 && (
-              <p className="cm-picker-empty">{pickerShowSelected ? "No courses selected yet." : pickerSearch ? `No results for "${pickerSearch}".` : "No courses available."}</p>
-            )}
-            {pickerFiltered.map((course) => {
-              const checked = pickerDraft.includes(course.id);
-              return (
-                <label key={course.id} className={`cm-picker-row${checked ? " checked" : ""}`}>
-                  <input type="checkbox" checked={checked} onChange={(e) => {
-                    if (e.target.checked) setPickerDraft((d) => [...d, course.id]);
-                    else setPickerDraft((d) => d.filter((id) => id !== course.id));
-                  }} />
-                  <span className="cm-picker-name">{course.name}</span>
-                </label>
-              );
-            })}
-          </div>
-          <div className="cm-dialog-actions cm-picker-footer">
-            <span className="cm-picker-count">
-              {pickerDraft.length === 0 ? "None selected" : `${pickerDraft.length} course${pickerDraft.length !== 1 ? "s" : ""} selected`}
-            </span>
-            <button type="button" className="cm-button" onClick={() => setPickerLevelId(null)}>Cancel</button>
-            <button type="button" className="cm-button primary" disabled={!hasChanged} onClick={applyPicker}>Apply selection</button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
+    onSave({ ...draft, name: draft.name.trim(), description: draft.description.trim() });
   }
 
   return (
-    <div className="cm-create-inline">
+    <div className="cm-skill-inline-edit">
       {errors.length > 0 && (
-        <div className="cm-error" role="alert">
-          {errors.map((e) => <div key={e}>{e}</div>)}
+        <p className="cm-error">{errors.join(" ")}</p>
+      )}
+      <div className="cm-skill-edit-fields">
+        <label>
+          <span className="cm-req-label">Skill name <span className="req">*</span></span>
+          <input
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            placeholder="Skill name"
+          />
+        </label>
+        <label>
+          Status
+          <select
+            value={draft.status}
+            onChange={(e) =>
+              setDraft({ ...draft, status: e.target.value as RecordItem["status"] })
+            }
+          >
+            <option>Active</option>
+            <option>Inactive</option>
+            <option>Draft</option>
+          </select>
+        </label>
+      </div>
+      <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 14, fontWeight: 600, color: "#636b7e" }}>
+        Description
+        <textarea
+          rows={2}
+          value={draft.description}
+          onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          placeholder="What does this skill mean?"
+        />
+      </label>
+      {data.levels.filter((l) => l.status === "Active").length > 0 && (
+        <div className="cm-skill-edit-levels">
+          <strong>Proficiency level descriptions</strong>
+          <small>Describe what this skill looks like at each level.</small>
+          {data.levels
+            .filter((l) => l.status === "Active")
+            .map((l, i) => (
+              <label key={l.id}>
+                <span className="cm-level-num-badge">{i + 1}</span>
+                {l.name}
+                <textarea
+                  rows={2}
+                  value={draft.levels?.[l.id] || ""}
+                  onChange={(e) => setLevel(l.id, e.target.value)}
+                  placeholder={`What does ${l.name} look like for this skill?`}
+                />
+              </label>
+            ))}
         </div>
       )}
-      <div className="cm-config-section">
-        <div className="cm-create-skill-card-body">
-          <label>
-            <span className="cm-req-label">Skill name <span className="req">*</span></span>
-            <input autoFocus maxLength={120} value={draft.name}
-              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              placeholder="e.g. Active Listening" />
-          </label>
-          <label>
-            <span>Description <span className="cm-field-optional">optional</span></span>
-            <textarea rows={2} value={draft.description}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-              placeholder="What will the learner be able to do?" />
-          </label>
-          {levels.length > 0 && (
-            <div className="cm-proficiency-section">
-              <p className="cm-proficiency-label">Proficiency levels</p>
-              {levels.map((l) => {
-                const expanded = expandedLevels.has(l.id);
-                const desc = draft.levels?.[l.id]?.trim() ?? "";
-                const mapped = getLevelCourses(l.id);
-                return (
-                  <div key={l.id} className={`cm-level-row${expanded ? " expanded" : ""}`}>
-                    <button type="button" className="cm-level-row-toggle" aria-expanded={expanded}
-                      onClick={() => setExpandedLevels((prev) => { const n = new Set(prev); n.has(l.id) ? n.delete(l.id) : n.add(l.id); return n; })}>
-                      {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                      <span className="cm-level-row-name">{l.name}</span>
-                      <span className="cm-level-row-preview">{desc || <em>Description required</em>}</span>
-                      <span className="cm-level-row-meta">{mapped.length > 0 ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}` : ""}</span>
-                    </button>
-                    {expanded && (
-                      <div className="cm-level-row-body">
-                        <label>
-                          <span className="cm-req-label">Proficiency description <span className="req">*</span></span>
-                          <textarea rows={3} aria-label={`${l.name} proficiency description`}
-                            value={draft.levels?.[l.id] ?? ""}
-                            onChange={(e) => setDraft((d) => ({ ...d, levels: { ...d.levels, [l.id]: e.target.value } }))}
-                            placeholder={`What can someone do at ${l.name.toLowerCase()} level?`} />
-                        </label>
-                        <div className="cm-level-courses">
-                          <div className="cm-level-courses-hd">
-                            <span>Mapped courses ({mapped.length})</span>
-                            <button type="button" className="cm-map-courses-btn" onClick={() => openPicker(l.id)}>
-                              <Plus size={11} /> Map courses
-                            </button>
-                          </div>
-                          {mapped.length === 0 ? (
-                            <p className="cm-level-no-courses">No courses mapped.</p>
-                          ) : (() => {
-                            return (
-                              <div className="cm-course-list">
-                                {mapped.map((c) => (
-                                  <div key={c.id} className="cm-course-row">
-                                    <span className="cm-course-row-name">{c.name}</span>
-                                    <button type="button" aria-label={`Remove ${c.name}`} className="cm-course-row-remove"
-                                      onClick={() => setLevelMappings((prev) => ({ ...prev, [l.id]: (prev[l.id] ?? []).filter((id) => id !== c.id) }))}>
-                                      <X size={12} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <div className="cm-inline-form-actions" style={{ borderTop: "none", paddingTop: 0 }}>
-            <button type="button" className="cm-button" onClick={onCancel}>Cancel</button>
-            <button type="button" className="cm-button primary" onClick={save}>Save skill</button>
-          </div>
-        </div>
+      <div className="cm-skill-edit-actions">
+        <button className="cm-button" onClick={onCancel}>Cancel</button>
+        <button className="cm-button primary" onClick={save}>Save skill</button>
       </div>
     </div>
   );
@@ -412,7 +255,6 @@ export function CompetencyLibrary({
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editingComp, setEditingComp] = useState<RecordItem | null>(null);
-  const [editingCompInline, setEditingCompInline] = useState<RecordItem | null>(null);
   const [deleting, setDeleting] = useState<{ kind: Kind; item: RecordItem } | null>(null);
 
   // skills view state
@@ -459,33 +301,6 @@ export function CompetencyLibrary({
       )
     )
       setEditingSkill(null);
-  }
-
-  /* Early return: inline edit form */
-  if (editingCompInline) {
-    const existingSkills = data.skills.filter((s) => s.competencyId === editingCompInline.id);
-    return (
-      <LibraryCreate
-        data={data}
-        onSaveWork={onSaveWork}
-        initial={{ competency: editingCompInline, skills: existingSkills }}
-        onClose={() => setEditingCompInline(null)}
-        onSave={(updatedComp, updatedSkills) => {
-          const otherSkills = data.skills.filter((s) => s.competencyId !== updatedComp.id);
-          if (
-            commit(
-              {
-                ...data,
-                competencies: data.competencies.map((c) => (c.id === updatedComp.id ? updatedComp : c)),
-                skills: [...otherSkills, ...updatedSkills],
-              },
-              `Saved "${updatedComp.name}"`,
-            )
-          )
-            setEditingCompInline(null);
-        }}
-      />
-    );
   }
 
   /* Early return: inline create form */
@@ -565,7 +380,7 @@ export function CompetencyLibrary({
               </DialogDescription>
             </DialogHeader>
             <div className="cm-dialog-actions">
-              <button className="cm-button" onClick={() => setDeleting(null)}>Cancel</button>
+              <button className="cm-button" onClick={() => setDeleting(null)}>Keep item</button>
               <button
                 className="cm-button destructive"
                 onClick={() => {
@@ -579,7 +394,7 @@ export function CompetencyLibrary({
                     setDeleting(null);
                 }}
               >
-                Delete
+                Delete item
               </button>
             </div>
           </DialogContent>
@@ -628,7 +443,7 @@ export function CompetencyLibrary({
             {comp.description && <p style={{ marginTop: 6 }}>{comp.description}</p>}
           </div>
           <div className="cm-actions">
-            <button className="cm-icon-button" aria-label={"Edit " + comp.name} onClick={() => setEditingCompInline(comp)}>
+            <button className="cm-icon-button" aria-label={"Edit " + comp.name} onClick={() => setEditingComp(comp)}>
               <Pencil size={16} />
             </button>
             <button
@@ -651,17 +466,18 @@ export function CompetencyLibrary({
 
         {/* Add-skill inline form */}
         {editingSkill === "__new__" && (
-          <SkillInlineEdit
-            skill={{ id: uid(), name: "", description: "", status: "Active", levels: {}, competencyId: comp.id }}
-            data={data}
-            work={work}
-            onSaveWork={onSaveWork}
-            onSave={(item) => {
-              if (commit({ ...data, skills: [...data.skills, item] }, `Added skill "${item.name}"`))
-                setEditingSkill(null);
-            }}
-            onCancel={() => setEditingSkill(null)}
-          />
+          <div className="cm-card" style={{ margin: "12px 0", border: "1px solid #bed5ff" }}>
+            <h3 style={{ marginBottom: 14 }}>New skill</h3>
+            <SkillInlineEdit
+              skill={{ id: uid(), name: "", description: "", status: "Active", levels: {}, competencyId: comp.id }}
+              data={data}
+              onSave={(item) => {
+                if (commit({ ...data, skills: [...data.skills, item] }, `Added skill "${item.name}"`))
+                  setEditingSkill(null);
+              }}
+              onCancel={() => setEditingSkill(null)}
+            />
+          </div>
         )}
 
         {/* Skill accordions */}
@@ -700,6 +516,7 @@ export function CompetencyLibrary({
                         <span className="cm-category">
                           {definedLevels.length} {definedLevels.length === 1 ? "level" : "levels"}
                         </span>
+                        <span className={"cm-badge " + s.status.toLowerCase()}>{s.status}</span>
                       </span>
                     </button>
                     {courses.length > 0 && work && onSaveWork && (
@@ -743,8 +560,6 @@ export function CompetencyLibrary({
                         <SkillInlineEdit
                           skill={s}
                           data={data}
-                          work={work}
-                          onSaveWork={onSaveWork}
                           onSave={saveSkill}
                           onCancel={() => setEditingSkill(null)}
                         />
@@ -886,7 +701,7 @@ export function CompetencyLibrary({
                           <button
                             className="cm-icon-button"
                             aria-label={"Edit " + c.name}
-                            onClick={() => setEditingCompInline(c)}
+                            onClick={() => setEditingComp(c)}
                           >
                             <Pencil size={16} />
                           </button>

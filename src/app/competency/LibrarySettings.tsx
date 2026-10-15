@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Pencil, Trash2, Ban } from "lucide-react";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { Data, RecordItem, used } from "./model";
 import { Editor } from "./Editor";
 import {
@@ -22,8 +22,7 @@ export function LibrarySettings({
     [query, setQuery] = useState(""),
     [status, setStatus] = useState(""),
     [editing, setEditing] = useState<{ item?: RecordItem } | null>(null),
-    [deleting, setDeleting] = useState<RecordItem | null>(null),
-    [inactivating, setInactivating] = useState<RecordItem | null>(null);
+    [deleting, setDeleting] = useState<RecordItem | null>(null);
 
   function applyLevelOrder(allLevels: RecordItem[], newItem: RecordItem, isNew: boolean): RecordItem[] {
     const maxPos = isNew ? allLevels.length + 1 : allLevels.length;
@@ -37,23 +36,18 @@ export function LibrarySettings({
     setSection(initialSection);
     setQuery("");
   }, [initialSection]);
-  const records = data[section]
-    .filter(
-      (x) =>
-        (x.name + " " + x.description)
-          .toLowerCase()
-          .includes(query.toLowerCase()) &&
-        (!status || x.status === status),
-    )
-    .sort((a, b) =>
-      section === "levels" ? (a.order ?? 999) - (b.order ?? 999) : 0,
-    );
+  const records = data[section].filter(
+    (x) =>
+      (x.name + " " + x.description)
+        .toLowerCase()
+        .includes(query.toLowerCase()) &&
+      (!status || x.status === status),
+  );
   return (
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
           <h2>Library settings</h2>
-          <p>Manage categories and proficiency levels used across your competency framework.</p>
         </div>
         <div className="cm-settings-tabs-bar">
           <div
@@ -108,7 +102,6 @@ export function LibrarySettings({
           <thead>
             <tr>
               <th>Name</th>
-              {section === "levels" && <th style={{ width: 80 }}>Order</th>}
               <th>Status</th>
               <th className="cm-right">Actions</th>
             </tr>
@@ -121,9 +114,6 @@ export function LibrarySettings({
                   <strong>{r.name}</strong>
                   <small>{r.description || "No description added"}</small>
                 </td>
-                {section === "levels" && (
-                  <td style={{ color: "#526176", fontSize: 14 }}>{r.order ?? "—"}</td>
-                )}
                 <td>
                   <span className={"cm-badge " + r.status.toLowerCase()}>
                     {r.status}
@@ -138,16 +128,6 @@ export function LibrarySettings({
                     >
                       <Pencil size={16} />
                     </button>
-                    {section === "levels" && r.status === "Active" && (
-                      <button
-                        className="cm-icon-button"
-                        aria-label={"Inactivate " + r.name}
-                        title="Inactivate"
-                        onClick={() => setInactivating(r)}
-                      >
-                        <Ban size={16} />
-                      </button>
-                    )}
                     <button
                       className="cm-icon-button danger"
                       aria-label={"Delete " + r.name}
@@ -168,6 +148,9 @@ export function LibrarySettings({
           No matching {section}. Try another search or add an item.
         </p>
       )}
+      <p className="cm-hint">
+        Items already used by skills, skill groups, or learners cannot be deleted or deactivated.
+      </p>
       {editing && (
         <Editor
           kind={section}
@@ -189,39 +172,6 @@ export function LibrarySettings({
           }}
         />
       )}
-      {inactivating && (
-        <Dialog open onOpenChange={(open) => { if (!open) setInactivating(null); }}>
-          <DialogContent className="cm-dialog">
-            <DialogHeader>
-              <DialogTitle>
-                {used(data, "levels", inactivating.id)
-                  ? `${inactivating.name} is mapped to a competency, skill, role, course, or learner usage and cannot be inactivated`
-                  : `Are you sure you want to inactivate ${inactivating.name}?`}
-              </DialogTitle>
-              <DialogDescription />
-            </DialogHeader>
-            <div className="cm-dialog-actions">
-              <button className="cm-button" onClick={() => setInactivating(null)}>Cancel</button>
-              {!used(data, "levels", inactivating.id) && (
-                <button
-                  className="cm-button destructive"
-                  onClick={() => {
-                    if (
-                      commit(
-                        { ...data, levels: data.levels.map((x) => x.id === inactivating.id ? { ...x, status: "Inactive" } : x) },
-                        `${inactivating.name} inactivated`,
-                      )
-                    )
-                      setInactivating(null);
-                  }}
-                >
-                  Inactivate
-                </button>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
       {deleting && (
         <Dialog
           open
@@ -232,13 +182,9 @@ export function LibrarySettings({
           <DialogContent className="cm-dialog">
             <DialogHeader>
               <DialogTitle>
-                {section === "levels"
-                  ? used(data, "levels", deleting.id)
-                    ? `${deleting.name} is mapped to a skill, role, course, or learner usage and cannot be deleted.`
-                    : `Are you sure you want to delete ${deleting.name}?`
-                  : used(data, section, deleting.id)
-                    ? `${deleting.name} is mapped to a competency and cannot be inactivated.`
-                    : `Are you sure you want to inactivate ${deleting.name}?`}
+                {used(data, section, deleting.id)
+                  ? `${deleting.name} is mapped to a competency and cannot be inactivated.`
+                  : `Are you sure you want to inactivate ${deleting.name}?`}
               </DialogTitle>
               <DialogDescription />
             </DialogHeader>
