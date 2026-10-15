@@ -163,54 +163,28 @@ function SkillAccordionCard({
                           </div>
                           {mapped.length === 0 ? (
                             <p className="cm-level-no-courses">No courses mapped.</p>
-                          ) : (() => {
-                              const total = mapped.reduce(
-                                (sum, c) => sum + (courseWeightages[skill.id]?.[l.id]?.[c.id] ?? 0), 0,
-                              );
-                              const cls = total === 100 ? "ok" : total > 100 ? "over" : "warn";
-                              return (
-                                <>
-                                  <div className="cm-course-list">
-                                    {mapped.map((c) => {
-                                      const w = courseWeightages[skill.id]?.[l.id]?.[c.id];
-                                      return (
-                                        <div key={c.id} className="cm-course-row">
-                                          <span className="cm-course-row-name">{c.name}</span>
-                                          <div className="cm-course-row-weight">
-                                            <input
-                                              type="number" min={0} max={100}
-                                              value={w ?? ""} placeholder="0"
-                                              aria-label={`Weightage for ${c.name}`}
-                                              onInput={(e) => { if (e.currentTarget.value.length > 3) e.currentTarget.value = e.currentTarget.value.slice(0, 3); }}
-                                              onChange={(e) => onSetWeightage(l.id, c.id, e.target.value)}
-                                            />
-                                            <span>%</span>
-                                          </div>
-                                          <button
-                                            type="button"
-                                            aria-label={`Remove ${c.name}`}
-                                            className="cm-course-row-remove"
-                                            onClick={() =>
-                                              onSetLevelCourses(
-                                                l.id,
-                                                (courseMappings[skill.id]?.[l.id] ?? []).filter((id) => id !== c.id),
-                                              )
-                                            }
-                                          >
-                                            <X size={12} />
-                                          </button>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                  <div className={`cm-course-weight-total ${cls}`}>
-                                    Total weightage: <strong>{total}%</strong>
-                                    {total === 100 && <span className="cm-course-weight-check">✓</span>}
-                                  </div>
-                                </>
-                              );
-                            })()
-                          }
+                          ) : (
+                              <div className="cm-course-list">
+                                    {mapped.map((c) => (
+                                      <div key={c.id} className="cm-course-row">
+                                        <span className="cm-course-row-name">{c.name}</span>
+                                        <button
+                                          type="button"
+                                          aria-label={`Remove ${c.name}`}
+                                          className="cm-course-row-remove"
+                                          onClick={() =>
+                                            onSetLevelCourses(
+                                              l.id,
+                                              (courseMappings[skill.id]?.[l.id] ?? []).filter((id) => id !== c.id),
+                                            )
+                                          }
+                                        >
+                                          <X size={12} />
+                                        </button>
+                                      </div>
+                                    ))}
+                              </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -234,23 +208,51 @@ export function LibraryCreate({
   onClose,
   onSave,
   onSaveWork,
+  initial,
 }: {
   data: Data;
   onClose: () => void;
   onSave: (competency: RecordItem, skills: RecordItem[]) => void;
   onSaveWork?: (work: WorkflowData, msg: string) => boolean;
+  initial?: { competency: RecordItem; skills: RecordItem[] };
 }) {
-  const [competency, setCompetency] = useState<RecordItem>(() => ({
-    id: uid(),
-    name: "",
-    description: "",
-    categoryId: "",
-    status: "Active",
-  }));
-  const [skills, setSkills] = useState<RecordItem[]>(() => [blankSkill()]);
-  const [openSkillId, setOpenSkillId] = useState<string | null>(null); // null = first skill
-  const [courseMappings, setCourseMappings] = useState<CourseMappings>({});
-  const [courseWeightages, setCourseWeightages] = useState<CourseWeightages>({});
+  const isEdit = !!initial;
+
+  const [competency, setCompetency] = useState<RecordItem>(() =>
+    initial ? structuredClone(initial.competency) : { id: uid(), name: "", description: "", categoryId: "", status: "Active" },
+  );
+  const [skills, setSkills] = useState<RecordItem[]>(() =>
+    initial ? initial.skills.map((s) => structuredClone(s)) : [blankSkill()],
+  );
+  const [openSkillId, setOpenSkillId] = useState<string | null>(
+    initial ? (initial.skills[0]?.id ?? null) : null,
+  );
+  const [courseMappings, setCourseMappings] = useState<CourseMappings>(() => {
+    if (!initial) return {};
+    const maps: CourseMappings = {};
+    for (const course of data.workflow?.courses ?? []) {
+      for (const m of course.mappings) {
+        if (!initial.skills.some((s) => s.id === m.skillId)) continue;
+        if (!maps[m.skillId]) maps[m.skillId] = {};
+        if (!maps[m.skillId][m.levelId]) maps[m.skillId][m.levelId] = [];
+        maps[m.skillId][m.levelId].push(course.id);
+      }
+    }
+    return maps;
+  });
+  const [courseWeightages, setCourseWeightages] = useState<CourseWeightages>(() => {
+    if (!initial) return {};
+    const weights: CourseWeightages = {};
+    for (const course of data.workflow?.courses ?? []) {
+      for (const m of course.mappings) {
+        if (!initial.skills.some((s) => s.id === m.skillId) || m.weightage == null) continue;
+        if (!weights[m.skillId]) weights[m.skillId] = {};
+        if (!weights[m.skillId][m.levelId]) weights[m.skillId][m.levelId] = {};
+        weights[m.skillId][m.levelId][course.id] = m.weightage;
+      }
+    }
+    return weights;
+  });
   // Keys are `${skillId}:${levelId}` so each skill tracks its own expanded levels
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
   const [pickerKey, setPickerKey] = useState<{ skillId: string; levelId: string } | null>(null);
@@ -368,7 +370,7 @@ export function LibraryCreate({
     if (
       name &&
       (skills.some((x) => x.id !== s.id && x.name.trim().toLowerCase() === name.toLowerCase()) ||
-        data.skills.some((x) => x.name.trim().toLowerCase() === name.toLowerCase()))
+        data.skills.some((x) => x.id !== s.id && x.name.trim().toLowerCase() === name.toLowerCase()))
     )
       issues.push(`${label}: this skill name already exists.`);
     if (proficiency)
@@ -392,8 +394,11 @@ export function LibraryCreate({
   }
 
   function handleFinalSave() {
+    const dataForValidate = isEdit
+      ? { ...data, competencies: data.competencies.filter((c) => c.id !== clean.id) }
+      : data;
     const issues = [
-      ...validate(clean, "competencies", data),
+      ...validate(clean, "competencies", dataForValidate),
       ...(linked.length === 0 ? ["Add at least one skill, or save as draft."] : []),
       ...linked.flatMap((s, i) => skillIssues(s, i)),
     ];
@@ -506,37 +511,16 @@ export function LibraryCreate({
                     }}
                   />
                   <span className="cm-picker-name">{course.name}</span>
-                  {checked && (
-                    <div className="cm-picker-weight" onClick={(e) => e.preventDefault()}>
-                      <input
-                        type="number" min={0} max={100}
-                        value={pickerWeightages[course.id] ?? ""} placeholder="0"
-                        aria-label={`Weightage for ${course.name}`}
-                        onInput={(e) => { if (e.currentTarget.value.length > 3) e.currentTarget.value = e.currentTarget.value.slice(0, 3); }}
-                        onChange={(e) => {
-                          const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
-                          setPickerWeightages((prev) => ({ ...prev, [course.id]: v }));
-                        }}
-                      />
-                      <span>%</span>
-                    </div>
-                  )}
                 </label>
               );
             })}
           </div>
           <div className="cm-dialog-actions cm-picker-footer">
-            {(() => {
-              const total = pickerDraft.reduce((s, id) => s + (pickerWeightages[id] ?? 0), 0);
-              const cls = pickerDraft.length === 0 ? "" : total === 100 ? " ok" : total > 100 ? " over" : " warn";
-              return (
-                <span className={`cm-picker-count${cls}`}>
-                  {pickerDraft.length === 0
-                    ? "None selected"
-                    : `${pickerDraft.length} course${pickerDraft.length !== 1 ? "s" : ""} · Total: ${total}%`}
-                </span>
-              );
-            })()}
+            <span className="cm-picker-count">
+              {pickerDraft.length === 0
+                ? "None selected"
+                : `${pickerDraft.length} course${pickerDraft.length !== 1 ? "s" : ""} selected`}
+            </span>
             <button type="button" className="cm-button" onClick={() => setPickerKey(null)}>Cancel</button>
             <button type="button" className="cm-button primary" disabled={!hasChanged} onClick={applyPicker}>
               Apply selection
@@ -554,7 +538,7 @@ export function LibraryCreate({
         <button type="button" className="cm-text-button cm-inline-back" onClick={handleClose}>
           ← Competency framework
         </button>
-        <h2>Create competency &amp; skills</h2>
+        <h2>{isEdit ? "Edit competency & skills" : "Create competency & skills"}</h2>
       </div>
 
       {errors.length > 0 && (
@@ -601,6 +585,19 @@ export function LibraryCreate({
               rows={3}
             />
           </label>
+          {isEdit && (
+            <label>
+              <span>Status</span>
+              <select
+                value={competency.status}
+                onChange={(e) => setCompetency({ ...competency, status: e.target.value as RecordItem["status"] })}
+              >
+                <option>Active</option>
+                <option>Inactive</option>
+                <option>Draft</option>
+              </select>
+            </label>
+          )}
         </div>
       </div>
 
@@ -645,7 +642,7 @@ export function LibraryCreate({
         <button type="button" className="cm-button" onClick={handleClose}>
           Cancel
         </button>
-        {skills.some(
+        {!isEdit && skills.some(
           (s) => s.name.trim() || s.description.trim() || Object.values(s.levels ?? {}).some((v) => v.trim()),
         ) && (
           <button type="button" className="cm-button" onClick={saveDraft}>
@@ -653,7 +650,7 @@ export function LibraryCreate({
           </button>
         )}
         <button type="button" className="cm-button primary" onClick={handleFinalSave}>
-          Create competency
+          {isEdit ? "Save changes" : "Create competency"}
         </button>
       </div>
     </section>

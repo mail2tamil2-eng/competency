@@ -2,6 +2,10 @@
 :root {
   --font-sans: "Nunito Sans", sans-serif;
 }
+.cm .req,
+.cm-dialog .req {
+  color: #dc2626;
+}
 /* Readability scale: supporting 14, table 15, body/control 16, headings 20/24/28. */
 .cm,
 .cm-dialog {

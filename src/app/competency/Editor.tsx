@@ -75,7 +75,12 @@ export function Editor({
               name: draft.name.trim(),
               description: draft.description.trim(),
             };
-            const issues = validate(next, kind, data);
+            const issues = validate(next, kind, data).filter(
+              (e) =>
+                !parent ||
+                (e !== "Choose an active category." &&
+                  e !== "Choose an active competency in this category."),
+            );
             setErrors(issues);
             if (!issues.length) onSave(next);
           }}
