@@ -1806,24 +1806,26 @@
   font-size: 12px;
 }
 .cm-cp-add-role-btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  margin-top: 10px;
-  padding: 6px 14px;
-  background: white;
-  border: 1.5px dashed #d1d5db;
+  margin-top: 12px;
+  padding: 10px 14px;
+  width: 100%;
+  background: #f0f4ff;
+  border: 1.5px solid #93b4f7;
   border-radius: 6px;
   color: #2463d6;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  align-self: flex-start;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
 }
 .cm-cp-add-role-btn:hover {
-  background: #f0f4ff;
+  background: #dce8ff;
   border-color: #2463d6;
+  box-shadow: 0 0 0 3px #dce8ff;
 }
 @media (max-width: 600px) {
   .cm-cp-chain { row-gap: 6px; }
