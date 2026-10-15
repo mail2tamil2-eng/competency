@@ -7,6 +7,7 @@ import {
   Search,
   Pencil,
   Trash2,
+  Ban,
   ArrowLeft,
   ChevronDown,
   ChevronRight,
@@ -464,6 +465,7 @@ export function CompetencyLibrary({
   const [editingSkill, setEditingSkill] = useState<string | null>(null);
   const [coursePopup, setCoursePopup] = useState<string | null>(null); // skill id
   const [levelCourseView, setLevelCourseView] = useState<{ skillId: string; levelId: string } | null>(null);
+  const [inactivatingSkill, setInactivatingSkill] = useState<RecordItem | null>(null);
   const [levelPicker, setLevelPicker] = useState<{ skillId: string; levelId: string } | null>(null);
   const [lPickerDraft, setLPickerDraft] = useState<string[]>([]);
   const [lPickerOriginal, setLPickerOriginal] = useState<string[]>([]);
@@ -500,6 +502,9 @@ export function CompetencyLibrary({
     data.levels.find((l) => l.id === lId)?.name || lId;
   const coursesForSkill = (sId: string) =>
     (work?.courses ?? []).filter((c) => c.mappings.some((m) => m.skillId === sId));
+
+  const skillIsProtected = (sId: string) =>
+    used(data, "skills", sId) || (work?.courses ?? []).some((c) => c.mappings.some((m) => m.skillId === sId));
 
   function openLevelPicker(skillId: string, levelId: string) {
     if (!work) return;
@@ -647,28 +652,66 @@ export function CompetencyLibrary({
         <Dialog open onOpenChange={(open) => { if (!open) setDeleting(null); }}>
           <DialogContent className="cm-dialog">
             <DialogHeader>
-              <DialogTitle>Delete {deleting.item.name}?</DialogTitle>
-              <DialogDescription>
-                This removes the item from your library. This cannot be undone.
-              </DialogDescription>
+              <DialogTitle>
+                {deleting.kind === "skills"
+                  ? skillIsProtected(deleting.item.id)
+                    ? `${deleting.item.name} is mapped to courses or acquired by users, so cannot be deleted.`
+                    : `Are you sure you want to delete ${deleting.item.name}?`
+                  : `Delete ${deleting.item.name}?`}
+              </DialogTitle>
+              <DialogDescription />
             </DialogHeader>
             <div className="cm-dialog-actions">
               <button className="cm-button" onClick={() => setDeleting(null)}>Cancel</button>
-              <button
-                className="cm-button destructive"
-                onClick={() => {
-                  if (used(data, deleting.kind, deleting.item.id)) return;
-                  if (
-                    commit(
-                      { ...data, [deleting.kind]: data[deleting.kind].filter((x) => x.id !== deleting.item.id) },
-                      "Item deleted",
+              {!skillIsProtected(deleting.item.id) && (
+                <button
+                  className="cm-button destructive"
+                  onClick={() => {
+                    if (
+                      commit(
+                        { ...data, [deleting.kind]: data[deleting.kind].filter((x) => x.id !== deleting.item.id) },
+                        "Item deleted",
+                      )
                     )
-                  )
-                    setDeleting(null);
-                }}
-              >
-                Delete
-              </button>
+                      setDeleting(null);
+                  }}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      {inactivatingSkill && (
+        <Dialog open onOpenChange={(open) => { if (!open) setInactivatingSkill(null); }}>
+          <DialogContent className="cm-dialog">
+            <DialogHeader>
+              <DialogTitle>
+                {skillIsProtected(inactivatingSkill.id)
+                  ? `${inactivatingSkill.name} is mapped to courses or acquired by users and cannot be inactivated.`
+                  : `Are you sure you want to inactivate ${inactivatingSkill.name}?`}
+              </DialogTitle>
+              <DialogDescription />
+            </DialogHeader>
+            <div className="cm-dialog-actions">
+              <button className="cm-button" onClick={() => setInactivatingSkill(null)}>Cancel</button>
+              {!skillIsProtected(inactivatingSkill.id) && (
+                <button
+                  className="cm-button destructive"
+                  onClick={() => {
+                    if (
+                      commit(
+                        { ...data, skills: data.skills.map((x) => x.id === inactivatingSkill.id ? { ...x, status: "Inactive" as const } : x) },
+                        `${inactivatingSkill.name} inactivated`,
+                      )
+                    )
+                      setInactivatingSkill(null);
+                  }}
+                >
+                  Inactivate
+                </button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -955,11 +998,20 @@ export function CompetencyLibrary({
                       >
                         {isEditing ? <X size={15} /> : <Pencil size={15} />}
                       </button>
+                      {s.status === "Active" && (
+                        <button
+                          className="cm-icon-button"
+                          aria-label={"Inactivate " + s.name}
+                          title="Inactivate skill"
+                          onClick={() => setInactivatingSkill(s)}
+                        >
+                          <Ban size={15} />
+                        </button>
+                      )}
                       <button
                         className="cm-icon-button danger"
                         aria-label={"Delete " + s.name}
-                        disabled={used(data, "skills", s.id)}
-                        title={used(data, "skills", s.id) ? "Used by learners or courses" : "Delete skill"}
+                        title="Delete skill"
                         onClick={() => setDeleting({ kind: "skills", item: s })}
                       >
                         <Trash2 size={15} />
