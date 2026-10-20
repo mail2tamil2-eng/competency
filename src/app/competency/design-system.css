@@ -1730,6 +1730,14 @@
 .cm-cp-dialog {
   max-width: 500px !important;
 }
+/* ── Course detail popup ──────────────────────────────────────────────────── */
+.cm-course-popup-dialog {
+  max-width: 700px !important;
+}
+.cm-course-popup-dialog .cm-table-wrap {
+  max-height: 400px;
+  overflow-y: auto;
+}
 .cm-cp-builder {
   display: flex;
   flex-direction: column;

@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { ArrowLeft, Download, Search } from "lucide-react";
-import { Data, download, progress } from "./model";
+import { Data, Assignment, download, progress } from "./model";
 import { WorkflowData } from "./workflowModel";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../components/ui/dialog";
 import { employeeFor, levelName, skillGap, proofStatus, personKey } from "./managerModel";
 import { ManagerPageSize, ManagerPagination } from "./ManagerPagination";
 import { StatusBadge } from "./ManagerProgress";
@@ -54,6 +61,7 @@ function DetailView({
   const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
+  const [coursePopup, setCoursePopup] = useState<{ assignmentId: string; skillId: string } | null>(null);
 
   const assignments = data.assignments.filter((a) => {
     if (ctx.kind === "skill" && a.skillId !== ctx.skillId) return false;
@@ -80,20 +88,41 @@ function DetailView({
     : data.assignments.find((a) => personKey(a) === ctx.pKey)?.name || "Learner";
   const filterLabel = ctx.filter === "gap" ? "with skill gap" : ctx.filter === "completed" ? "completed" : "all";
 
+  function getCourseRows(a: Assignment) {
+    const eIdx = data.levels.findIndex((l) => l.id === a.expected);
+    if (eIdx < 0) return [];
+    const done = work.completed[a.id] || [];
+    const cIdx = data.levels.findIndex((l) => l.id === a.current);
+    let firstRequired: string | null = null;
+    for (const l of data.levels.slice(cIdx + 1, eIdx + 1)) {
+      const c = work.courses.find((c) => c.mappings.some((m) => m.skillId === a.skillId && m.levelId === l.id) && !done.includes(c.id));
+      if (c) { firstRequired = c.id; break; }
+    }
+    return data.levels.slice(0, eIdx + 1).flatMap((l) =>
+      work.courses
+        .filter((c) => c.mappings.some((m) => m.skillId === a.skillId && m.levelId === l.id))
+        .map((c) => {
+          const mapping = c.mappings.find((m) => m.skillId === a.skillId && m.levelId === l.id);
+          const proof = work.proofs.filter((p) => p.assignmentId === a.id && p.courseId === c.id).at(-1);
+          const courseStatus = done.includes(c.id) ? "Completed" : c.id === firstRequired ? "In Progress" : "Not Started";
+          return { level: l, course: c, weightage: mapping?.weightage, courseStatus, proofStatus: proof?.status || "—" };
+        }),
+    );
+  }
+
   function exportRows() {
     download("detail-report.csv", [
-      ["Name", "Email", "Dept", "Role", "Reporting Manager", "Skill", "Competency", "Current Level", "Expected Level", "Skill Gap", "Status", "Assigned Date", "Completed Date", "Proof Status"],
+      ["Name", "Email", "Dept", "Role", "Reporting Manager", "Skill", "Current Level", "Expected Level", "Skill Gap", "Courses", "Status", "Assigned Date", "Completed Date", "Proof Status"],
       ...rows.map((a) => {
         const emp = employeeFor(work, a);
         const mgr = work.employees.find((e) => e.id === emp?.managerId);
         const skill = data.skills.find((s) => s.id === a.skillId);
-        const comp = data.competencies.find((c) => c.id === skill?.competencyId);
         const gap = skillGap(data, a);
         return [
           a.name, emp?.email || "Not recorded", a.department, emp?.role || "Not recorded",
-          mgr?.name || "Not recorded", skill?.name || "Unavailable", comp?.name || "Not recorded",
+          mgr?.name || "Not recorded", skill?.name || "Unavailable",
           levelName(data, a.current), levelName(data, a.expected),
-          gap ?? "Not assessed", progress(data, a),
+          gap ?? "Not assessed", getCourseRows(a).length, progress(data, a),
           a.assignedDate?.slice(0, 10) || "—", a.completedDate?.slice(0, 10) || "—",
           proofStatus(work, a.id),
         ].map(String);
@@ -137,7 +166,7 @@ function DetailView({
         <table className="cm-manager-table">
           <thead>
             <tr>
-              {["Name", "Email", "Role", "Skill", "Competency", "Current Level", "Expected Level", "Gap", "Status", "Assigned", "Completed", "Proof"].map((h) => (
+              {["Name", "Email", "Role", "Dept", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Assigned", "Completed", "Proof"].map((h) => (
                 <th key={h}>{h}</th>
               ))}
             </tr>
@@ -146,18 +175,25 @@ function DetailView({
             {rows.slice(cp * size, (cp + 1) * size).map((a) => {
               const emp = employeeFor(work, a);
               const skill = data.skills.find((s) => s.id === a.skillId);
-              const comp = data.competencies.find((c) => c.id === skill?.competencyId);
               const gap = skillGap(data, a);
+              const courseCount = getCourseRows(a).length;
               return (
                 <tr key={a.id}>
-                  <td><strong>{a.name}</strong><small>{a.department}</small></td>
+                  <td><strong>{a.name}</strong></td>
                   <td>{emp?.email || "—"}</td>
                   <td>{emp?.role || "—"}</td>
+                  <td>{a.department || "—"}</td>
                   <td><strong>{skill?.name || "Unavailable"}</strong></td>
-                  <td>{comp?.name || "—"}</td>
                   <td>{levelName(data, a.current)}</td>
                   <td>{levelName(data, a.expected)}</td>
                   <td><strong className={gap ? "cm-manager-gap" : ""}>{gap ?? "Not assessed"}</strong></td>
+                  <td>
+                    {courseCount > 0 ? (
+                      <button className="cm-link" onClick={() => setCoursePopup({ assignmentId: a.id, skillId: a.skillId })}>
+                        {courseCount} course{courseCount !== 1 ? "s" : ""}
+                      </button>
+                    ) : <span>—</span>}
+                  </td>
                   <td><StatusBadge status={progress(data, a)} /></td>
                   <td>{a.assignedDate?.slice(0, 10) || "—"}</td>
                   <td>{a.completedDate?.slice(0, 10) || "—"}</td>
@@ -166,12 +202,60 @@ function DetailView({
               );
             })}
             {!total && (
-              <tr><td colSpan={12}>No matching records. Try another search.</td></tr>
+              <tr><td colSpan={13}>No matching records. Try another search.</td></tr>
             )}
           </tbody>
         </table>
       </div>
       <ManagerPagination total={total} page={cp} pageSize={size} onPage={setPage} />
+
+      {/* Course detail popup */}
+      {coursePopup && (() => {
+        const a = data.assignments.find((x) => x.id === coursePopup.assignmentId);
+        const skill = data.skills.find((s) => s.id === coursePopup.skillId);
+        if (!a || !skill) return null;
+        const courseRows = getCourseRows(a);
+        return (
+          <Dialog open onOpenChange={(open) => { if (!open) setCoursePopup(null); }}>
+            <DialogContent className="cm-dialog cm-course-popup-dialog">
+              <DialogHeader>
+                <DialogTitle>{a.name} — {skill.name}</DialogTitle>
+                <DialogDescription>Courses grouped by skill level</DialogDescription>
+              </DialogHeader>
+              <div className="cm-table-wrap">
+                <table className="cm-manager-table">
+                  <thead>
+                    <tr>
+                      <th>Skill Level</th>
+                      <th>Course Name</th>
+                      <th>Course Weightage</th>
+                      <th>Course Status</th>
+                      <th>Proof Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {courseRows.map(({ level, course, weightage, courseStatus, proofStatus: ps }) => (
+                      <tr key={course.id + level.id}>
+                        <td>{level.name}</td>
+                        <td><strong>{course.name}</strong></td>
+                        <td>{weightage != null ? weightage + "%" : "—"}</td>
+                        <td><StatusBadge status={courseStatus} /></td>
+                        <td>{ps === "—" ? <span className="cm-muted">—</span> : <StatusBadge status={ps} />}</td>
+                      </tr>
+                    ))}
+                    {!courseRows.length && (
+                      <tr><td colSpan={5}>No courses mapped for this skill.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="cm-dialog-actions">
+                <button className="cm-button" onClick={() => setCoursePopup(null)}>Close</button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </section>
   );
 }
