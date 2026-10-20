@@ -277,6 +277,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                   : [
                       "Reportee",
                       "Email ID",
+                      "Role",
                       "Assigned skills",
                       "Completed",
                       "In progress",
@@ -354,6 +355,10 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                             {employeeFor(work, items[0])?.email ||
                               "Not recorded"}
                           </td>
+                          <td>
+                            {employeeFor(work, items[0])?.role ||
+                              "Not recorded"}
+                          </td>
                           <td>{items.length}</td>
                           <td>{done}</td>
                           <td>{inProgress}</td>
@@ -382,7 +387,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                     })}
               {!total && (
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={9}>
                     <div className="cm-manager-empty">
                       <Users size={28} />
                       <strong>
