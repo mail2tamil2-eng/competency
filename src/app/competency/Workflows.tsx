@@ -784,11 +784,11 @@ export function Learning({
           ))}
         </select>
       </div>
-      <p className="cm-hint">
-        {manager
-          ? "Manager preview · All demo employees are shown. Production access must be limited to authorized reportees."
-          : "Learner preview · Course completion is simulated in this prototype."}
-      </p>
+      {manager && (
+        <p className="cm-hint">
+          Manager preview · All demo employees are shown. Production access must be limited to authorized reportees.
+        </p>
+      )}
 
       {/* My Skill Widget — learner only */}
       {!manager && assignments.length > 0 && (() => {
