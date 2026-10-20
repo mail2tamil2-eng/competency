@@ -760,7 +760,7 @@ export function Learning({
     );
   }
   return (
-    <section className="cm-card">
+    <section className={`cm-card${!manager ? " cm-learner" : ""}`}>
       <div className="cm-section-head">
         <div>
           <h2>

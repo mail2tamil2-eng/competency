@@ -1170,6 +1170,296 @@ body {
   align-self: center;
   margin-right: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEARNER DASHBOARD — SaaS visual upgrade
+   All rules scoped to section.cm-learner — manager view is untouched
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Outer section: light dashboard background, flush edges */
+section.cm-learner {
+  background: #f3f5fb;
+  border-color: #dde3f0;
+  overflow: hidden;
+}
+
+/* ── Hero header (bleeds to card edges via negative margin) ── */
+.cm-learner > .cm-section-head {
+  margin: -23px -23px 0;
+  padding: 28px 28px 26px;
+  background: linear-gradient(130deg, #1741b8 0%, #2563eb 55%, #5a8dfb 100%);
+  border-radius: 0;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+.cm-learner > .cm-section-head h2 {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+}
+.cm-learner > .cm-section-head p {
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+  font-size: 14px;
+}
+.cm-learner > .cm-section-head select {
+  background: rgba(255, 255, 255, 0.13);
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 200px;
+  padding: 8px 12px;
+}
+.cm-learner > .cm-section-head select option {
+  background: #1741b8;
+  color: #fff;
+}
+.cm-learner > .cm-section-head select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
+/* ── Prototype hint ── */
+.cm-learner > .cm-hint {
+  margin-top: 14px;
+  font-size: 12px;
+  color: #9aa3b5;
+}
+
+/* ── KPI stat cards ── */
+.cm-learner .cm-skill-widget {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  padding: 22px 0 8px;
+  margin: 0;
+  align-items: stretch;
+}
+.cm-learner .cm-skill-widget-stat {
+  flex: 1;
+  min-width: 110px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 16px 14px;
+  background: #fff;
+  border: 1px solid #e0e6f2;
+  border-radius: 14px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.cm-learner .cm-skill-widget-stat:hover {
+  box-shadow: 0 6px 20px rgba(29, 78, 216, 0.1);
+  transform: translateY(-2px);
+}
+.cm-learner .cm-skill-widget-stat strong {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1.5px;
+  color: #1a2540;
+}
+.cm-learner .cm-skill-widget-stat span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8a99b3;
+}
+/* Color-coded top accent per stat type */
+.cm-learner .cm-skill-widget-stat:first-child            { border-top: 3px solid #2563eb; }
+.cm-learner .cm-skill-widget-stat:first-child strong     { color: #2563eb; }
+.cm-learner .cm-skill-widget-stat.success                { border-top: 3px solid #16a34a; }
+.cm-learner .cm-skill-widget-stat.success strong         { color: #16a34a; }
+.cm-learner .cm-skill-widget-stat.pending                { border-top: 3px solid #d97706; }
+.cm-learner .cm-skill-widget-stat.pending strong         { color: #d97706; }
+.cm-learner .cm-skill-widget-stat.muted                  { border-top: 3px solid #9ca3af; }
+.cm-learner .cm-skill-widget-stat.muted strong           { color: #9ca3af; }
+.cm-learner .cm-skill-widget-stat.warn                   { border-top: 3px solid #dc2626; }
+.cm-learner .cm-skill-widget-stat.warn strong            { color: #dc2626; }
+
+/* Overall progress bar — always full width */
+.cm-learner .cm-skill-widget-progress {
+  flex: 0 0 100%;
+  margin-left: 0;
+  background: #fff;
+  border: 1px solid #e0e6f2;
+  border-radius: 14px;
+  padding: 14px 20px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+  gap: 14px;
+  flex-shrink: initial;
+}
+.cm-learner .cm-skill-widget-progress > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #526176;
+  white-space: nowrap;
+}
+.cm-learner .cm-skill-widget-progress > strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2563eb;
+  min-width: 44px;
+  text-align: right;
+  white-space: nowrap;
+}
+.cm-learner .cm-skill-widget-bar {
+  flex: 1;
+  height: 10px;
+  background: #e0e7f5;
+  border-radius: 5px;
+}
+.cm-learner .cm-skill-widget-bar > div {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #1d4ed8 0%, #60a5fa 100%);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.4);
+}
+
+/* ── View toggle ── */
+.cm-learner .cm-view-toggle {
+  display: inline-flex;
+  background: #edf0f7;
+  border: 1px solid #d8dce8;
+  border-radius: 11px;
+  padding: 3px;
+  gap: 2px;
+  margin: 20px 0 0;
+}
+.cm-learner .cm-view-toggle button {
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  transition: all 0.15s;
+}
+.cm-learner .cm-view-toggle button.active {
+  background: #fff;
+  color: #1d4ed8;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Career path panel ── */
+.cm-learner .cm-lp-career { margin-top: 20px; }
+.cm-learner .cm-lp-panel {
+  border: 1px solid #c8d8f8;
+  border-radius: 18px;
+  box-shadow: 0 2px 14px rgba(29, 78, 216, 0.07);
+}
+.cm-learner .cm-lp-panel-head {
+  background: linear-gradient(110deg, #edf3ff 0%, #e4eeff 100%);
+  border-bottom-color: #c8d8f8;
+}
+
+/* ── Skill learning cards ── */
+.cm-learner .cm-learning-card {
+  background: #fff;
+  border: 1px solid #e0e6f2;
+  border-radius: 18px;
+  padding: 22px 26px;
+  margin-top: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.15s;
+}
+.cm-learner .cm-learning-card:hover {
+  box-shadow: 0 6px 22px rgba(29, 78, 216, 0.08);
+}
+.cm-learner .cm-learning-card .cm-section-head {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f0f4fb;
+  margin-bottom: 16px;
+}
+.cm-learner .cm-learning-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a2540;
+}
+.cm-learner .cm-learning-card .cm-section-head p {
+  color: #6b7a97;
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+/* ── Level track: card-style stepper ── */
+.cm-learner .cm-level-track {
+  background: #f7faff;
+  border: 1px solid #dde8ff;
+  border-radius: 12px;
+  overflow: hidden;
+  gap: 0;
+  margin: 16px 0;
+}
+.cm-learner .cm-level-track > div {
+  border-top: none;
+  border-right: 1px solid #dde8ff;
+  border-left: none;
+  border-bottom: none;
+  padding: 14px 14px 12px;
+  background: transparent;
+  gap: 5px;
+}
+.cm-learner .cm-level-track > div:last-child { border-right: none; }
+.cm-learner .cm-level-track > div.done { background: #f0faf5; }
+.cm-learner .cm-level-track > div.done span { color: #16a34a; }
+.cm-learner .cm-level-track > div:not(.done):not(.beyond) span { color: #8a99b3; }
+.cm-learner .cm-level-track strong { font-size: 13px; font-weight: 700; color: #1a2540; }
+.cm-learner .cm-level-track small  { font-size: 12px; color: #7a8198; line-height: 1.4; }
+
+/* ── Course rows ── */
+.cm-learner .cm-course-row {
+  border-top: 1px solid #f0f4fb;
+  padding: 15px 0;
+  gap: 14px;
+}
+.cm-learner .cm-course-row > svg { color: #2563eb; }
+.cm-learner .cm-course-row strong { font-size: 15px; font-weight: 600; color: #1a2540; }
+.cm-learner .cm-course-row small  { color: #8a99b3; font-size: 13px; }
+
+/* ── Inline status messages ── */
+.cm-learner .cm-not-assessed {
+  background: #f0f7ff;
+  border: 1px solid #bcd5ff;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #1e3a5f;
+  font-size: 14px;
+}
+.cm-learner .cm-content-missing-hint {
+  background: #fffbf0;
+  border: 1px solid #fde9a0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #7c5a0a;
+  font-size: 14px;
+}
+
+/* ── Competency view cards ── */
+.cm-learner .cm-competency-group {
+  background: #fff;
+  border: 1px solid #e0e6f2;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 10px 0;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Responsive ── */
+@media (max-width: 680px) {
+  .cm-learner > .cm-section-head { padding: 20px 18px; }
+  .cm-learner .cm-skill-widget-stat {
+    flex: 0 0 calc(50% - 6px);
+    min-width: 0;
+  }
+}
 @media (max-width: 700px) {
   .cm .cm-report-toolbar {
     grid-template-columns: 1fr;
