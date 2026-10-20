@@ -108,6 +108,15 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
       setDraft(null);
   }
 
+  const careerPathIsProtected = (path: CareerPath) =>
+    work.employees.some(
+      (e) =>
+        path.roles.includes(e.role) &&
+        data.assignments.some(
+          (a) => a.employeeId === e.id || (a.name === e.name && a.department === e.department),
+        ),
+    );
+
   function toggleStatus(path: CareerPath) {
     if (path.status === "Active") { setDeactivating(path); return; }
     const updatedPaths = paths.map((p) =>
@@ -324,15 +333,17 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
         <Dialog open onOpenChange={(open) => { if (!open) setDeactivating(null); }}>
           <DialogContent className="cm-dialog">
             <DialogHeader>
-              <DialogTitle>Deactivate career path?</DialogTitle>
-              <DialogDescription>
-                &ldquo;{deactivating.name}&rdquo; will no longer appear in progression recommendations.
-                You can reactivate it at any time.
-              </DialogDescription>
+              <DialogTitle>
+                {careerPathIsProtected(deactivating)
+                  ? `${deactivating.name} is assigned to learners or progress exists, so it cannot be deactivated.`
+                  : `Are you sure you want to deactivate ${deactivating.name}?`}
+              </DialogTitle>
             </DialogHeader>
             <div className="cm-dialog-actions">
               <button className="cm-button" onClick={() => setDeactivating(null)}>Cancel</button>
-              <button className="cm-button destructive" onClick={confirmDeactivate}>Deactivate</button>
+              {!careerPathIsProtected(deactivating) && (
+                <button className="cm-button destructive" onClick={confirmDeactivate}>Deactivate</button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -343,16 +354,17 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
         <Dialog open onOpenChange={(open) => { if (!open) setDeleting(null); }}>
           <DialogContent className="cm-dialog">
             <DialogHeader>
-              <DialogTitle>Delete career path?</DialogTitle>
-              <DialogDescription>
-                Remove &ldquo;{deleting.name}&rdquo;? This removes{" "}
-                {deleting.roles.length - 1} transition
-                {deleting.roles.length > 2 ? "s" : ""} from progression recommendations and cannot be undone.
-              </DialogDescription>
+              <DialogTitle>
+                {careerPathIsProtected(deleting)
+                  ? `${deleting.name} is assigned to learners or progress exists, so it cannot be deleted.`
+                  : `Are you sure you want to delete ${deleting.name}?`}
+              </DialogTitle>
             </DialogHeader>
             <div className="cm-dialog-actions">
-              <button className="cm-button" onClick={() => setDeleting(null)}>Keep it</button>
-              <button className="cm-button destructive" onClick={confirmDelete}>Delete</button>
+              <button className="cm-button" onClick={() => setDeleting(null)}>Cancel</button>
+              {!careerPathIsProtected(deleting) && (
+                <button className="cm-button destructive" onClick={confirmDelete}>Delete</button>
+              )}
             </div>
           </DialogContent>
         </Dialog>
