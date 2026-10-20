@@ -1732,12 +1732,38 @@
 }
 /* ── Course detail popup ──────────────────────────────────────────────────── */
 .cm-course-popup-dialog {
-  max-width: 700px !important;
+  max-width: 680px !important;
 }
+/* The table-wrap's base overflow:auto is fine; eliminate horizontal scroll
+   by making the table genuinely fit — no overflow-x hiding. */
 .cm-course-popup-dialog .cm-table-wrap {
-  max-height: 400px;
+  max-height: 420px;
   overflow-y: auto;
 }
+/* Override the global min-width:920px that is set for full-page report tables */
+.cm-course-popup-dialog .cm-manager-table {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  box-sizing: border-box;
+}
+/* Let headers wrap; the global rule sets white-space:nowrap which widens columns */
+.cm-course-popup-dialog .cm-manager-table th {
+  white-space: normal;
+}
+/* Allow long course names to wrap inside their column */
+.cm-course-popup-dialog .cm-manager-table th,
+.cm-course-popup-dialog .cm-manager-table td {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+/* Explicit column widths — total 100% */
+.cm-course-popup-dialog .cm-manager-table th:nth-child(1) { width: 16%; } /* Skill Level   */
+.cm-course-popup-dialog .cm-manager-table th:nth-child(2) { width: 34%; } /* Course Name   */
+.cm-course-popup-dialog .cm-manager-table th:nth-child(3) { width: 16%; } /* Weightage     */
+.cm-course-popup-dialog .cm-manager-table th:nth-child(4) { width: 17%; } /* Course Status */
+.cm-course-popup-dialog .cm-manager-table th:nth-child(5) { width: 17%; } /* Proof Status  */
 .cm-cp-builder {
   display: flex;
   flex-direction: column;
