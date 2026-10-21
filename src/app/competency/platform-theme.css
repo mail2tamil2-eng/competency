@@ -1306,10 +1306,10 @@ section.cm-learner {
   white-space: nowrap;
 }
 .cm-banner-progress .cm-skill-widget-bar {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.18);
 }
 .cm-banner-progress .cm-skill-widget-bar > div {
-  background: #fff;
+  background: #4ade80;
 }
 .cm-learner .cm-skill-widget-bar {
   flex: 1;
