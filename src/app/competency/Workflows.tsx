@@ -783,6 +783,18 @@ export function Learning({
             </option>
           ))}
         </select>
+        {!manager && assignments.length > 0 && (() => {
+          const pct = Math.round(assignments.filter((a) => progress(data, a) === "Completed").length / assignments.length * 100);
+          return (
+            <div className="cm-banner-progress">
+              <span>Overall progress</span>
+              <div className="cm-skill-widget-bar">
+                <div style={{ width: pct + "%" }} />
+              </div>
+              <strong>{pct}%</strong>
+            </div>
+          );
+        })()}
       </div>
       {manager && (
         <p className="cm-hint">
@@ -821,13 +833,6 @@ export function Learning({
                 <span>Needs Attention</span>
               </div>
             )}
-            <div className="cm-skill-widget-progress">
-              <span>Overall progress</span>
-              <div className="cm-skill-widget-bar">
-                <div style={{ width: pct + "%" }} />
-              </div>
-              <strong>{pct}%</strong>
-            </div>
           </div>
         );
       })()}

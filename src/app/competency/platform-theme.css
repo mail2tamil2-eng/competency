@@ -1283,31 +1283,33 @@ section.cm-learner {
 .cm-learner .cm-skill-widget-stat.warn                   { border-top: 3px solid #dc2626; }
 .cm-learner .cm-skill-widget-stat.warn strong            { color: #dc2626; }
 
-/* Overall progress bar — always full width */
-.cm-learner .cm-skill-widget-progress {
+/* Overall progress bar — inside the blue banner */
+.cm-banner-progress {
   flex: 0 0 100%;
-  margin-left: 0;
-  background: #fff;
-  border: 1px solid #e0e6f2;
-  border-radius: 14px;
-  padding: 14px 20px;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
-  gap: 14px;
-  flex-shrink: initial;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
 }
-.cm-learner .cm-skill-widget-progress > span {
-  font-size: 13px;
+.cm-banner-progress > span {
+  font-size: 12px;
   font-weight: 600;
-  color: #526176;
+  color: rgba(255, 255, 255, 0.8);
   white-space: nowrap;
 }
-.cm-learner .cm-skill-widget-progress > strong {
-  font-size: 16px;
+.cm-banner-progress > strong {
+  font-size: 14px;
   font-weight: 800;
-  color: #2563eb;
-  min-width: 44px;
+  color: #fff;
+  min-width: 36px;
   text-align: right;
   white-space: nowrap;
+}
+.cm-banner-progress .cm-skill-widget-bar {
+  background: rgba(255, 255, 255, 0.25);
+}
+.cm-banner-progress .cm-skill-widget-bar > div {
+  background: #fff;
 }
 .cm-learner .cm-skill-widget-bar {
   flex: 1;
