@@ -13,8 +13,6 @@ export function LearnerSkillReport({
   work: WorkflowData;
 }) {
   const [query, setQuery] = useState("");
-  const [roleFilter, setRole] = useState("");
-  const [deptFilter, setDept] = useState("");
   const [statusFilter, setStatus] = useState("");
   const [enrollFrom, setEnrollFrom] = useState("");
   const [enrollTo, setEnrollTo] = useState("");
@@ -23,24 +21,15 @@ export function LearnerSkillReport({
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
 
-  const allRoles = [...new Set(work.employees.map((e) => e.role).filter(Boolean))].sort();
-  const allDepts = [...new Set(data.assignments.map((a) => a.department).filter(Boolean))].sort();
-
   const skillName = (id: string) =>
     data.skills.find((s) => s.id === id)?.name || "Unavailable skill";
 
   const rows = data.assignments.filter((a) => {
-    const emp = employeeFor(work, a);
     const q = query.trim().toLowerCase();
     const assignedDay = a.assignedDate?.slice(0, 10) || "";
     const completedDay = a.completedDate?.slice(0, 10) || "";
     return (
-      (!q ||
-        skillName(a.skillId).toLowerCase().includes(q) ||
-        a.name.toLowerCase().includes(q) ||
-        a.department.toLowerCase().includes(q)) &&
-      (!roleFilter || emp?.role === roleFilter) &&
-      (!deptFilter || a.department === deptFilter) &&
+      (!q || skillName(a.skillId).toLowerCase().includes(q)) &&
       (!statusFilter || progress(data, a) === statusFilter) &&
       (!enrollFrom || assignedDay >= enrollFrom) &&
       (!enrollTo || assignedDay <= enrollTo) &&
@@ -52,13 +41,13 @@ export function LearnerSkillReport({
   const current = Math.min(page, Math.max(0, Math.ceil(rows.length / size) - 1));
 
   function reset() {
-    setQuery(""); setRole(""); setDept(""); setStatus("");
+    setQuery(""); setStatus("");
     setEnrollFrom(""); setEnrollTo(""); setCompleteFrom(""); setCompleteTo("");
     setPage(0);
   }
 
   const hasFilter =
-    query || roleFilter || deptFilter || statusFilter ||
+    query || statusFilter ||
     enrollFrom || enrollTo || completeFrom || completeTo;
 
   return (
@@ -95,43 +84,22 @@ export function LearnerSkillReport({
 
       {/* Filter area */}
       <div className="cm-rf-area">
-        {/* Search */}
-        <label className="cm-search cm-rf-search">
-          <Search size={15} />
-          <input
-            aria-label="Search skill or learner"
-            placeholder="Search skill name, learner, or department…"
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setPage(0); }}
-          />
-          {query && (
-            <button type="button" className="cm-rf-clear-input" aria-label="Clear search" onClick={() => { setQuery(""); setPage(0); }}>
-              <X size={13} />
-            </button>
-          )}
-        </label>
-
-        {/* Filter controls */}
+        {/* Filter controls (search + dropdowns in one row) */}
         <div className="cm-rf-controls">
-          <select
-            aria-label="Filter by role"
-            value={roleFilter}
-            className={`cm-rf-select${roleFilter ? " active" : ""}`}
-            onChange={(e) => { setRole(e.target.value); setPage(0); }}
-          >
-            <option value="">All roles</option>
-            {allRoles.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
-
-          <select
-            aria-label="Filter by department"
-            value={deptFilter}
-            className={`cm-rf-select${deptFilter ? " active" : ""}`}
-            onChange={(e) => { setDept(e.target.value); setPage(0); }}
-          >
-            <option value="">All departments</option>
-            {allDepts.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
+          <label className="cm-search cm-rf-search">
+            <Search size={15} />
+            <input
+              aria-label="Search skill"
+              placeholder="Search skill name…"
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setPage(0); }}
+            />
+            {query && (
+              <button type="button" className="cm-rf-clear-input" aria-label="Clear search" onClick={() => { setQuery(""); setPage(0); }}>
+                <X size={13} />
+              </button>
+            )}
+          </label>
 
           <select
             aria-label="Filter by status"
@@ -220,18 +188,6 @@ export function LearnerSkillReport({
                 <button aria-label="Remove search filter" onClick={() => { setQuery(""); setPage(0); }}><X size={11} /></button>
               </span>
             )}
-            {roleFilter && (
-              <span className="cm-rf-chip">
-                {roleFilter}
-                <button aria-label={`Remove role filter`} onClick={() => { setRole(""); setPage(0); }}><X size={11} /></button>
-              </span>
-            )}
-            {deptFilter && (
-              <span className="cm-rf-chip">
-                {deptFilter}
-                <button aria-label={`Remove department filter`} onClick={() => { setDept(""); setPage(0); }}><X size={11} /></button>
-              </span>
-            )}
             {statusFilter && (
               <span className={`cm-rf-chip ${statusFilter === "Completed" ? "success" : statusFilter === "In Progress" ? "warn" : ""}`}>
                 {statusFilter}
@@ -263,20 +219,16 @@ export function LearnerSkillReport({
         <table>
           <thead>
             <tr>
-              {["Learner", "Role", "Department", "Assigned skill", "Current level", "Expected level", "Skill gap", "Enrol date", "Completed date", "Status"].map((h) => (
+              {["Assigned skill", "Current level", "Expected level", "Skill gap", "Enrol date", "Completed date", "Status"].map((h) => (
                 <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.slice(current * size, (current + 1) * size).map((a) => {
-              const emp = employeeFor(work, a);
               const gap = skillGap(data, a);
               return (
                 <tr key={a.id}>
-                  <td><strong>{a.name}</strong></td>
-                  <td>{emp?.role || <span className="cm-muted-dash">—</span>}</td>
-                  <td>{a.department || <span className="cm-muted-dash">—</span>}</td>
                   <td><strong>{skillName(a.skillId)}</strong></td>
                   <td>{levelName(data, a.current)}</td>
                   <td>{levelName(data, a.expected)}</td>
@@ -297,7 +249,7 @@ export function LearnerSkillReport({
             })}
             {!rows.length && (
               <tr>
-                <td colSpan={10} className="cm-empty">
+                <td colSpan={7} className="cm-empty">
                   {hasFilter ? "No records match the active filters." : "No skill assignments found."}
                 </td>
               </tr>
