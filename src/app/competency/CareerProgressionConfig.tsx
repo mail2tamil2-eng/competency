@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react";
-import { Plus, Pencil, Trash2, ChevronRight, Route } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronRight, Route, Ban, CheckCircle2 } from "lucide-react";
 import { Data, uid } from "./model";
 import { WorkflowData, CareerPath, syncProgressions } from "./workflowModel";
 import {
@@ -184,16 +184,25 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
                   >
                     <Pencil size={15} />
                   </button>
-                  <button
-                    role="switch"
-                    aria-checked={path.status === "Active"}
-                    className="cm-toggle-switch"
-                    title={path.status === "Active" ? "Deactivate" : "Activate"}
-                    aria-label={(path.status === "Active" ? "Deactivate " : "Activate ") + path.name}
-                    onClick={() => toggleStatus(path)}
-                  >
-                    <span className="cm-toggle-thumb" />
-                  </button>
+                  {path.status === "Active" ? (
+                    <button
+                      className="cm-icon-button"
+                      aria-label={"Inactivate " + path.name}
+                      title="Inactivate"
+                      onClick={() => toggleStatus(path)}
+                    >
+                      <Ban size={16} />
+                    </button>
+                  ) : (
+                    <button
+                      className="cm-icon-button"
+                      aria-label={"Activate " + path.name}
+                      title="Activate"
+                      onClick={() => toggleStatus(path)}
+                    >
+                      <CheckCircle2 size={16} />
+                    </button>
+                  )}
                   <button
                     className="cm-icon-button danger"
                     aria-label={`Delete ${path.name}`}

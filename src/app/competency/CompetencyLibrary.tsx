@@ -8,6 +8,7 @@ import {
   Pencil,
   Trash2,
   Ban,
+  CheckCircle2,
   ArrowLeft,
   ChevronDown,
   ChevronRight,
@@ -1037,14 +1038,28 @@ export function CompetencyLibrary({
                       >
                         {isEditing ? <X size={15} /> : <Pencil size={15} />}
                       </button>
-                      {s.status === "Active" && (
+                      {s.status === "Active" ? (
                         <button
                           className="cm-icon-button"
                           aria-label={"Inactivate " + s.name}
                           title="Inactivate skill"
                           onClick={() => setInactivatingSkill(s)}
                         >
-                          <Ban size={15} />
+                          <Ban size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          className="cm-icon-button"
+                          aria-label={"Activate " + s.name}
+                          title="Activate skill"
+                          onClick={() =>
+                            commit(
+                              { ...data, skills: data.skills.map((x) => x.id === s.id ? { ...x, status: "Active" as const } : x) },
+                              `${s.name} activated`,
+                            )
+                          }
+                        >
+                          <CheckCircle2 size={16} />
                         </button>
                       )}
                       <button
@@ -1239,7 +1254,7 @@ export function CompetencyLibrary({
                           >
                             <Pencil size={16} />
                           </button>
-                          {c.status === "Active" && (
+                          {c.status === "Active" ? (
                             <button
                               className="cm-icon-button"
                               aria-label={"Inactivate " + c.name}
@@ -1247,6 +1262,20 @@ export function CompetencyLibrary({
                               onClick={() => setInactivatingComp(c)}
                             >
                               <Ban size={16} />
+                            </button>
+                          ) : (
+                            <button
+                              className="cm-icon-button"
+                              aria-label={"Activate " + c.name}
+                              title="Activate competency"
+                              onClick={() =>
+                                commit(
+                                  { ...data, competencies: data.competencies.map((x) => x.id === c.id ? { ...x, status: "Active" as const } : x) },
+                                  `${c.name} activated`,
+                                )
+                              }
+                            >
+                              <CheckCircle2 size={16} />
                             </button>
                           )}
                           <button

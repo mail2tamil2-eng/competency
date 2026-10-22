@@ -3,7 +3,7 @@ import { Data, progress, download } from "./model";
 import { WorkflowData } from "./workflowModel";
 import { levelName, employeeFor, skillGap } from "./managerModel";
 import { ManagerPageSize, ManagerPagination } from "./ManagerPagination";
-import { Search, Download, X } from "lucide-react";
+import { Search, Download } from "lucide-react";
 
 export function LearnerSkillReport({
   data,
@@ -40,15 +40,15 @@ export function LearnerSkillReport({
 
   const current = Math.min(page, Math.max(0, Math.ceil(rows.length / size) - 1));
 
+  const hasFilter =
+    query || statusFilter ||
+    enrollFrom || enrollTo || completeFrom || completeTo;
+
   function reset() {
     setQuery(""); setStatus("");
     setEnrollFrom(""); setEnrollTo(""); setCompleteFrom(""); setCompleteTo("");
     setPage(0);
   }
-
-  const hasFilter =
-    query || statusFilter ||
-    enrollFrom || enrollTo || completeFrom || completeTo;
 
   return (
     <section className="cm-card">
@@ -57,8 +57,81 @@ export function LearnerSkillReport({
           <h2>Skill progress report</h2>
           <p>Track assigned skills and progress towards expected levels across all learners.</p>
         </div>
+      </div>
+
+      <div className="cm-report-filters" style={{ alignItems: "flex-end", gap: 12 }}>
+        <span style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 180 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>Skill name</span>
+          <label className="cm-search">
+            <Search size={15} />
+            <input
+              aria-label="Search skill"
+              placeholder="Search skill name…"
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setPage(0); }}
+            />
+          </label>
+        </span>
+
+        <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>Status</span>
+          <select
+            aria-label="Filter by status"
+            value={statusFilter}
+            onChange={(e) => { setStatus(e.target.value); setPage(0); }}
+          >
+            <option value="">All statuses</option>
+            {["Completed", "In Progress", "Yet to Start"].map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </span>
+
+        <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>Enrol date</span>
+          <span className="cm-date-range">
+            <input
+              type="date"
+              aria-label="Enrol from"
+              value={enrollFrom}
+              onChange={(e) => { setEnrollFrom(e.target.value); setPage(0); }}
+            />
+            <span className="cm-date-range-sep">–</span>
+            <input
+              type="date"
+              aria-label="Enrol to"
+              value={enrollTo}
+              onChange={(e) => { setEnrollTo(e.target.value); setPage(0); }}
+            />
+          </span>
+        </span>
+
+        <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>Completed date</span>
+          <span className="cm-date-range">
+            <input
+              type="date"
+              aria-label="Completed from"
+              value={completeFrom}
+              onChange={(e) => { setCompleteFrom(e.target.value); setPage(0); }}
+            />
+            <span className="cm-date-range-sep">–</span>
+            <input
+              type="date"
+              aria-label="Completed to"
+              value={completeTo}
+              onChange={(e) => { setCompleteTo(e.target.value); setPage(0); }}
+            />
+          </span>
+        </span>
+
+        {hasFilter && (
+          <button className="cm-text-button" onClick={reset}>Clear</button>
+        )}
+
         <button
           className="cm-button"
+          style={{ marginLeft: "auto" }}
           onClick={() =>
             download("skill-progress-report.csv", [
               ["Learner", "Role", "Department", "Assigned skill", "Current level", "Expected level", "Skill gap", "Enrol date", "Completed date", "Status"],
@@ -80,139 +153,6 @@ export function LearnerSkillReport({
           <Download size={16} />
           Export CSV
         </button>
-      </div>
-
-      {/* Filter area */}
-      <div className="cm-rf-area">
-        {/* Filter controls (search + dropdowns in one row) */}
-        <div className="cm-rf-controls">
-          <label className="cm-search cm-rf-search">
-            <Search size={15} />
-            <input
-              aria-label="Search skill"
-              placeholder="Search skill name…"
-              value={query}
-              onChange={(e) => { setQuery(e.target.value); setPage(0); }}
-            />
-            {query && (
-              <button type="button" className="cm-rf-clear-input" aria-label="Clear search" onClick={() => { setQuery(""); setPage(0); }}>
-                <X size={13} />
-              </button>
-            )}
-          </label>
-
-          <select
-            aria-label="Filter by status"
-            value={statusFilter}
-            className={`cm-rf-select${statusFilter ? " active" : ""}`}
-            onChange={(e) => { setStatus(e.target.value); setPage(0); }}
-          >
-            <option value="">All statuses</option>
-            {["Completed", "In Progress", "Yet to Start"].map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-
-          <div className="cm-rf-date-group">
-            <span className="cm-rf-date-label">Enrol date</span>
-            <div className={`cm-rf-date-range${enrollFrom || enrollTo ? " active" : ""}`}>
-              <input
-                type="date"
-                aria-label="Enrol from"
-                value={enrollFrom}
-                onChange={(e) => { setEnrollFrom(e.target.value); setPage(0); }}
-              />
-              <span>–</span>
-              <input
-                type="date"
-                aria-label="Enrol to"
-                value={enrollTo}
-                onChange={(e) => { setEnrollTo(e.target.value); setPage(0); }}
-              />
-              {(enrollFrom || enrollTo) && (
-                <button
-                  type="button"
-                  className="cm-rf-date-clear"
-                  aria-label="Clear enrol date filter"
-                  onClick={() => { setEnrollFrom(""); setEnrollTo(""); setPage(0); }}
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="cm-rf-date-group">
-            <span className="cm-rf-date-label">Completed</span>
-            <div className={`cm-rf-date-range${completeFrom || completeTo ? " active" : ""}`}>
-              <input
-                type="date"
-                aria-label="Completed from"
-                value={completeFrom}
-                onChange={(e) => { setCompleteFrom(e.target.value); setPage(0); }}
-              />
-              <span>–</span>
-              <input
-                type="date"
-                aria-label="Completed to"
-                value={completeTo}
-                onChange={(e) => { setCompleteTo(e.target.value); setPage(0); }}
-              />
-              {(completeFrom || completeTo) && (
-                <button
-                  type="button"
-                  className="cm-rf-date-clear"
-                  aria-label="Clear completed date filter"
-                  onClick={() => { setCompleteFrom(""); setCompleteTo(""); setPage(0); }}
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {hasFilter && (
-            <button className="cm-rf-reset" onClick={reset}>
-              <X size={13} /> Clear all
-            </button>
-          )}
-        </div>
-
-        {/* Active filter chips */}
-        {hasFilter && (
-          <div className="cm-rf-chips">
-            <span className="cm-rf-chips-label">Filtered:</span>
-            {query && (
-              <span className="cm-rf-chip">
-                "{query}"
-                <button aria-label="Remove search filter" onClick={() => { setQuery(""); setPage(0); }}><X size={11} /></button>
-              </span>
-            )}
-            {statusFilter && (
-              <span className={`cm-rf-chip ${statusFilter === "Completed" ? "success" : statusFilter === "In Progress" ? "warn" : ""}`}>
-                {statusFilter}
-                <button aria-label={`Remove status filter`} onClick={() => { setStatus(""); setPage(0); }}><X size={11} /></button>
-              </span>
-            )}
-            {(enrollFrom || enrollTo) && (
-              <span className="cm-rf-chip">
-                Enrol: {enrollFrom || "any"} – {enrollTo || "any"}
-                <button aria-label="Remove enrol date filter" onClick={() => { setEnrollFrom(""); setEnrollTo(""); setPage(0); }}><X size={11} /></button>
-              </span>
-            )}
-            {(completeFrom || completeTo) && (
-              <span className="cm-rf-chip">
-                Completed: {completeFrom || "any"} – {completeTo || "any"}
-                <button aria-label="Remove completed date filter" onClick={() => { setCompleteFrom(""); setCompleteTo(""); setPage(0); }}><X size={11} /></button>
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="cm-table-controls">
-        <ManagerPageSize value={size} onChange={(v) => { setSize(v); setPage(0); }} />
-        <span className="cm-table-count">{rows.length} record{rows.length !== 1 ? "s" : ""}</span>
       </div>
 
       <div className="cm-table-wrap" role="region" aria-label="Skill progress report" tabIndex={0}>
@@ -257,7 +197,11 @@ export function LearnerSkillReport({
           </tbody>
         </table>
       </div>
-      <ManagerPagination total={rows.length} page={current} pageSize={size} onPage={setPage} />
+
+      <div className="cm-report-footer">
+        <ManagerPageSize value={size} onChange={(v) => { setSize(v); setPage(0); }} />
+        <ManagerPagination total={rows.length} page={current} pageSize={size} onPage={setPage} />
+      </div>
     </section>
   );
 }

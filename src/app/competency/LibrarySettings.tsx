@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Pencil, Trash2, Ban } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Ban, CheckCircle2 } from "lucide-react";
 import { Data, RecordItem, used } from "./model";
 import { Editor } from "./Editor";
 import {
@@ -108,8 +108,8 @@ export function LibrarySettings({
           <thead>
             <tr>
               <th>Name</th>
-              {section === "levels" && <th style={{ width: 80 }}>Order</th>}
               <th>Status</th>
+              {section === "levels" && <th style={{ width: 80 }}>Order</th>}
               <th className="cm-right">Actions</th>
             </tr>
           </thead>
@@ -121,14 +121,14 @@ export function LibrarySettings({
                   <strong>{r.name}</strong>
                   <small>{r.description || "No description added"}</small>
                 </td>
-                {section === "levels" && (
-                  <td style={{ color: "#526176", fontSize: 14 }}>{r.order ?? "—"}</td>
-                )}
                 <td>
                   <span className={"cm-badge " + r.status.toLowerCase()}>
                     {r.status}
                   </span>
                 </td>
+                {section === "levels" && (
+                  <td style={{ color: "#526176", fontSize: 14 }}>{r.order ?? "—"}</td>
+                )}
                 <td>
                   <div className="cm-row-actions">
                     <button
@@ -138,7 +138,7 @@ export function LibrarySettings({
                     >
                       <Pencil size={16} />
                     </button>
-                    {section === "levels" && r.status === "Active" && (
+                    {r.status === "Active" ? (
                       <button
                         className="cm-icon-button"
                         aria-label={"Inactivate " + r.name}
@@ -146,6 +146,20 @@ export function LibrarySettings({
                         onClick={() => setInactivating(r)}
                       >
                         <Ban size={16} />
+                      </button>
+                    ) : (
+                      <button
+                        className="cm-icon-button"
+                        aria-label={"Activate " + r.name}
+                        title="Activate"
+                        onClick={() =>
+                          commit(
+                            { ...data, [section]: data[section].map((x) => x.id === r.id ? { ...x, status: "Active" } : x) },
+                            `${r.name} activated`,
+                          )
+                        }
+                      >
+                        <CheckCircle2 size={16} />
                       </button>
                     )}
                     <button
@@ -194,21 +208,23 @@ export function LibrarySettings({
           <DialogContent className="cm-dialog">
             <DialogHeader>
               <DialogTitle>
-                {used(data, "levels", inactivating.id)
-                  ? `${inactivating.name} is mapped to a competency, skill, role, course, or learner usage and cannot be inactivated`
+                {used(data, section, inactivating.id)
+                  ? section === "levels"
+                    ? `${inactivating.name} is mapped to a competency, skill, role, course, or learner usage and cannot be inactivated.`
+                    : `${inactivating.name} is mapped to a competency and cannot be inactivated.`
                   : `Are you sure you want to inactivate ${inactivating.name}?`}
               </DialogTitle>
               <DialogDescription />
             </DialogHeader>
             <div className="cm-dialog-actions">
               <button className="cm-button" onClick={() => setInactivating(null)}>Cancel</button>
-              {!used(data, "levels", inactivating.id) && (
+              {!used(data, section, inactivating.id) && (
                 <button
                   className="cm-button destructive"
                   onClick={() => {
                     if (
                       commit(
-                        { ...data, levels: data.levels.map((x) => x.id === inactivating.id ? { ...x, status: "Inactive" } : x) },
+                        { ...data, [section]: data[section].map((x) => x.id === inactivating.id ? { ...x, status: "Inactive" } : x) },
                         `${inactivating.name} inactivated`,
                       )
                     )
@@ -237,8 +253,8 @@ export function LibrarySettings({
                     ? `${deleting.name} is mapped to a skill, role, course, or learner usage and cannot be deleted.`
                     : `Are you sure you want to delete ${deleting.name}?`
                   : used(data, section, deleting.id)
-                    ? `${deleting.name} is mapped to a competency and cannot be inactivated.`
-                    : `Are you sure you want to inactivate ${deleting.name}?`}
+                    ? `${deleting.name} is mapped to a competency and cannot be deleted.`
+                    : `Are you sure you want to delete ${deleting.name}?`}
               </DialogTitle>
               <DialogDescription />
             </DialogHeader>

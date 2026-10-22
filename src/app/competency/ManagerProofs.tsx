@@ -69,8 +69,8 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
             </p>
           </div>
         </div>
-        <div className="cm-manager-filters">
-          <label className="cm-search">
+        <div className="cm-report-filters">
+          <label className="cm-search" style={{ flex: 1, minWidth: 220 }}>
             <Search size={16} />
             <input
               aria-label="Search proof submissions"
@@ -107,15 +107,6 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
               Clear filters
             </button>
           )}
-        </div>
-        <div className="cm-table-controls">
-          <ManagerPageSize
-            value={entries}
-            onChange={(value) => {
-              setEntries(value);
-              setPage(0);
-            }}
-          />
         </div>
         <div
           className="cm-table-wrap"
@@ -215,12 +206,21 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
             </tbody>
           </table>
         </div>
-        <ManagerPagination
-          total={rows.length}
-          page={currentPage}
-          pageSize={entries}
-          onPage={setPage}
-        />
+        <div className="cm-table-controls">
+          <ManagerPageSize
+            value={entries}
+            onChange={(value) => {
+              setEntries(value);
+              setPage(0);
+            }}
+          />
+          <ManagerPagination
+            total={rows.length}
+            page={currentPage}
+            pageSize={entries}
+            onPage={setPage}
+          />
+        </div>
       </section>
       {chosen && (
         <ManagerProofDialog

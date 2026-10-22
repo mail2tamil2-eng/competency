@@ -357,3 +357,33 @@
   margin: 0;
   white-space: nowrap;
 }
+.cm-export-wrap {
+  position: relative;
+}
+.cm-export-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.10);
+  min-width: 140px;
+  z-index: 50;
+  overflow: hidden;
+}
+.cm-export-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a202c;
+  cursor: pointer;
+}
+.cm-export-menu button:hover {
+  background: #f3f4f6;
+}

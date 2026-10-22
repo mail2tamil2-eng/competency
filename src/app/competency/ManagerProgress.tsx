@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { ManagerProofs } from "./ManagerProofs";
 import { ManagerNavigation } from "./ManagerNavigation";
 import { ManagerPagination, ManagerPageSize } from "./ManagerPagination";
-import { ArrowLeft, ArrowRight, Download, Search, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, Download, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Assignment, Data, download, progress } from "./model";
 import { WorkflowData } from "./workflowModel";
@@ -27,11 +27,7 @@ export type ManagerProps = {
 export function ManagerProgress({ data, work, save }: ManagerProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const view = location.pathname.endsWith("/reportees")
-    ? "all"
-    : location.pathname.endsWith("/reportee")
-      ? "detail"
-      : "summary";
+  const view = location.pathname.endsWith("/reportee") ? "detail" : "all";
   const person = new URLSearchParams(location.search).get("person") || "";
   const [query, setQuery] = useState("");
   const [competency, setCompetency] = useState("");
@@ -40,6 +36,16 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
   const [entries, setEntries] = useState(10);
   const [editing, setEditing] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node))
+        setExportOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
   const skill = (a: Assignment) => data.skills.find((s) => s.id === a.skillId);
   const competencyName = (a: Assignment) =>
     data.competencies.find((c) => c.id === skill(a)?.competencyId)?.name ||
@@ -64,14 +70,14 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
     .map(([id, items]) => [id, items.filter((a) => rows.includes(a))] as const)
     .filter(([, items]) => items.length);
   const total = view === "detail" ? rows.length : visibleGroups.length;
-  const pageSize = view === "summary" ? 5 : entries;
+  const pageSize = entries;
   const currentPage = Math.min(
     page,
     Math.max(0, Math.ceil(total / pageSize) - 1),
   );
   function go(next: typeof view, id = "") {
     navigate(
-      `/competency-management/manager${next === "all" ? "/reportees" : next === "detail" ? `/reportee?person=${encodeURIComponent(id)}` : ""}`,
+      `/competency-management/manager${next === "detail" ? `/reportee?person=${encodeURIComponent(id)}` : ""}`,
     );
     setQuery("");
     setStatus("");
@@ -98,36 +104,23 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
     return <ManagerProofs data={data} work={work} save={save} />;
   return (
     <div className="cm-manager">
-      {view !== "summary" && (
+      {view === "detail" && (
         <div className="cm-actions">
-          <button
-            className="cm-button"
-            onClick={() => go(view === "detail" ? "all" : "summary")}
-          >
+          <button className="cm-button" onClick={() => go("all")}>
             <ArrowLeft size={16} />
-            {view === "detail"
-              ? "Back to all reportees"
-              : "Back to team overview"}
+            Back to all reportees
           </button>
         </div>
       )}
-      {view === "summary" && <ManagerNavigation />}
-      {view !== "summary" && (
+      {view === "all" && <ManagerNavigation />}
+      {view === "detail" && (
         <nav
           className="cm-manager-breadcrumb"
           aria-label="Team progress navigation"
         >
-          <button onClick={() => go("summary")}>Team overview</button>
+          <button onClick={() => go("all")}>All reportees</button>
           <span>/</span>
-          {view === "detail" ? (
-            <>
-              <button onClick={() => go("all")}>All reportees</button>
-              <span>/</span>
-              <span>{selectedPerson?.name}</span>
-            </>
-          ) : (
-            <span>All reportees</span>
-          )}
+          <span>{selectedPerson?.name}</span>
         </nav>
       )}
       <section className="cm-card">
@@ -136,9 +129,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
             <h3>
               {view === "detail"
                 ? `${selectedPerson?.name || "Reportee"} — Skills & progress`
-                : view === "all"
-                  ? "All reportees"
-                  : "Team Skill Progress"}
+                : "All reportees"}
             </h3>
             <p>
               {view === "detail"
@@ -146,110 +137,83 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                 : "Select a team member to see their skills, current levels, and how far they’ve progressed."}
             </p>
           </div>
-          {view === "summary" ? (
-            <button className="cm-text-button" onClick={() => go("all")}>
-              View all <ArrowRight size={16} />
-            </button>
-          ) : (
-            <div className="cm-actions">
-              <button
-                className="cm-button"
-                disabled={!rows.length || exporting}
-                onClick={() => exportReport("csv")}
-              >
-                <Download size={16} />
-                Export CSV
-              </button>
-              <button
-                className="cm-button"
-                disabled={!rows.length || exporting}
-                onClick={() => exportReport("xlsx")}
-              >
-                <Download size={16} />
-                {exporting ? "Exporting…" : "Export XLSX"}
-              </button>
-            </div>
-          )}
-        </div>
-        {view !== "summary" && (
-          <div className="cm-manager-filters">
-              <label className="cm-search">
-                <Search size={16} />
-                <input
-                  aria-label="Search team progress"
-                  placeholder={
-                    view === "detail"
-                      ? "Search competency or skill…"
-                      : "Search name, email or skill…"
-                  }
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setPage(0);
-                  }}
-                />
-              </label>
-            <select
-              aria-label="Filter competency"
-              value={competency}
-              onChange={(e) => {
-                setCompetency(e.target.value);
-                setPage(0);
-              }}
+          <div className="cm-export-wrap" ref={exportRef}>
+            <button
+              className="cm-button"
+              disabled={!rows.length || exporting}
+              onClick={() => setExportOpen((o) => !o)}
             >
-              <option value="">All competencies</option>
-              {data.competencies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-                <select
-                  aria-label="Filter progress status"
-                  value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value);
-                    setPage(0);
-                  }}
-                >
-                  <option value="">All progress statuses</option>
-                  {["Completed", "In Progress", "Yet to Start"].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-            {(query || competency || status) && (
-              <button
-                className="cm-text-button"
-                onClick={() => {
-                  setQuery("");
-                  setCompetency("");
-                  setStatus("");
-                  setPage(0);
-                }}
-              >
-                Clear filters
-              </button>
+              <Download size={16} />
+              {exporting ? "Exporting…" : "Export"}
+              <ChevronDown size={14} />
+            </button>
+            {exportOpen && (
+              <div className="cm-export-menu">
+                <button onClick={() => { setExportOpen(false); exportReport("csv"); }}>Export CSV</button>
+                <button onClick={() => { setExportOpen(false); exportReport("xlsx"); }}>Export XLSX</button>
+              </div>
             )}
           </div>
-        )}
-        {view !== "summary" && (
-          <div className="cm-table-controls">
-            <ManagerPageSize
-              value={entries}
-              onChange={(value) => {
-                setEntries(value);
+        </div>
+        <div className="cm-report-filters">
+          <label className="cm-search" style={{ flex: 1, minWidth: 220 }}>
+            <Search size={16} />
+            <input
+              aria-label="Search team progress"
+              placeholder={
+                view === "detail"
+                  ? "Search competency or skill…"
+                  : "Search name, email or skill…"
+              }
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
                 setPage(0);
               }}
             />
-            <p className="cm-manager-caption">
-              {rows.length} matching skill records
-              {view !== "detail"
-                ? ` across ${visibleGroups.length} reportees`
-                : ""}
-              . Exports include all matching rows, across every page.
-            </p>
-          </div>
-        )}
+          </label>
+          <select
+            aria-label="Filter competency"
+            value={competency}
+            onChange={(e) => {
+              setCompetency(e.target.value);
+              setPage(0);
+            }}
+          >
+            <option value="">All competencies</option>
+            {data.competencies.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Filter progress status"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(0);
+            }}
+          >
+            <option value="">All progress statuses</option>
+            {["Completed", "In Progress", "Yet to Start"].map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+          {(query || competency || status) && (
+            <button
+              className="cm-text-button"
+              onClick={() => {
+                setQuery("");
+                setCompetency("");
+                setStatus("");
+                setPage(0);
+              }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
         <div
           className="cm-table-wrap"
           tabIndex={0}
@@ -407,18 +371,21 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
             </tbody>
           </table>
         </div>
-        {view === "summary" ? (
-          <p className="cm-manager-caption">
-            Showing {Math.min(total, 5)} of {total} reportees.
-          </p>
-        ) : (
+        <div className="cm-table-controls">
+          <ManagerPageSize
+            value={entries}
+            onChange={(value) => {
+              setEntries(value);
+              setPage(0);
+            }}
+          />
           <ManagerPagination
             total={total}
             page={currentPage}
             pageSize={pageSize}
             onPage={setPage}
           />
-        )}
+        </div>
       </section>
       {editing && (
         <ManagerSkillDialog

@@ -1156,7 +1156,7 @@ export function Learning({
                         {pct > 0 && (
                           <circle
                             cx="32" cy="32" r="26" fill="none"
-                            stroke={meetsThreshold ? "#1ca85e" : "#2463d6"}
+                            stroke="#2463d6"
                             strokeWidth="7"
                             strokeDasharray={`${circumference * pct / 100} ${circumference}`}
                             strokeLinecap="round"
