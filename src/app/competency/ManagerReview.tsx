@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, ArrowLeft, CheckCircle2, BookOpen } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import {
   levelName,
   managerLevel,
   reviewProof,
+  saveCompletedCourses,
 } from "./managerModel";
 type Props = ManagerProps & { assignmentId: string; onClose: () => void };
 
@@ -409,5 +410,371 @@ export function ManagerProofDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export function ManagerProofReviewPage({
+  data,
+  work,
+  save,
+  assignmentId,
+  proofId,
+  onClose,
+}: ManagerProps & { assignmentId: string; proofId: string; onClose: () => void }) {
+  const a = data.assignments.find((x) => x.id === assignmentId)!;
+  const proof = work.proofs.find((p) => p.id === proofId);
+  const skill = data.skills.find((s) => s.id === a.skillId);
+  const [remarks, setRemarks] = useState("");
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const currentIdx = data.levels.findIndex((l) => l.id === a.current);
+  const expectedIdx = data.levels.findIndex((l) => l.id === a.expected);
+  const relevantLevels = data.levels.slice(
+    Math.max(0, currentIdx + 1),
+    expectedIdx + 1,
+  );
+
+  const initialDone = new Set<string>(work.completed[assignmentId] || []);
+  const [selected, setSelected] = useState<Set<string>>(initialDone);
+
+  const usable =
+    proof &&
+    /^data:(application\/pdf|image\/png|image\/jpeg);base64,[a-z0-9+/=\s]+$/i.test(
+      proof.document,
+    );
+  const isImage = usable && proof.document.startsWith("data:image/");
+
+  function isLevelUnlocked(li: number): boolean {
+    if (li === 0) return true;
+    const prev = relevantLevels[li - 1];
+    const prevCourses = work.courses.filter((c) =>
+      c.mappings.some((m) => m.skillId === a.skillId && m.levelId === prev.id),
+    );
+    return prevCourses.length > 0 && prevCourses.every((c) => selected.has(c.id));
+  }
+
+  function toggleCourse(courseId: string, li: number) {
+    const next = new Set(selected);
+    if (next.has(courseId)) {
+      next.delete(courseId);
+      for (let i = li + 1; i < relevantLevels.length; i++) {
+        work.courses
+          .filter((c) =>
+            c.mappings.some(
+              (m) => m.skillId === a.skillId && m.levelId === relevantLevels[i].id,
+            ),
+          )
+          .forEach((c) => next.delete(c.id));
+      }
+    } else {
+      next.add(courseId);
+    }
+    setSelected(next);
+    setSaved(false);
+  }
+
+  function toggleLevel(li: number, check: boolean) {
+    const next = new Set(selected);
+    const level = relevantLevels[li];
+    const levelCourses = work.courses.filter((c) =>
+      c.mappings.some((m) => m.skillId === a.skillId && m.levelId === level.id),
+    );
+    if (check) {
+      levelCourses.forEach((c) => next.add(c.id));
+    } else {
+      levelCourses.forEach((c) => next.delete(c.id));
+      for (let i = li + 1; i < relevantLevels.length; i++) {
+        work.courses
+          .filter((c) =>
+            c.mappings.some(
+              (m) => m.skillId === a.skillId && m.levelId === relevantLevels[i].id,
+            ),
+          )
+          .forEach((c) => next.delete(c.id));
+      }
+    }
+    setSelected(next);
+    setSaved(false);
+  }
+
+  function decide(approved: boolean) {
+    if (!proof) return;
+    try {
+      const next = reviewProof(data, work, proof.id, approved, remarks);
+      save(
+        next.data,
+        next.work,
+        approved ? "Proof approved." : "Proof rejected with feedback.",
+      );
+      setRemarks("");
+      setError("");
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  function saveSelection() {
+    setSaving(true);
+    try {
+      const next = saveCompletedCourses(data, work, assignmentId, [...selected]);
+      if (save(next.data, next.work, "Course completion updated")) setSaved(true);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setSaving(false);
+  }
+
+  const isApproved = proof?.status === "Approved";
+  const savedCourses = new Set<string>(work.completed[assignmentId] || []);
+  const hasChanges =
+    selected.size !== savedCourses.size ||
+    [...selected].some((id) => !savedCourses.has(id));
+
+  return (
+    <div className="cm-proof-page">
+      <div className="cm-proof-page-header">
+        <button className="cm-text-button cm-proof-back" onClick={onClose}>
+          <ArrowLeft size={16} /> Back to Proof Submissions
+        </button>
+        <div className="cm-proof-page-title">
+          <h2>Review Proof Submission</h2>
+          <p>{a.name} · {skill?.name}</p>
+        </div>
+        <div className="cm-proof-header-meta">
+          <span><span className="cm-proof-meta-label">Target level</span>{levelName(data, a.expected)}</span>
+          <span><span className="cm-proof-meta-label">Current level</span>{levelName(data, a.current)}</span>
+          <span><span className="cm-proof-meta-label">Submitted</span>{proof?.submitted || "—"}</span>
+        </div>
+        <span className={`cm-manager-status ${proof?.status === "Approved" ? "success" : proof?.status === "Rejected" ? "rejected" : "pending"}`}>
+          {proof?.status || "No submission"}
+        </span>
+      </div>
+
+      <div className="cm-proof-page-body">
+        {/* LEFT — document preview */}
+        <div className="cm-proof-left">
+          <div className="cm-proof-doc-header">
+            <div className="cm-proof-doc-meta">
+              <FileText size={18} />
+              <div>
+                <strong>{proof?.fileName || "No document"}</strong>
+                <small>Submitted {proof?.submitted}</small>
+              </div>
+            </div>
+            {usable && (
+              <a className="cm-button" href={proof.document} download={proof.fileName}>
+                <Download size={15} /> Download
+              </a>
+            )}
+          </div>
+          <div className="cm-proof-preview">
+            {isImage ? (
+              <img src={proof.document} alt={proof.fileName} />
+            ) : usable ? (
+              <object data={proof.document} type="application/pdf" aria-label="Proof preview">
+                <p>PDF preview unavailable. Use the Download button above.</p>
+              </object>
+            ) : (
+              <div className="cm-proof-no-preview">
+                <FileText size={40} />
+                <p>No document to preview.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT — actions + course selection */}
+        <div className="cm-proof-right">
+          {proof?.status === "Under Review" && (
+            <div className="cm-proof-actions-card">
+              <h4>Review decision</h4>
+              <p className="cm-hint">Approving confirms the learner's evidence. You can then mark completed courses below.</p>
+              <label className="cm-proof-feedback-label">
+                Feedback <span className="cm-hint-inline">(required when rejecting)</span>
+                <textarea
+                  value={remarks}
+                  maxLength={2000}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Explain what the learner should correct or note for approval…"
+                  rows={3}
+                />
+              </label>
+              {error && <p className="cm-error" role="alert">{error}</p>}
+              <div className="cm-proof-action-btns">
+                <button className="cm-button cm-manager-reject" onClick={() => decide(false)}>
+                  Reject with feedback
+                </button>
+                <button
+                  className="cm-button primary"
+                  disabled={!usable}
+                  onClick={() => decide(true)}
+                >
+                  Approve proof
+                </button>
+              </div>
+            </div>
+          )}
+
+          {proof?.status === "Rejected" && (
+            <div className="cm-proof-actions-card">
+              <h4>Decision recorded</h4>
+              <p><strong>Rejected</strong> by {proof.reviewedBy || "Manager"}</p>
+              {proof.reviewedAt && <small>{new Date(proof.reviewedAt).toLocaleString()}</small>}
+              <p className="cm-hint">{proof.remarks || "No feedback recorded."}</p>
+            </div>
+          )}
+
+          {/* Activity log — always visible once there is a proof */}
+          {proof && (
+            <div className="cm-proof-actions-card">
+              <h4>Activity log</h4>
+              <div className="cm-activity-log">
+                <div className="cm-activity-entry">
+                  <span className="cm-activity-dot cm-activity-dot--neutral" />
+                  <div className="cm-activity-content">
+                    <strong>Proof submitted</strong>
+                    <span className="cm-activity-time">{proof.submitted}</span>
+                    <span className="cm-activity-meta">{proof.fileName}</span>
+                  </div>
+                </div>
+                {proof.status !== "Under Review" && (
+                  <div className="cm-activity-entry">
+                    <span className={`cm-activity-dot cm-activity-dot--${proof.status === "Approved" ? "success" : "rejected"}`} />
+                    <div className="cm-activity-content">
+                      <strong>Proof {proof.status === "Approved" ? "approved" : "rejected"}</strong>
+                      <span className="cm-activity-time">
+                        {proof.reviewedBy || "Manager"}{proof.reviewedAt ? ` · ${new Date(proof.reviewedAt).toLocaleDateString()}` : ""}
+                      </span>
+                      {proof.remarks && <span className="cm-activity-meta">{proof.remarks}</span>}
+                    </div>
+                  </div>
+                )}
+                {(a.levelHistory || []).map((entry, i) => (
+                  <div key={i} className="cm-activity-entry">
+                    <span className="cm-activity-dot cm-activity-dot--level" />
+                    <div className="cm-activity-content">
+                      <strong>{levelName(data, entry.from)} → {levelName(data, entry.to)}</strong>
+                      <span className="cm-activity-time">
+                        {entry.by} · {new Date(entry.at).toLocaleDateString()}
+                      </span>
+                      {entry.reason && <span className="cm-activity-meta">{entry.reason}</span>}
+                    </div>
+                  </div>
+                ))}
+                {(work.completed[assignmentId] || []).length > 0 && (() => {
+                  const completedIds = work.completed[assignmentId];
+                  const byLevel = data.levels
+                    .map((lv) => ({
+                      lv,
+                      courses: work.courses.filter(
+                        (c) =>
+                          completedIds.includes(c.id) &&
+                          c.mappings.some(
+                            (m) => m.skillId === a.skillId && m.levelId === lv.id,
+                          ),
+                      ),
+                    }))
+                    .filter((g) => g.courses.length > 0);
+                  return (
+                    <div className="cm-activity-entry">
+                      <span className="cm-activity-dot cm-activity-dot--courses" />
+                      <div className="cm-activity-content">
+                        <strong>Completed courses saved</strong>
+                        <span className="cm-activity-time">{completedIds.length} course{completedIds.length !== 1 ? "s" : ""} marked</span>
+                        <div className="cm-activity-levels">
+                          {byLevel.map(({ lv, courses }) => (
+                            <div key={lv.id} className="cm-activity-level-group">
+                              <span className="cm-activity-level-tag">{lv.name}</span>
+                              <ul className="cm-activity-courses">
+                                {courses.map((c) => (
+                                  <li key={c.id}>{c.name}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {isApproved && relevantLevels.length > 0 && (
+            <div className="cm-proof-actions-card">
+              <div className="cm-hier-header-row">
+                <h4>Mark completed courses</h4>
+                <span className="cm-hier-strip-text">Complete each level to unlock the next.</span>
+              </div>
+              <div className="cm-hier-levels">
+                {relevantLevels.map((level, li) => {
+                  const unlocked = isLevelUnlocked(li);
+                  const levelCourses = work.courses.filter((c) =>
+                    c.mappings.some((m) => m.skillId === a.skillId && m.levelId === level.id),
+                  );
+                  const doneCount = levelCourses.filter((c) => selected.has(c.id)).length;
+                  const allChecked = levelCourses.length > 0 && doneCount === levelCourses.length;
+                  const someChecked = doneCount > 0 && !allChecked;
+                  const levelState: "active" | "done" | "disabled" = !unlocked ? "disabled" : allChecked ? "done" : "active";
+                  return (
+                    <div key={level.id} className={`cm-hier-level cm-hier-level--${levelState}`}>
+                      <div className="cm-hier-level-header">
+                        <label className="cm-hier-level-label">
+                          <input
+                            type="checkbox"
+                            checked={allChecked}
+                            ref={(el) => { if (el) el.indeterminate = someChecked; }}
+                            disabled={!unlocked || levelCourses.length === 0}
+                            onChange={(e) => toggleLevel(li, e.target.checked)}
+                          />
+                          <span className={`cm-hier-num cm-hier-num--${levelState}`}>
+                            {allChecked ? <CheckCircle2 size={12} /> : li + 1}
+                          </span>
+                          <span className="cm-hier-name">{level.name}</span>
+                        </label>
+                        <div className="cm-hier-count">
+                          {levelCourses.length > 0 ? `${doneCount}/${levelCourses.length}` : "—"}
+                          {allChecked && <span className="cm-hier-done-chip">Complete</span>}
+                        </div>
+                      </div>
+                      {levelCourses.length > 0 && (
+                        <div className="cm-hier-courses">
+                          {levelCourses.map((c) => (
+                            <label key={c.id} className={`cm-hier-course${!unlocked ? " cm-hier-course--disabled" : ""}`}>
+                              <input
+                                type="checkbox"
+                                checked={selected.has(c.id)}
+                                disabled={!unlocked}
+                                onChange={() => toggleCourse(c.id, li)}
+                              />
+                              <BookOpen size={13} className="cm-hier-course-icon" />
+                              <span className="cm-hier-course-name">{c.name}</span>
+                              <span className="cm-hier-course-dur">{c.duration}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {error && <p className="cm-error" role="alert">{error}</p>}
+              <div className="cm-hier-save-row">
+                <button
+                  className="cm-button primary"
+                  disabled={saving || (!hasChanges && !saved)}
+                  onClick={saveSelection}
+                >
+                  {saving ? "Saving…" : saved ? "Saved ✓" : "Save completion"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

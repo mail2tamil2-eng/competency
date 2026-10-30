@@ -54,7 +54,7 @@ export type CareerPath = {
 export type Proof = {
   id: string;
   assignmentId: string;
-  courseId: string;
+  courseId?: string;
   fileName: string;
   document: string;
   status: "Under Review" | "Approved" | "Rejected";

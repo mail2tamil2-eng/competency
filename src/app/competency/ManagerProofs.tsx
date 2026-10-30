@@ -4,8 +4,8 @@ import { ClipboardCheck, Search } from "lucide-react";
 import { ManagerNavigation } from "./ManagerNavigation";
 import { ManagerPagination, ManagerPageSize } from "./ManagerPagination";
 import type { ManagerProps } from "./ManagerProgress";
-import { ManagerProofDialog } from "./ManagerReview";
-import { employeeFor, latestProofs, levelName } from "./managerModel";
+import { ManagerProofReviewPage } from "./ManagerReview";
+import { employeeFor, latestProofs } from "./managerModel";
 
 export function ManagerProofs({ data, work, save }: ManagerProps) {
   const [params, setParams] = useSearchParams();
@@ -18,14 +18,13 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
     latestProofs(work, a.id).map((proof) => ({
       a,
       proof,
-      course: work.courses.find((c) => c.id === proof.courseId),
       skill: data.skills.find((s) => s.id === a.skillId),
     })),
   );
   const rows = submissions.filter(
-    ({ a, proof, course, skill }) =>
+    ({ a, proof, skill }) =>
       (!status || proof.status === status) &&
-      `${a.name} ${employeeFor(work, a)?.email || ""} ${course?.name} ${skill?.name}`
+      `${a.name} ${employeeFor(work, a)?.email || ""} ${skill?.name}`
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
   );
@@ -34,6 +33,20 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
     Math.max(0, Math.ceil(rows.length / entries) - 1),
   );
   const chosen = submissions.find((x) => x.proof.id === selected);
+
+  if (chosen) {
+    return (
+      <ManagerProofReviewPage
+        data={data}
+        work={work}
+        save={save}
+        assignmentId={chosen.a.id}
+        proofId={chosen.proof.id}
+        onClose={() => setSelected(null)}
+      />
+    );
+  }
+
   return (
     <div className="cm-manager">
       <ManagerNavigation />
@@ -74,7 +87,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
             <Search size={16} />
             <input
               aria-label="Search proof submissions"
-              placeholder="Search reportee, course or skill…"
+              placeholder="Search reportee or skill…"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -119,10 +132,8 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
               <tr>
                 {[
                   "Reportee",
-                  "Course name",
-                  "Mapped skill",
-                  "Skill level",
-                  "Proof",
+                  "Skill",
+                  "Proof file",
                   "Submitted date",
                   "Status",
                   "Action",
@@ -136,7 +147,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
             <tbody>
               {rows
                 .slice(currentPage * entries, (currentPage + 1) * entries)
-                .map(({ a, proof, course, skill }) => (
+                .map(({ a, proof, skill }) => (
                   <tr key={proof.id}>
                     <td>
                       <strong>{a.name}</strong>
@@ -144,17 +155,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
                         {employeeFor(work, a)?.email || "Email not recorded"}
                       </small>
                     </td>
-                    <td>{course?.name || "Unavailable course"}</td>
                     <td>{skill?.name || "Unavailable skill"}</td>
-                    <td>
-                      {levelName(
-                        data,
-                        proof.levelId ||
-                          course?.mappings.find((m) => m.skillId === a.skillId)
-                            ?.levelId ||
-                          "",
-                      )}
-                    </td>
                     <td>
                       <button
                         className="cm-manager-link"
@@ -174,7 +175,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
                     <td>
                       <button
                         className="cm-button"
-                        aria-label={`${proof.status === "Under Review" ? "Review" : "View"} proof for ${a.name} ${course?.name || "course"}`}
+                        aria-label={`${proof.status === "Under Review" ? "Review" : "View"} proof for ${a.name}`}
                         onClick={() => setSelected(proof.id)}
                       >
                         {proof.status === "Under Review"
@@ -186,7 +187,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
                 ))}
               {!rows.length && (
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={6}>
                     <div className="cm-manager-empty">
                       <ClipboardCheck size={32} />
                       <strong>
@@ -222,17 +223,6 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
           />
         </div>
       </section>
-      {chosen && (
-        <ManagerProofDialog
-          key={chosen.proof.id}
-          data={data}
-          work={work}
-          save={save}
-          assignmentId={chosen.a.id}
-          initialProofId={chosen.proof.id}
-          onClose={() => setSelected(null)}
-        />
-      )}
     </div>
   );
 }

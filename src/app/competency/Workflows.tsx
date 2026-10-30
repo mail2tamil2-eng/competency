@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Target,
   ChevronRight,
+  ChevronDown,
   Route,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -661,14 +662,12 @@ export function Learning({
   ];
   const [localKey, setLocalKey] = useState(""),
     [skillView, setSkillView] = useState<"skill" | "competency">("skill"),
-    [submission, setSubmission] = useState<{
-      assignmentId: string;
-      courseId: string;
-    } | null>(null),
+    [submission, setSubmission] = useState<{ assignmentId: string } | null>(null),
     [file, setFile] = useState<File | null>(null),
     [remark, setRemark] = useState<Record<string, string>>({}),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [openLevels, setOpenLevels] = useState<Record<string, boolean>>({});
   const requestedKey = learnerKey ?? localKey;
   const selectedKey = people.some(([id]) => id === requestedKey)
     ? requestedKey
@@ -700,15 +699,7 @@ export function Learning({
       });
       const proof: Proof = {
         id: uid(),
-        ...submission,
-        levelId: work.courses
-          .find((c) => c.id === submission.courseId)
-          ?.mappings.find(
-            (m) =>
-              m.skillId ===
-              data.assignments.find((a) => a.id === submission.assignmentId)
-                ?.skillId,
-          )?.levelId,
+        assignmentId: submission.assignmentId,
         fileName: file.name,
         document,
         status: "Under Review",
@@ -748,9 +739,10 @@ export function Learning({
           : x,
       ),
     };
-    const next = approved
-      ? completeCourse(data, updated, p.assignmentId, p.courseId)
-      : { data, work: updated };
+    const next =
+      approved && p.courseId
+        ? completeCourse(data, updated, p.assignmentId, p.courseId)
+        : { data, work: updated };
     save(
       next.data,
       next.work,
@@ -921,7 +913,6 @@ export function Learning({
       {(manager || skillView === "skill") && assignments.map((a) => {
         const courses = requiredCourses(data, work, a);
         const done = work.completed[a.id] || [];
-        const first = courses.find((c) => !done.includes(c.id));
         const currentIndex = data.levels.findIndex((l) => l.id === a.current);
         const expectedIndex = data.levels.findIndex((l) => l.id === a.expected);
         return (
@@ -935,15 +926,37 @@ export function Learning({
                   → {data.levels.find((l) => l.id === a.expected)?.name}
                 </p>
               </div>
-              <span
-                className={
-                  "cm-badge " +
-                  (progress(data, a) === "Completed" ? "active" : "draft")
-                }
-              >
-                {progress(data, a)}
-                {a.updatedBy ? " · Updated by " + a.updatedBy : ""}
-              </span>
+              <div className="cm-head-actions">
+                {!manager && (() => {
+                  const skillProof = work.proofs
+                    .filter((p) => p.assignmentId === a.id && !p.courseId)
+                    .at(-1);
+                  if (progress(data, a) === "Completed") return null;
+                  return (
+                    <button
+                      className="cm-button cm-button-sm"
+                      disabled={skillProof?.status === "Under Review"}
+                      title={skillProof?.status === "Under Review" ? "Proof already submitted — awaiting review" : ""}
+                      onClick={() => {
+                        setError("");
+                        setFile(null);
+                        setSubmission({ assignmentId: a.id });
+                      }}
+                    >
+                      {skillProof?.status === "Under Review" ? "Under Review" : "Submit proof"}
+                    </button>
+                  );
+                })()}
+                <span
+                  className={
+                    "cm-badge " +
+                    (progress(data, a) === "Completed" ? "active" : "draft")
+                  }
+                >
+                  {progress(data, a)}
+                  {a.updatedBy ? " · Updated by " + a.updatedBy : ""}
+                </span>
+              </div>
             </div>
             <div className="cm-level-track">
               {data.levels.map((l, i) => (
@@ -1021,74 +1034,48 @@ export function Learning({
                   </p>
                 );
               })()}
-            {courses.map((c) => {
-              const proof = work.proofs
-                .filter((p) => p.assignmentId === a.id && p.courseId === c.id)
-                .at(-1);
-              const hasEarlierGap = data.levels
-                .slice(
-                  currentIndex + 1,
-                  data.levels.findIndex((l) => l.id === c.level.id),
-                )
-                .some(
-                  (l) =>
-                    !work.courses.some((course) =>
-                      course.mappings.some(
-                        (m) => m.skillId === a.skillId && m.levelId === l.id,
-                      ),
-                    ),
-                );
-              const locked = c.id !== first?.id || hasEarlierGap;
-              return (
-                <div className="cm-course-row" key={c.id}>
-                  <BookOpen size={21} />
-                  <div>
-                    <strong>{c.name}</strong>
-                    <small>
-                      {c.level.name} · {c.duration}
-                    </small>
-                    {proof && (
-                      <small>
-                        {proof.status}
-                        {proof.remarks ? " · " + proof.remarks : ""}
-                      </small>
-                    )}
-                  </div>
-                  {done.includes(c.id) ? (
-                    <span className="cm-badge active">Completed</span>
-                  ) : (
-                    <div className="cm-actions">
-                      <button
-                        className="cm-button"
-                        disabled={locked || proof?.status === "Under Review"}
-                        title={locked ? "Complete prior levels first" : ""}
-                        onClick={() => finish(a.id, c.id)}
-                      >
-                        {locked ? (
-                          <>
-                            <LockKeyhole size={14} />
-                            Locked
-                          </>
-                        ) : (
-                          "Complete demo course"
-                        )}
-                      </button>
-                      <button
-                        className="cm-text-button"
-                        disabled={locked || proof?.status === "Under Review"}
-                        onClick={() => {
-                          setError("");
-                          setFile(null);
-                          setSubmission({ assignmentId: a.id, courseId: c.id });
-                        }}
-                      >
-                        Submit proof
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {courses.length > 0 && (
+              <div className="cm-course-table-wrap">
+                <table className="cm-course-table">
+                  <thead>
+                    <tr>
+                      <th>Course</th>
+                      <th>Level</th>
+                      <th>Duration</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {courses.map((c) => {
+                      const proof = work.proofs
+                        .filter((p) => p.assignmentId === a.id && p.courseId === c.id)
+                        .at(-1);
+                      const status = done.includes(c.id)
+                        ? "Completed"
+                        : proof?.status ?? "Not started";
+                      const statusClass = done.includes(c.id)
+                        ? "active"
+                        : proof
+                          ? "draft"
+                          : "pending";
+                      return (
+                        <tr key={c.id}>
+                          <td>
+                            <div className="cm-ct-course">
+                              <BookOpen size={14} />
+                              {c.name}
+                            </div>
+                          </td>
+                          <td><span className="cm-level-badge">{c.level.name}</span></td>
+                          <td className="cm-ct-dur">{c.duration}</td>
+                          <td><span className={`cm-badge cm-badge-sm ${statusClass}`}>{status}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </article>
         );
       })}
@@ -1108,7 +1095,6 @@ export function Learning({
         const completedCount = assignments.filter((a) => progress(data, a) === "Completed").length;
         const pct = assignments.length ? Math.round((completedCount / assignments.length) * 100) : 0;
         const circumference = 2 * Math.PI * 26;
-        // Group current-role assignments by competency
         const byComp = new Map<string, typeof assignments>();
         for (const a of assignments) {
           const cId = data.skills.find((s) => s.id === a.skillId)?.competencyId || "__none__";
@@ -1135,7 +1121,6 @@ export function Learning({
                 ?? assignments.find((a) => progress(data, a) === "Yet to Start");
               return (
                 <div key={cp.id} className="cm-lp-panel">
-                  {/* Header */}
                   <div className="cm-lp-panel-head">
                     <Route size={17} className="cm-lp-panel-icon" />
                     <div>
@@ -1143,8 +1128,6 @@ export function Learning({
                       <span>Track your journey toward your next role, skills and goals.</span>
                     </div>
                   </div>
-
-                  {/* Hero: Current Role | Donut | Next Role */}
                   <div className="cm-lp-hero">
                     <div className="cm-lp-hero-role">
                       <span className="cm-lp-hero-role-label">Current Role</span>
@@ -1156,8 +1139,7 @@ export function Learning({
                         {pct > 0 && (
                           <circle
                             cx="32" cy="32" r="26" fill="none"
-                            stroke="#2463d6"
-                            strokeWidth="7"
+                            stroke="#2463d6" strokeWidth="7"
                             strokeDasharray={`${circumference * pct / 100} ${circumference}`}
                             strokeLinecap="round"
                             transform="rotate(-90 32 32)"
@@ -1179,186 +1161,180 @@ export function Learning({
                       </div>
                     )}
                   </div>
-
                   <div className="cm-lp-body-grid">
-                  <div className="cm-lp-main">
-                  {/* Career path chain */}
-                  <div className="cm-lp-chain-wrap">
-                    <div className="cm-lp-chain-label">{cp.name}</div>
-                    <div className="cm-cp-chain">
-                      {cp.roles.map((role, i) => (
-                        <Fragment key={i}>
-                          <div className={`cm-cp-role${i < roleIdx ? " past" : i === roleIdx ? " current" : " future"}`}>
-                            <span className="cm-cp-role-num">
-                              {i < roleIdx ? <CheckCircle2 size={10} /> : i + 1}
-                            </span>
-                            <span className="cm-cp-role-name">{role}</span>
-                          </div>
-                          {i < cp.roles.length - 1 && (
-                            <div className="cm-cp-connector" aria-hidden="true">
-                              <ChevronRight size={13} className="cm-cp-arrow" />
-                              <span className="cm-cp-pct">{cp.thresholds[i]}%</span>
-                            </div>
-                          )}
-                        </Fragment>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Phase 1 — current role skills grouped by competency */}
-                  <div className="cm-lp-phase">
-                    <div className="cm-lp-phase-head">
-                      <span className="cm-lp-phase-num">Phase {roleIdx + 1}</span>
-                      <div>
-                        <strong>{emp.role} · Current Role Skills</strong>
-                        <span>{completedCount} of {assignments.length} skills completed</span>
-                      </div>
-                      <span className={`cm-badge${phase1Status === "Complete" ? " active" : phase1Status === "In Progress" ? " draft" : ""}`}>
-                        {phase1Status}
-                      </span>
-                    </div>
-                    <div className="cm-lp-phase-bar-wrap">
-                      <div className="cm-lp-phase-bar">
-                        <div style={{ width: pct + "%" }} className={pct === 100 ? "done" : ""} />
-                      </div>
-                      <span>{pct}%</span>
-                    </div>
-                    {[...byComp.entries()].map(([cId, items]) => {
-                      const comp = data.competencies.find((c) => c.id === cId);
-                      return (
-                        <div key={cId} className="cm-lp-comp-group">
-                          {comp && <div className="cm-lp-comp-name">{comp.name}</div>}
-                          {items.map((a) => {
-                            const skill = data.skills.find((s) => s.id === a.skillId);
-                            if (!skill) return null;
-                            const cIdx = data.levels.findIndex((l) => l.id === a.current);
-                            const eIdx = data.levels.findIndex((l) => l.id === a.expected);
-                            const skillPct = !a.current ? 0 : cIdx >= eIdx ? 100 : Math.round((cIdx + 1) / (eIdx + 1) * 100);
-                            const st = progress(data, a);
-                            return (
-                              <div key={a.id} className="cm-lp-skill-row">
-                                <span className="cm-lp-skill-name">{skill.name}</span>
-                                <div className="cm-lp-skill-bar-wrap">
-                                  <div className="cm-lp-skill-bar">
-                                    <div style={{ width: skillPct + "%" }} className={st === "Completed" ? "done" : ""} />
-                                  </div>
-                                  <span className="cm-lp-skill-pct">{skillPct}%</span>
-                                </div>
-                                <span className={`cm-badge sm ${st === "Completed" ? "active" : st === "In Progress" ? "draft" : ""}`}>{st}</span>
+                    <div className="cm-lp-main">
+                      <div className="cm-lp-chain-wrap">
+                        <div className="cm-lp-chain-label">{cp.name}</div>
+                        <div className="cm-cp-chain">
+                          {cp.roles.map((role, i) => (
+                            <Fragment key={i}>
+                              <div className={`cm-cp-role${i < roleIdx ? " past" : i === roleIdx ? " current" : " future"}`}>
+                                <span className="cm-cp-role-num">
+                                  {i < roleIdx ? <CheckCircle2 size={10} /> : i + 1}
+                                </span>
+                                <span className="cm-cp-role-name">{role}</span>
                               </div>
-                            );
-                          })}
+                              {i < cp.roles.length - 1 && (
+                                <div className="cm-cp-connector" aria-hidden="true">
+                                  <ChevronRight size={13} className="cm-cp-arrow" />
+                                  <span className="cm-cp-pct">{cp.thresholds[i]}%</span>
+                                </div>
+                              )}
+                            </Fragment>
+                          ))}
                         </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Phase 2 — next role skills */}
-                  {nextRole && (
-                    <div className={`cm-lp-phase${!meetsThreshold ? " locked" : ""}`}>
-                      <div className="cm-lp-phase-head">
-                        <span className="cm-lp-phase-num">{roleIdx + 2}</span>
-                        <div>
-                          <strong>{nextRole} · Next Role Skills</strong>
-                          <span>
-                            {meetsThreshold
-                              ? "You've met the threshold — start preparing for your next role"
-                              : `Reach ${threshold}% in your current role to unlock`}
+                      </div>
+                      <div className="cm-lp-phase">
+                        <div className="cm-lp-phase-head">
+                          <span className="cm-lp-phase-num">Phase {roleIdx + 1}</span>
+                          <div>
+                            <strong>{emp.role} · Current Role Skills</strong>
+                            <span>{completedCount} of {assignments.length} skills completed</span>
+                          </div>
+                          <span className={`cm-badge${phase1Status === "Complete" ? " active" : phase1Status === "In Progress" ? " draft" : ""}`}>
+                            {phase1Status}
                           </span>
                         </div>
-                        {meetsThreshold ? (
-                          <span className="cm-badge active">Unlocked</span>
-                        ) : (
-                          <span className="cm-badge">Locked</span>
-                        )}
-                      </div>
-                      {!meetsThreshold && (
-                        <div className="cm-lp-locked">
-                          <LockKeyhole size={18} />
-                          <span>Complete {threshold! - pct}% more of your current role to unlock next-role preparation</span>
+                        <div className="cm-lp-phase-bar-wrap">
+                          <div className="cm-lp-phase-bar">
+                            <div style={{ width: pct + "%" }} className={pct === 100 ? "done" : ""} />
+                          </div>
+                          <span>{pct}%</span>
                         </div>
-                      )}
-                      {meetsThreshold && nextRoleSkillIds.length > 0 && (
-                        <div className="cm-lp-comp-group">
-                          {nextRoleSkillIds.map((skillId) => {
-                            const skill = data.skills.find((s) => s.id === skillId);
-                            if (!skill) return null;
-                            const assignment = assignments.find((a) => a.skillId === skillId);
-                            const st = assignment ? progress(data, assignment) : "Not yet assigned";
-                            const cIdx = assignment ? data.levels.findIndex((l) => l.id === assignment.current) : -1;
-                            const eIdx = assignment ? data.levels.findIndex((l) => l.id === assignment.expected) : -1;
-                            const skillPct = !assignment?.current ? 0 : cIdx >= eIdx ? 100 : Math.round((cIdx + 1) / (eIdx + 1) * 100);
-                            return (
-                              <div key={skillId} className="cm-lp-skill-row">
-                                <span className="cm-lp-skill-name">{skill.name}</span>
-                                <div className="cm-lp-skill-bar-wrap">
-                                  <div className="cm-lp-skill-bar">
-                                    <div style={{ width: skillPct + "%" }} className={st === "Completed" ? "done" : ""} />
+                        {[...byComp.entries()].map(([cId, items]) => {
+                          const comp = data.competencies.find((c) => c.id === cId);
+                          return (
+                            <div key={cId} className="cm-lp-comp-group">
+                              {comp && <div className="cm-lp-comp-name">{comp.name}</div>}
+                              {items.map((a) => {
+                                const skill = data.skills.find((s) => s.id === a.skillId);
+                                if (!skill) return null;
+                                const cIdx = data.levels.findIndex((l) => l.id === a.current);
+                                const eIdx = data.levels.findIndex((l) => l.id === a.expected);
+                                const skillPct = !a.current ? 0 : cIdx >= eIdx ? 100 : Math.round((cIdx + 1) / (eIdx + 1) * 100);
+                                const st = progress(data, a);
+                                return (
+                                  <div key={a.id} className="cm-lp-skill-row">
+                                    <span className="cm-lp-skill-name">{skill.name}</span>
+                                    <div className="cm-lp-skill-bar-wrap">
+                                      <div className="cm-lp-skill-bar">
+                                        <div style={{ width: skillPct + "%" }} className={st === "Completed" ? "done" : ""} />
+                                      </div>
+                                      <span className="cm-lp-skill-pct">{skillPct}%</span>
+                                    </div>
+                                    <span className={`cm-badge sm ${st === "Completed" ? "active" : st === "In Progress" ? "draft" : ""}`}>{st}</span>
                                   </div>
-                                  <span className="cm-lp-skill-pct">{skillPct}%</span>
-                                </div>
-                                <span className={`cm-badge sm ${st === "Completed" ? "active" : mySkillIds.has(skillId) ? "draft" : ""}`}>
-                                  {st === "Completed" ? "Achieved" : st}
-                                </span>
-                              </div>
-                            );
-                          })}
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {nextRole && (
+                        <div className={`cm-lp-phase${!meetsThreshold ? " locked" : ""}`}>
+                          <div className="cm-lp-phase-head">
+                            <span className="cm-lp-phase-num">{roleIdx + 2}</span>
+                            <div>
+                              <strong>{nextRole} · Next Role Skills</strong>
+                              <span>
+                                {meetsThreshold
+                                  ? "You've met the threshold — start preparing for your next role"
+                                  : `Reach ${threshold}% in your current role to unlock`}
+                              </span>
+                            </div>
+                            {meetsThreshold ? (
+                              <span className="cm-badge active">Unlocked</span>
+                            ) : (
+                              <span className="cm-badge">Locked</span>
+                            )}
+                          </div>
+                          {!meetsThreshold && (
+                            <div className="cm-lp-locked">
+                              <LockKeyhole size={18} />
+                              <span>Complete {threshold! - pct}% more of your current role to unlock next-role preparation</span>
+                            </div>
+                          )}
+                          {meetsThreshold && nextRoleSkillIds.length > 0 && (
+                            <div className="cm-lp-comp-group">
+                              {nextRoleSkillIds.map((skillId) => {
+                                const skill = data.skills.find((s) => s.id === skillId);
+                                if (!skill) return null;
+                                const assignment = assignments.find((a) => a.skillId === skillId);
+                                const st = assignment ? progress(data, assignment) : "Not yet assigned";
+                                const cIdx = assignment ? data.levels.findIndex((l) => l.id === assignment.current) : -1;
+                                const eIdx = assignment ? data.levels.findIndex((l) => l.id === assignment.expected) : -1;
+                                const skillPct = !assignment?.current ? 0 : cIdx >= eIdx ? 100 : Math.round((cIdx + 1) / (eIdx + 1) * 100);
+                                return (
+                                  <div key={skillId} className="cm-lp-skill-row">
+                                    <span className="cm-lp-skill-name">{skill.name}</span>
+                                    <div className="cm-lp-skill-bar-wrap">
+                                      <div className="cm-lp-skill-bar">
+                                        <div style={{ width: skillPct + "%" }} className={st === "Completed" ? "done" : ""} />
+                                      </div>
+                                      <span className="cm-lp-skill-pct">{skillPct}%</span>
+                                    </div>
+                                    <span className={`cm-badge sm ${st === "Completed" ? "active" : mySkillIds.has(skillId) ? "draft" : ""}`}>
+                                      {st === "Completed" ? "Achieved" : st}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {meetsThreshold && nextRoleSkillIds.length === 0 && (
+                            <p className="cm-hint" style={{ marginTop: 10 }}>
+                              No skills assigned for {nextRole} yet. Contact your administrator.
+                            </p>
+                          )}
                         </div>
                       )}
-                      {meetsThreshold && nextRoleSkillIds.length === 0 && (
-                        <p className="cm-hint" style={{ marginTop: 10 }}>
-                          No skills assigned for {nextRole} yet. Contact your administrator.
-                        </p>
+                    </div>
+                    <aside className="cm-lp-sidebar">
+                      <div className="cm-lp-sidebar-card">
+                        <div className="cm-lp-sidebar-title">Progress Summary</div>
+                        <div className="cm-lp-stats">
+                          <div className="cm-lp-stat cm-lp-stat--green">
+                            <span className="cm-lp-stat-num">{completedCount}</span>
+                            <span className="cm-lp-stat-label">Done</span>
+                          </div>
+                          <div className="cm-lp-stat cm-lp-stat--blue">
+                            <span className="cm-lp-stat-num">{inProgressCount}</span>
+                            <span className="cm-lp-stat-label">Active</span>
+                          </div>
+                          <div className="cm-lp-stat cm-lp-stat--gray">
+                            <span className="cm-lp-stat-num">{notStartedCount}</span>
+                            <span className="cm-lp-stat-label">Pending</span>
+                          </div>
+                        </div>
+                      </div>
+                      {threshold !== null && (
+                        <div className="cm-lp-sidebar-card">
+                          <div className="cm-lp-sidebar-title">Next Role Unlock</div>
+                          <div className="cm-lp-unlock-bar">
+                            <div style={{ width: Math.min(100, threshold ? Math.round(pct / threshold * 100) : 0) + "%" }} className={meetsThreshold ? "done" : ""} />
+                          </div>
+                          <div className="cm-lp-unlock-meta">
+                            <span>{pct}% complete</span>
+                            <span>Target {threshold}%</span>
+                          </div>
+                          {meetsThreshold ? (
+                            <div className="cm-lp-unlock-ready"><CheckCircle2 size={14} /> Ready for {nextRole}</div>
+                          ) : (
+                            <div className="cm-lp-unlock-hint">{threshold! - pct}% more to unlock {nextRole}</div>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
-                  </div>{/* /cm-lp-main */}
-                  <aside className="cm-lp-sidebar">
-                    <div className="cm-lp-sidebar-card">
-                      <div className="cm-lp-sidebar-title">Progress Summary</div>
-                      <div className="cm-lp-stats">
-                        <div className="cm-lp-stat cm-lp-stat--green">
-                          <span className="cm-lp-stat-num">{completedCount}</span>
-                          <span className="cm-lp-stat-label">Done</span>
+                      {firstActiveSkill && (
+                        <div className="cm-lp-sidebar-card">
+                          <div className="cm-lp-sidebar-title">Focus Next</div>
+                          <div className="cm-lp-focus">
+                            <span className="cm-lp-focus-verb">{progress(data, firstActiveSkill) === "In Progress" ? "Continue" : "Start"}</span>
+                            <strong className="cm-lp-focus-skill">{data.skills.find((s) => s.id === firstActiveSkill.skillId)?.name}</strong>
+                          </div>
                         </div>
-                        <div className="cm-lp-stat cm-lp-stat--blue">
-                          <span className="cm-lp-stat-num">{inProgressCount}</span>
-                          <span className="cm-lp-stat-label">Active</span>
-                        </div>
-                        <div className="cm-lp-stat cm-lp-stat--gray">
-                          <span className="cm-lp-stat-num">{notStartedCount}</span>
-                          <span className="cm-lp-stat-label">Pending</span>
-                        </div>
-                      </div>
-                    </div>
-                    {threshold !== null && (
-                      <div className="cm-lp-sidebar-card">
-                        <div className="cm-lp-sidebar-title">Next Role Unlock</div>
-                        <div className="cm-lp-unlock-bar">
-                          <div style={{ width: Math.min(100, threshold ? Math.round(pct / threshold * 100) : 0) + "%" }} className={meetsThreshold ? "done" : ""} />
-                        </div>
-                        <div className="cm-lp-unlock-meta">
-                          <span>{pct}% complete</span>
-                          <span>Target {threshold}%</span>
-                        </div>
-                        {meetsThreshold ? (
-                          <div className="cm-lp-unlock-ready"><CheckCircle2 size={14} /> Ready for {nextRole}</div>
-                        ) : (
-                          <div className="cm-lp-unlock-hint">{threshold! - pct}% more to unlock {nextRole}</div>
-                        )}
-                      </div>
-                    )}
-                    {firstActiveSkill && (
-                      <div className="cm-lp-sidebar-card">
-                        <div className="cm-lp-sidebar-title">Focus Next</div>
-                        <div className="cm-lp-focus">
-                          <span className="cm-lp-focus-verb">{progress(data, firstActiveSkill) === "In Progress" ? "Continue" : "Start"}</span>
-                          <strong className="cm-lp-focus-skill">{data.skills.find((s) => s.id === firstActiveSkill.skillId)?.name}</strong>
-                        </div>
-                      </div>
-                    )}
-                  </aside>
-                  </div>{/* /cm-lp-body-grid */}
+                      )}
+                    </aside>
+                  </div>
                 </div>
               );
             })}

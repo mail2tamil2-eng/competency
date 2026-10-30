@@ -22,8 +22,13 @@ export function latestProofs(work: WorkflowData, assignmentId: string) {
   for (const proof of work.proofs.filter(
     (p) => p.assignmentId === assignmentId,
   ))
-    latest.set(proof.courseId, proof);
+    latest.set(proof.courseId ?? "skill", proof);
   return [...latest.values()];
+}
+export function latestSkillProof(work: WorkflowData, assignmentId: string) {
+  return work.proofs
+    .filter((p) => p.assignmentId === assignmentId && !p.courseId)
+    .at(-1);
 }
 export function proofStatus(work: WorkflowData, id: string) {
   const proofs = latestProofs(work, id);
@@ -75,54 +80,15 @@ export function reviewProof(
 ) {
   const proof = work.proofs.find((p) => p.id === id);
   const a = data.assignments.find((a) => a.id === proof?.assignmentId);
-  if (
-    !proof ||
-    !a ||
-    proof.status !== "Under Review" ||
-    !latestProofs(work, a.id).some((p) => p.id === id)
-  )
+  if (!proof || !a || proof.status !== "Under Review")
     throw Error("This submission is no longer awaiting review.");
   if (!approved && !reason.trim())
     throw Error("Add a reason so the learner knows what to do next.");
-  const course = work.courses.find((c) => c.id === proof.courseId);
-  const level =
-    proof.levelId ||
-    course?.mappings.find((m) => m.skillId === a.skillId)?.levelId;
-  if (
-    approved &&
-    (!level ||
-      !data.levels.some((l) => l.id === level && l.status === "Active"))
-  )
-    throw Error(
-      "The mapped skill level is unavailable. Ask the administrator to restore the mapping.",
-    );
   const at = new Date().toISOString();
-  let nextData = data;
-  if (
-    approved &&
-    data.levels.findIndex((l) => l.id === level) >
-      data.levels.findIndex((l) => l.id === a.current)
-  ) {
-    nextData = managerLevel(
-      data,
-      a,
-      level!,
-      `Proof approved: ${course?.name || "Course"}${reason.trim() ? ". " + reason.trim() : ""}`,
-      at,
-    );
-  }
   return {
-    data: nextData,
+    data,
     work: {
       ...work,
-      completed: approved
-        ? {
-            ...work.completed,
-            [a.id]: [
-              ...new Set([...(work.completed[a.id] || []), proof.courseId]),
-            ],
-          }
-        : work.completed,
       proofs: work.proofs.map((p) =>
         p.id === id
           ? {
@@ -135,6 +101,49 @@ export function reviewProof(
           : p,
       ),
     },
+  };
+}
+
+export function saveCompletedCourses(
+  data: Data,
+  work: WorkflowData,
+  assignmentId: string,
+  courseIds: string[],
+) {
+  const a = data.assignments.find((x) => x.id === assignmentId);
+  if (!a) return { data, work };
+  const at = new Date().toISOString();
+  const completedSet = new Set(courseIds);
+  const currentIdx = data.levels.findIndex((l) => l.id === a.current);
+  const expectedIdx = data.levels.findIndex((l) => l.id === a.expected);
+  const relevantLevels = data.levels.slice(currentIdx + 1, expectedIdx + 1);
+  let highestCompletedLevel = a.current;
+  for (const level of relevantLevels) {
+    const levelCourses = work.courses.filter((c) =>
+      c.mappings.some((m) => m.skillId === a.skillId && m.levelId === level.id),
+    );
+    if (levelCourses.length > 0 && levelCourses.every((c) => completedSet.has(c.id))) {
+      highestCompletedLevel = level.id;
+    } else break;
+  }
+  let nextData = data;
+  if (
+    highestCompletedLevel &&
+    highestCompletedLevel !== a.current &&
+    data.levels.findIndex((l) => l.id === highestCompletedLevel) >
+      data.levels.findIndex((l) => l.id === a.current)
+  ) {
+    nextData = managerLevel(
+      data,
+      a,
+      highestCompletedLevel,
+      "Proficiency updated after proof approval and course selection",
+      at,
+    );
+  }
+  return {
+    data: nextData,
+    work: { ...work, completed: { ...work.completed, [assignmentId]: courseIds } },
   };
 }
 export function detailedRows(
