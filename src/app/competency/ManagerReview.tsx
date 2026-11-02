@@ -588,18 +588,104 @@ export function ManagerProofReviewPage({
           </div>
         </div>
 
-        {/* RIGHT — course selection first, then decision, then log */}
+        {/* RIGHT */}
         <div className="cm-proof-right">
-          {/* Mark completed courses — visible before AND after approval */}
-          {(proof?.status === "Under Review" || isApproved) && relevantLevels.length > 0 && (
+          {/* Under Review: courses + feedback + action buttons in one card */}
+          {proof?.status === "Under Review" && (
+            <div className="cm-proof-actions-card">
+              {relevantLevels.length > 0 && (
+                <>
+                  <div className="cm-hier-header-row">
+                    <h4>Mark completed courses</h4>
+                    <span className="cm-hier-strip-text">Select courses completed, then approve below.</span>
+                  </div>
+                  <div className="cm-hier-levels">
+                    {relevantLevels.map((level, li) => {
+                      const unlocked = isLevelUnlocked(li);
+                      const levelCourses = work.courses.filter((c) =>
+                        c.mappings.some((m) => m.skillId === a.skillId && m.levelId === level.id),
+                      );
+                      const doneCount = levelCourses.filter((c) => selected.has(c.id)).length;
+                      const allChecked = levelCourses.length > 0 && doneCount === levelCourses.length;
+                      const someChecked = doneCount > 0 && !allChecked;
+                      const levelState: "active" | "done" | "disabled" = !unlocked ? "disabled" : allChecked ? "done" : "active";
+                      return (
+                        <div key={level.id} className={`cm-hier-level cm-hier-level--${levelState}`}>
+                          <div className="cm-hier-level-header">
+                            <label className="cm-hier-level-label">
+                              <input
+                                type="checkbox"
+                                checked={allChecked}
+                                ref={(el) => { if (el) el.indeterminate = someChecked; }}
+                                disabled={!unlocked || levelCourses.length === 0}
+                                onChange={(e) => toggleLevel(li, e.target.checked)}
+                              />
+                              <span className={`cm-hier-num cm-hier-num--${levelState}`}>
+                                {allChecked ? <CheckCircle2 size={12} /> : li + 1}
+                              </span>
+                              <span className="cm-hier-name">{level.name}</span>
+                            </label>
+                            <div className="cm-hier-count">
+                              {levelCourses.length > 0 ? `${doneCount}/${levelCourses.length}` : "—"}
+                              {allChecked && <span className="cm-hier-done-chip">Complete</span>}
+                            </div>
+                          </div>
+                          {levelCourses.length > 0 && (
+                            <div className="cm-hier-courses">
+                              {levelCourses.map((c) => (
+                                <label key={c.id} className={`cm-hier-course${!unlocked ? " cm-hier-course--disabled" : ""}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={selected.has(c.id)}
+                                    disabled={!unlocked}
+                                    onChange={() => toggleCourse(c.id, li)}
+                                  />
+                                  <BookOpen size={13} className="cm-hier-course-icon" />
+                                  <span className="cm-hier-course-name">{c.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="cm-proof-card-divider" />
+                </>
+              )}
+              {relevantLevels.length === 0 && <h4>Review decision</h4>}
+              <label className="cm-proof-feedback-label">
+                Feedback <span className="cm-hint-inline">(required when rejecting)</span>
+                <textarea
+                  value={remarks}
+                  maxLength={2000}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Explain what the learner should correct or note for approval…"
+                  rows={3}
+                />
+              </label>
+              {error && <p className="cm-error" role="alert">{error}</p>}
+              <div className="cm-proof-action-btns">
+                <button className="cm-button cm-manager-reject" onClick={() => decide(false)}>
+                  Reject with feedback
+                </button>
+                <button
+                  className="cm-button primary"
+                  disabled={!usable}
+                  onClick={() => decide(true)}
+                >
+                  Approve proof
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Approved: course completion with save */}
+          {isApproved && relevantLevels.length > 0 && (
             <div className="cm-proof-actions-card">
               <div className="cm-hier-header-row">
                 <h4>Mark completed courses</h4>
-                <span className="cm-hier-strip-text">
-                  {proof?.status === "Under Review"
-                    ? "Select courses completed, then approve below."
-                    : "Complete each level to unlock the next."}
-                </span>
+                <span className="cm-hier-strip-text">Complete each level to unlock the next.</span>
               </div>
               <div className="cm-hier-levels">
                 {relevantLevels.map((level, li) => {
@@ -644,7 +730,6 @@ export function ManagerProofReviewPage({
                               />
                               <BookOpen size={13} className="cm-hier-course-icon" />
                               <span className="cm-hier-course-name">{c.name}</span>
-                              <span className="cm-hier-course-dur">{c.duration}</span>
                             </label>
                           ))}
                         </div>
@@ -653,49 +738,14 @@ export function ManagerProofReviewPage({
                   );
                 })}
               </div>
-              {/* Save button only shown post-approval (during review, Approve does it) */}
-              {isApproved && (
-                <>
-                  {error && <p className="cm-error" role="alert">{error}</p>}
-                  <div className="cm-hier-save-row">
-                    <button
-                      className="cm-button primary"
-                      disabled={saving || (!hasChanges && !saved)}
-                      onClick={saveSelection}
-                    >
-                      {saving ? "Saving…" : saved ? "Saved ✓" : "Save completion"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {proof?.status === "Under Review" && (
-            <div className="cm-proof-actions-card">
-              <h4>Review decision</h4>
-              <p className="cm-hint">Select completed courses above, then approve or reject the proof.</p>
-              <label className="cm-proof-feedback-label">
-                Feedback <span className="cm-hint-inline">(required when rejecting)</span>
-                <textarea
-                  value={remarks}
-                  maxLength={2000}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Explain what the learner should correct or note for approval…"
-                  rows={3}
-                />
-              </label>
               {error && <p className="cm-error" role="alert">{error}</p>}
-              <div className="cm-proof-action-btns">
-                <button className="cm-button cm-manager-reject" onClick={() => decide(false)}>
-                  Reject with feedback
-                </button>
+              <div className="cm-hier-save-row">
                 <button
                   className="cm-button primary"
-                  disabled={!usable}
-                  onClick={() => decide(true)}
+                  disabled={saving || (!hasChanges && !saved)}
+                  onClick={saveSelection}
                 >
-                  Approve proof
+                  {saving ? "Saving…" : saved ? "Saved ✓" : "Save completion"}
                 </button>
               </div>
             </div>
@@ -710,7 +760,6 @@ export function ManagerProofReviewPage({
             </div>
           )}
 
-          {/* Activity log — always visible once there is a proof */}
           {proof && (
             <div className="cm-proof-actions-card">
               <h4>Activity log</h4>
@@ -783,77 +832,6 @@ export function ManagerProofReviewPage({
                     </div>
                   );
                 })()}
-              </div>
-            </div>
-          )}
-
-          {isApproved && relevantLevels.length > 0 && (
-            <div className="cm-proof-actions-card">
-              <div className="cm-hier-header-row">
-                <h4>Mark completed courses</h4>
-                <span className="cm-hier-strip-text">Complete each level to unlock the next.</span>
-              </div>
-              <div className="cm-hier-levels">
-                {relevantLevels.map((level, li) => {
-                  const unlocked = isLevelUnlocked(li);
-                  const levelCourses = work.courses.filter((c) =>
-                    c.mappings.some((m) => m.skillId === a.skillId && m.levelId === level.id),
-                  );
-                  const doneCount = levelCourses.filter((c) => selected.has(c.id)).length;
-                  const allChecked = levelCourses.length > 0 && doneCount === levelCourses.length;
-                  const someChecked = doneCount > 0 && !allChecked;
-                  const levelState: "active" | "done" | "disabled" = !unlocked ? "disabled" : allChecked ? "done" : "active";
-                  return (
-                    <div key={level.id} className={`cm-hier-level cm-hier-level--${levelState}`}>
-                      <div className="cm-hier-level-header">
-                        <label className="cm-hier-level-label">
-                          <input
-                            type="checkbox"
-                            checked={allChecked}
-                            ref={(el) => { if (el) el.indeterminate = someChecked; }}
-                            disabled={!unlocked || levelCourses.length === 0}
-                            onChange={(e) => toggleLevel(li, e.target.checked)}
-                          />
-                          <span className={`cm-hier-num cm-hier-num--${levelState}`}>
-                            {allChecked ? <CheckCircle2 size={12} /> : li + 1}
-                          </span>
-                          <span className="cm-hier-name">{level.name}</span>
-                        </label>
-                        <div className="cm-hier-count">
-                          {levelCourses.length > 0 ? `${doneCount}/${levelCourses.length}` : "—"}
-                          {allChecked && <span className="cm-hier-done-chip">Complete</span>}
-                        </div>
-                      </div>
-                      {levelCourses.length > 0 && (
-                        <div className="cm-hier-courses">
-                          {levelCourses.map((c) => (
-                            <label key={c.id} className={`cm-hier-course${!unlocked ? " cm-hier-course--disabled" : ""}`}>
-                              <input
-                                type="checkbox"
-                                checked={selected.has(c.id)}
-                                disabled={!unlocked}
-                                onChange={() => toggleCourse(c.id, li)}
-                              />
-                              <BookOpen size={13} className="cm-hier-course-icon" />
-                              <span className="cm-hier-course-name">{c.name}</span>
-                              <span className="cm-hier-course-dur">{c.duration}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {error && <p className="cm-error" role="alert">{error}</p>}
-              <div className="cm-hier-save-row">
-                <button
-                  className="cm-button primary"
-                  disabled={saving || (!hasChanges && !saved)}
-                  onClick={saveSelection}
-                >
-                  {saving ? "Saving…" : saved ? "Saved ✓" : "Save completion"}
-                </button>
               </div>
             </div>
           )}

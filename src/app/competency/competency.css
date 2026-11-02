@@ -3957,6 +3957,11 @@
 .cm-hier-course--disabled .cm-hier-course-dur {
   color: #c8d0dc;
 }
+.cm-proof-card-divider {
+  border: none;
+  border-top: 1px solid #edf0f5;
+  margin: 14px 0 12px;
+}
 .cm-hier-save-row {
   display: flex;
   justify-content: flex-end;
