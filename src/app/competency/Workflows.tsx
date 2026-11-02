@@ -90,7 +90,7 @@ export function CourseMapping({ data, work, save }: Props) {
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Skill â†’ course mapping</h2>
+          <h2>Skill → course mapping</h2>
           <p>
             Connect each skill level to learning content. Learners follow
             courses in level order.
@@ -480,11 +480,11 @@ export function RoleMapping({ data, work, save }: Props) {
     <section className="cm-inline-form" ref={formRef}>
       <div className="cm-inline-form-head">
         <button type="button" className="cm-text-button cm-inline-back" onClick={() => setDraft(null)}>
-          â† Assignments
+          ← Assignments
         </button>
         <h2>{draft.name.trim() || "New assignment"}</h2>
         <p className="cm-inline-form-meta">
-          {audience.length} matching learner{audience.length !== 1 ? "s" : ""} Â· {draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}
+          {audience.length} matching learner{audience.length !== 1 ? "s" : ""} · {draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}
         </p>
       </div>
       {error && <div className="cm-error" role="alert">{error}</div>}
@@ -500,7 +500,7 @@ export function RoleMapping({ data, work, save }: Props) {
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Competency â†’ role mapping</h2>
+          <h2>Competency → role mapping</h2>
           <p>Choose required skills, define expectations, and assign them to the right people.</p>
         </div>
         <button className="cm-button primary" onClick={() => begin()}>
@@ -533,10 +533,10 @@ export function RoleMapping({ data, work, save }: Props) {
                 <tr key={p.id}>
                   <td>
                     <strong>{p.name}</strong>
-                    <small>{p.start} â†’ {p.end}</small>
+                    <small>{p.start} → {p.end}</small>
                   </td>
                   <td>
-                    {p.method} Â· {p.type}
+                    {p.method} · {p.type}
                     <small>{p.assignedNames.length} learners</small>
                   </td>
                   <td>{p.skills.length}</td>
@@ -889,7 +889,7 @@ export function Learning({
         </p>
       )}
 
-      {/* View toggle â€” learner only */}
+      {/* View toggle — learner only */}
       {!manager && assignments.length > 0 && (
         <div className="cm-view-toggle" role="group" aria-label="View mode">
           <button
@@ -910,7 +910,7 @@ export function Learning({
       )}
 
 
-      {/* Competency view â€” grouped by competency */}
+      {/* Competency view — grouped by competency */}
       {!manager && skillView === "competency" && (() => {
         const grouped = new Map<string, typeof assignments>();
         for (const a of assignments) {
@@ -953,7 +953,7 @@ export function Learning({
                           <span><strong>{skill?.name}</strong></span>
                           <span className="cm-skill-progress-detail">
                             {a.current ? data.levels.find((l) => l.id === a.current)?.name : "Not assessed"}
-                            {" â†’ "}
+                            {" → "}
                             {data.levels.find((l) => l.id === a.expected)?.name}
                             {missing && <span className="cm-content-missing"><AlertTriangle size={12} /> Content missing</span>}
                           </span>
@@ -981,9 +981,9 @@ export function Learning({
               <div>
                 <h3>{data.skills.find((s) => s.id === a.skillId)?.name}</h3>
                 <p>
-                  {data.levels.find((l) => l.id === a.current)?.name ||
-                    "Not assessed"}{" "}
-                  â†’ {data.levels.find((l) => l.id === a.expected)?.name}
+                  {a.current === a.expected
+                    ? (data.levels.find((l) => l.id === a.current)?.name || "Not assessed")
+                    : (data.levels.find((l) => l.id === a.current)?.name || "Not assessed") + " → " + (data.levels.find((l) => l.id === a.expected)?.name ?? "")}
                 </p>
               </div>
               <div className="cm-head-actions">
@@ -996,7 +996,7 @@ export function Learning({
                     <button
                       className="cm-button cm-button-sm"
                       disabled={skillProof?.status === "Under Review"}
-                      title={skillProof?.status === "Under Review" ? "Proof already submitted â€” awaiting review" : ""}
+                      title={skillProof?.status === "Under Review" ? "Proof already submitted — awaiting review" : ""}
                       onClick={() => {
                         setError("");
                         setFile(null);
@@ -1014,7 +1014,7 @@ export function Learning({
                   }
                 >
                   {progress(data, a)}
-                  {a.updatedBy ? " Â· Updated by " + a.updatedBy : ""}
+                  {a.updatedBy ? " · Updated by " + a.updatedBy : ""}
                 </span>
               </div>
             </div>
@@ -1076,7 +1076,7 @@ export function Learning({
             )}
             {!a.current && (
               <p className="cm-hint cm-not-assessed">
-                Not Assessed â€” your administrator or manager needs to record your current level before your learning plan can be generated.
+                Not Assessed — your administrator or manager needs to record your current level before your learning plan can be generated.
               </p>
             )}
             {a.current &&
@@ -1090,7 +1090,7 @@ export function Learning({
                 return (
                   <p className="cm-hint cm-content-missing-hint">
                     <AlertTriangle size={14} />
-                    {" "}Learning Unavailable â€” required learning for {skillName} ({missingLevels.map((l) => l.name).join(", ")}) under {compName} has not been configured. Please contact your administrator.
+                    {" "}Learning Unavailable — required learning for {skillName} ({missingLevels.map((l) => l.name).join(", ")}) under {compName} has not been configured. Please contact your administrator.
                   </p>
                 );
               })()}
@@ -1160,7 +1160,7 @@ export function Learning({
                       {work.courses.find((c) => c.id === p.courseId)?.name}
                     </strong>
                     <p>
-                      {p.submitted} Â· {p.fileName}
+                      {p.submitted} · {p.fileName}
                     </p>
                   </div>
                   <span className="cm-badge">{p.status}</span>
@@ -1227,7 +1227,7 @@ export function Learning({
               />
             </label>
             <p className="cm-hint">
-              PDF, PNG or JPEG Â· Up to 1 MB. Stored in this browser for the
+              PDF, PNG or JPEG · Up to 1 MB. Stored in this browser for the
               prototype.
             </p>
             {error && (
@@ -1248,7 +1248,7 @@ export function Learning({
                 disabled={!file || busy}
                 onClick={() => void submit()}
               >
-                {busy ? "Savingâ€¦" : "Submit for review"}
+                {busy ? "Saving…" : "Submit for review"}
               </button>
             </div>
           </DialogContent>
