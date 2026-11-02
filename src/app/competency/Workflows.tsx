@@ -776,7 +776,6 @@ export function Learning({
         const inProgress = assignments.filter((a) => progress(data, a) === "In Progress").length;
         const notStarted = assignments.filter((a) => progress(data, a) === "Yet to Start").length;
         const pct = assignments.length ? Math.round((achieved / assignments.length) * 100) : 0;
-        const circumference = 2 * Math.PI * 32;
         const matchingPaths = emp?.role
           ? (work.careerPaths ?? []).filter((cp) => cp.status === "Active" && cp.roles.includes(emp.role))
           : [];
@@ -805,57 +804,38 @@ export function Learning({
               </select>
             </div>
 
-            {/* Career strip: Current Role | Donut | Next Role */}
+            {/* My Career Path widget */}
             {cp && emp?.role && (
-              <div className="cm-lch-strip">
-                <div className="cm-lch-role-col">
-                  <span className="cm-lch-label">Current Role</span>
-                  <span className="cm-lch-chip cm-lch-chip--current">{emp.role}</span>
+              <div className="cm-cp-widget">
+                <span className="cm-cp-title">My Career Path</span>
+                <div className="cm-cp-roles">
+                  {cp.roles.map((role, i) => {
+                    const state = i < roleIdx ? "past" : i === roleIdx ? "current" : i === roleIdx + 1 ? "next" : "future";
+                    const badge = state === "past" ? "Completed" : state === "current" ? "Current role" : state === "next" ? "Next role" : "Upcoming";
+                    return (
+                      <Fragment key={i}>
+                        <div className={`cm-cp-role ${state}`}>
+                          <span className="cm-cp-role-num">
+                            {state === "past" ? <CheckCircle2 size={10} /> : i + 1}
+                          </span>
+                          <span className="cm-cp-role-name">{role}</span>
+                          <span className="cm-cp-role-badge">{badge}</span>
+                        </div>
+                        {i < cp.roles.length - 1 && (
+                          <span className="cm-cp-chevron" aria-hidden="true">›</span>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </div>
-                <div className="cm-lch-center-col">
-                  <svg viewBox="0 0 80 80" className="cm-lch-donut" aria-hidden="true">
-                    <circle cx="40" cy="40" r="32" fill="none" stroke="#dce8ff" strokeWidth="8" />
-                    {pct > 0 && (
-                      <circle
-                        cx="40" cy="40" r="32" fill="none"
-                        stroke="#2463d6" strokeWidth="8"
-                        strokeDasharray={`${circumference * pct / 100} ${circumference}`}
-                        strokeLinecap="round"
-                        transform="rotate(-90 40 40)"
-                      />
-                    )}
-                    <text x="40" y="46" textAnchor="middle" className="cm-lch-donut-pct">{pct}%</text>
-                  </svg>
-                  <span className="cm-lch-label">Role Competency Progress</span>
+                <div className="cm-cp-progress-row">
+                  <span className="cm-cp-progress-label">Role Competency Progress</span>
+                  <progress className="cm-cp-progress-bar" max={100} value={pct} aria-label="Role competency progress" />
+                  <span className="cm-cp-progress-pct">{pct}%</span>
                 </div>
-                <div className="cm-lch-role-col cm-lch-role-col--right">
-                  <span className="cm-lch-label">{nextRole ? "Next Role" : "Status"}</span>
-                  <span className={`cm-lch-chip cm-lch-chip--next${meetsThreshold ? " ready" : ""}`}>
-                    {nextRole ?? "Top of Path"}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Career chain */}
-            {cp && (
-              <div className="cm-lch-chain">
-                {cp.roles.map((role, i) => (
-                  <Fragment key={i}>
-                    <div className={`cm-lch-node${i < roleIdx ? " past" : i === roleIdx ? " current" : " future"}`}>
-                      <span className="cm-lch-node-num">
-                        {i < roleIdx ? <CheckCircle2 size={10} /> : i + 1}
-                      </span>
-                      <span className="cm-lch-node-name">{role}</span>
-                    </div>
-                    {i < cp.roles.length - 1 && (
-                      <div className="cm-lch-sep">
-                        <span className="cm-lch-arrow">›</span>
-                        {cp.thresholds[i] && <span className="cm-lch-threshold">{cp.thresholds[i]}%</span>}
-                      </div>
-                    )}
-                  </Fragment>
-                ))}
+                {nextRole && threshold !== null && (
+                  <p className="cm-cp-hint">Complete {threshold}% of your current role competencies to unlock the next role.</p>
+                )}
               </div>
             )}
 
