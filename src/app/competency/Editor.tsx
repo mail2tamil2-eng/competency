@@ -151,9 +151,8 @@ export function Editor({
                 .filter((x) => x.status === "Active")
                 .map((l) => (
                   <label key={l.id}>
-                    {l.name} <span>*</span>
+                    {l.name}
                     <textarea
-                      required
                       rows={2}
                       placeholder={
                         "What does " +

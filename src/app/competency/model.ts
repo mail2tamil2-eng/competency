@@ -339,9 +339,6 @@ export function validate(item: RecordItem, kind: Kind, data: Data): string[] {
       )
     )
       errors.push("Choose an active competency in this category.");
-    for (const l of data.levels.filter((x) => x.status === "Active"))
-      if (!item.levels?.[l.id]?.trim())
-        errors.push(l.name + " description is required.");
   }
   if (item.status === "Inactive" && used(data, kind, item.id))
     errors.push("This item is in use and cannot be deactivated.");
