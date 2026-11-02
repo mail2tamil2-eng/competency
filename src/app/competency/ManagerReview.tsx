@@ -503,11 +503,14 @@ export function ManagerProofReviewPage({
     if (!proof) return;
     try {
       const next = reviewProof(data, work, proof.id, approved, remarks);
-      save(
-        next.data,
-        next.work,
-        approved ? "Proof approved." : "Proof rejected with feedback.",
-      );
+      let finalData = next.data;
+      let finalWork = next.work;
+      if (approved && selected.size > 0) {
+        const courseNext = saveCompletedCourses(finalData, finalWork, assignmentId, [...selected]);
+        finalData = courseNext.data;
+        finalWork = courseNext.work;
+      }
+      save(finalData, finalWork, approved ? "Proof approved." : "Proof rejected with feedback.");
       setRemarks("");
       setError("");
     } catch (e) {
@@ -585,12 +588,93 @@ export function ManagerProofReviewPage({
           </div>
         </div>
 
-        {/* RIGHT — actions + course selection */}
+        {/* RIGHT — course selection first, then decision, then log */}
         <div className="cm-proof-right">
+          {/* Mark completed courses — visible before AND after approval */}
+          {(proof?.status === "Under Review" || isApproved) && relevantLevels.length > 0 && (
+            <div className="cm-proof-actions-card">
+              <div className="cm-hier-header-row">
+                <h4>Mark completed courses</h4>
+                <span className="cm-hier-strip-text">
+                  {proof?.status === "Under Review"
+                    ? "Select courses completed, then approve below."
+                    : "Complete each level to unlock the next."}
+                </span>
+              </div>
+              <div className="cm-hier-levels">
+                {relevantLevels.map((level, li) => {
+                  const unlocked = isLevelUnlocked(li);
+                  const levelCourses = work.courses.filter((c) =>
+                    c.mappings.some((m) => m.skillId === a.skillId && m.levelId === level.id),
+                  );
+                  const doneCount = levelCourses.filter((c) => selected.has(c.id)).length;
+                  const allChecked = levelCourses.length > 0 && doneCount === levelCourses.length;
+                  const someChecked = doneCount > 0 && !allChecked;
+                  const levelState: "active" | "done" | "disabled" = !unlocked ? "disabled" : allChecked ? "done" : "active";
+                  return (
+                    <div key={level.id} className={`cm-hier-level cm-hier-level--${levelState}`}>
+                      <div className="cm-hier-level-header">
+                        <label className="cm-hier-level-label">
+                          <input
+                            type="checkbox"
+                            checked={allChecked}
+                            ref={(el) => { if (el) el.indeterminate = someChecked; }}
+                            disabled={!unlocked || levelCourses.length === 0}
+                            onChange={(e) => toggleLevel(li, e.target.checked)}
+                          />
+                          <span className={`cm-hier-num cm-hier-num--${levelState}`}>
+                            {allChecked ? <CheckCircle2 size={12} /> : li + 1}
+                          </span>
+                          <span className="cm-hier-name">{level.name}</span>
+                        </label>
+                        <div className="cm-hier-count">
+                          {levelCourses.length > 0 ? `${doneCount}/${levelCourses.length}` : "—"}
+                          {allChecked && <span className="cm-hier-done-chip">Complete</span>}
+                        </div>
+                      </div>
+                      {levelCourses.length > 0 && (
+                        <div className="cm-hier-courses">
+                          {levelCourses.map((c) => (
+                            <label key={c.id} className={`cm-hier-course${!unlocked ? " cm-hier-course--disabled" : ""}`}>
+                              <input
+                                type="checkbox"
+                                checked={selected.has(c.id)}
+                                disabled={!unlocked}
+                                onChange={() => toggleCourse(c.id, li)}
+                              />
+                              <BookOpen size={13} className="cm-hier-course-icon" />
+                              <span className="cm-hier-course-name">{c.name}</span>
+                              <span className="cm-hier-course-dur">{c.duration}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Save button only shown post-approval (during review, Approve does it) */}
+              {isApproved && (
+                <>
+                  {error && <p className="cm-error" role="alert">{error}</p>}
+                  <div className="cm-hier-save-row">
+                    <button
+                      className="cm-button primary"
+                      disabled={saving || (!hasChanges && !saved)}
+                      onClick={saveSelection}
+                    >
+                      {saving ? "Saving…" : saved ? "Saved ✓" : "Save completion"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {proof?.status === "Under Review" && (
             <div className="cm-proof-actions-card">
               <h4>Review decision</h4>
-              <p className="cm-hint">Approving confirms the learner's evidence. You can then mark completed courses below.</p>
+              <p className="cm-hint">Select completed courses above, then approve or reject the proof.</p>
               <label className="cm-proof-feedback-label">
                 Feedback <span className="cm-hint-inline">(required when rejecting)</span>
                 <textarea
