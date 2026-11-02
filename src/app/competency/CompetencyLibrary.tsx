@@ -253,7 +253,7 @@ function SkillInlineEdit({
                       onClick={() => setExpandedLevels((prev) => { const n = new Set(prev); n.has(l.id) ? n.delete(l.id) : n.add(l.id); return n; })}>
                       {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                       <span className="cm-level-row-name">{l.name}</span>
-                      <span className="cm-level-row-preview">{desc || <em>Description required</em>}</span>
+                      <span className="cm-level-row-preview">{desc || <em>No description</em>}</span>
                       <span className="cm-level-row-meta">{mapped.length > 0 ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}` : ""}</span>
                     </button>
                     {expanded && (

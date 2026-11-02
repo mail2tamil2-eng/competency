@@ -134,7 +134,7 @@ function SkillAccordionCard({
                       {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                       <span className="cm-level-row-name">{l.name}</span>
                       <span className="cm-level-row-preview">
-                        {desc || <em>Description required</em>}
+                        {desc || <em>No description</em>}
                       </span>
                       <span className="cm-level-row-meta">
                         {mapped.length > 0 ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}` : ""}
@@ -143,7 +143,7 @@ function SkillAccordionCard({
                     {expanded && (
                       <div className="cm-level-row-body">
                         <label>
-                          <span className="cm-req-label">Proficiency description <span className="req">*</span></span>
+                          <span>Proficiency description <span className="cm-field-optional">optional</span></span>
                           <textarea
                             rows={3}
                             aria-label={`${l.name} proficiency description`}
@@ -394,9 +394,6 @@ export function LibraryCreate({
         data.skills.some((x) => x.id !== s.id && x.name.trim().toLowerCase() === name.toLowerCase()))
     )
       issues.push(`${label}: this skill name already exists.`);
-    if (proficiency)
-      for (const l of levels)
-        if (!s.levels?.[l.id]?.trim()) issues.push(`${label}: describe ${l.name}.`);
     return issues;
   }
 
