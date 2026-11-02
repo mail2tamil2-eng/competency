@@ -177,29 +177,27 @@ export function Editor({
                 Level order
                 <input
                   type="number"
-                  min={1}
-                  max={item ? data.levels.length : data.levels.length + 1}
+                  readOnly
+                  disabled
                   value={draft.order ?? (item ? data.levels.length : data.levels.length + 1)}
-                  onChange={(e) => {
-                    const v = parseInt(e.target.value);
-                    setDraft((d) => ({ ...d, order: isNaN(v) ? undefined : v }));
-                  }}
                 />
               </label>
               <p className="cm-hint">Defines the proficiency sequence, from lowest to highest.</p>
             </>
           )}
-          <label>
-            Status
-            <select
-              value={draft.status}
-              onChange={(e) => set("status", e.target.value)}
-            >
-              <option>Active</option>
-              <option>Inactive</option>
-              {kind === "competencies" && <option>Draft</option>}
-            </select>
-          </label>
+          {kind !== "levels" && (
+            <label>
+              Status
+              <select
+                value={draft.status}
+                onChange={(e) => set("status", e.target.value)}
+              >
+                <option>Active</option>
+                <option>Inactive</option>
+                {kind === "competencies" && <option>Draft</option>}
+              </select>
+            </label>
+          )}
           <div className="cm-dialog-actions">
             <button type="button" className="cm-button" onClick={onClose}>
               Cancel
