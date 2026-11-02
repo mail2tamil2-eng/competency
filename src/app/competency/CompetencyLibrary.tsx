@@ -153,7 +153,7 @@ function SkillInlineEdit({
           <DialogHeader className="cm-picker-header">
             <DialogTitle>Map courses</DialogTitle>
             <DialogDescription>{draft.name.trim() || "New skill"} · {levelName}</DialogDescription>
-            <p className="cm-picker-hint">Select courses to support this proficiency level.</p>
+            <p className="cm-picker-hint">Select courses to support this proficiency level. Assign a weightage to each course to define its contribution.</p>
           </DialogHeader>
           <div className="cm-picker-controls">
             <div className="cm-picker-search">
@@ -165,6 +165,10 @@ function SkillInlineEdit({
               <button type="button" className={`cm-picker-filter-btn${!pickerShowSelected ? " active" : ""}`} onClick={() => setPickerShowSelected(false)}>All courses ({allCourses.length})</button>
               <button type="button" className={`cm-picker-filter-btn${pickerShowSelected ? " active" : ""}`} onClick={() => setPickerShowSelected(true)}>Selected ({pickerDraft.length})</button>
             </div>
+          </div>
+          <div className="cm-picker-col-header">
+            <span className="cm-picker-col-name">Course</span>
+            <span className="cm-picker-col-weight-label">Weightage (%)</span>
           </div>
           <div className="cm-picker-list" role="list">
             {pickerFiltered.length === 0 && (
@@ -179,22 +183,21 @@ function SkillInlineEdit({
                     else setPickerDraft((d) => d.filter((id) => id !== course.id));
                   }} />
                   <span className="cm-picker-name">{course.name}</span>
-                  {checked && (
-                    <div className="cm-picker-weight">
-                      <input
-                        type="number" min={0} max={100}
-                        value={pickerWeightages[course.id] ?? ""}
-                        placeholder="0"
-                        aria-label={`Weightage for ${course.name}`}
-                        onClick={(e) => e.preventDefault()}
-                        onChange={(e) => {
-                          const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
-                          setPickerWeightages((w) => ({ ...w, [course.id]: v }));
-                        }}
-                      />
-                      <span>%</span>
-                    </div>
-                  )}
+                  <div className={`cm-picker-weight${!checked ? " cm-picker-weight--disabled" : ""}`}>
+                    <input
+                      type="number" min={0} max={100}
+                      disabled={!checked}
+                      value={checked ? (pickerWeightages[course.id] ?? "") : ""}
+                      placeholder={checked ? "0" : ""}
+                      aria-label={`Weightage for ${course.name}`}
+                      onClick={(e) => e.preventDefault()}
+                      onChange={(e) => {
+                        const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                        setPickerWeightages((w) => ({ ...w, [course.id]: v }));
+                      }}
+                    />
+                    <span>%</span>
+                  </div>
                 </label>
               );
             })}
@@ -843,7 +846,7 @@ export function CompetencyLibrary({
               <DialogHeader className="cm-picker-header">
                 <DialogTitle>Map courses</DialogTitle>
                 <DialogDescription>{subtitle}</DialogDescription>
-                <p className="cm-picker-hint">Select courses to support this proficiency level.</p>
+                <p className="cm-picker-hint">Select courses to support this proficiency level. Assign a weightage to each course to define its contribution.</p>
               </DialogHeader>
               <div className="cm-picker-controls">
                 <div className="cm-picker-search">
@@ -867,6 +870,10 @@ export function CompetencyLibrary({
                   </button>
                 </div>
               </div>
+              <div className="cm-picker-col-header">
+                <span className="cm-picker-col-name">Course</span>
+                <span className="cm-picker-col-weight-label">Weightage (%)</span>
+              </div>
               <div className="cm-picker-list" role="list">
                 {pickerFiltered.length === 0 && (
                   <p className="cm-picker-empty">
@@ -885,22 +892,21 @@ export function CompetencyLibrary({
                         }}
                       />
                       <span className="cm-picker-name">{course.name}</span>
-                      {checked && (
-                        <div className="cm-picker-weight">
-                          <input
-                            type="number" min={0} max={100}
-                            value={lPickerWeightages[course.id] ?? ""}
-                            placeholder="0"
-                            aria-label={`Weightage for ${course.name}`}
-                            onClick={(e) => e.preventDefault()}
-                            onChange={(e) => {
-                              const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
-                              setLPickerWeightages((w) => ({ ...w, [course.id]: v }));
-                            }}
-                          />
-                          <span>%</span>
-                        </div>
-                      )}
+                      <div className={`cm-picker-weight${!checked ? " cm-picker-weight--disabled" : ""}`}>
+                        <input
+                          type="number" min={0} max={100}
+                          disabled={!checked}
+                          value={checked ? (lPickerWeightages[course.id] ?? "") : ""}
+                          placeholder={checked ? "0" : ""}
+                          aria-label={`Weightage for ${course.name}`}
+                          onClick={(e) => e.preventDefault()}
+                          onChange={(e) => {
+                            const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                            setLPickerWeightages((w) => ({ ...w, [course.id]: v }));
+                          }}
+                        />
+                        <span>%</span>
+                      </div>
                     </label>
                   );
                 })}
