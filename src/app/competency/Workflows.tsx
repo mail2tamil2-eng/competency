@@ -761,7 +761,7 @@ export function Learning({
             onChange={(e) => (onLearnerChange || setLocalKey)(e.target.value)}
           >
             {people.map(([id, a]) => (
-              <option key={id} value={id}>{a.name} Â· {a.department}</option>
+              <option key={id} value={id}>{a.name} · {a.department}</option>
             ))}
           </select>
         </div>
@@ -776,9 +776,19 @@ export function Learning({
         const inProgress = assignments.filter((a) => progress(data, a) === "In Progress").length;
         const notStarted = assignments.filter((a) => progress(data, a) === "Yet to Start").length;
         const pct = assignments.length ? Math.round((achieved / assignments.length) * 100) : 0;
-        const circumference = 2 * Math.PI * 26;
+        const circumference = 2 * Math.PI * 32;
+        const matchingPaths = emp?.role
+          ? (work.careerPaths ?? []).filter((cp) => cp.status === "Active" && cp.roles.includes(emp.role))
+          : [];
+        const cp = matchingPaths[0] ?? null;
+        const roleIdx = cp ? cp.roles.indexOf(emp!.role) : -1;
+        const isLast = cp ? roleIdx === cp.roles.length - 1 : false;
+        const nextRole = cp && !isLast ? cp.roles[roleIdx + 1] : null;
+        const threshold = cp && !isLast ? cp.thresholds[roleIdx] : null;
+        const meetsThreshold = threshold !== null && pct >= threshold!;
         return (
           <div className="cm-learner-header">
+            {/* Title + selector row */}
             <div className="cm-learner-header-top">
               <div className="cm-learner-title-block">
                 <h2>My Skills &amp; Learning Plan</h2>
@@ -790,35 +800,86 @@ export function Learning({
                 onChange={(e) => (onLearnerChange || setLocalKey)(e.target.value)}
               >
                 {people.map(([id, a]) => (
-                  <option key={id} value={id}>{a.name} Â· {a.department}</option>
+                  <option key={id} value={id}>{a.name} · {a.department}</option>
                 ))}
               </select>
             </div>
-            {(emp?.role || firstA?.department) && (
-              <div className="cm-learner-header-identity">
-                {firstA && <span className="cm-learner-identity-name">{firstA.name}</span>}
-                {emp?.role && <span className="cm-learner-identity-role">{emp.role}</span>}
-                {firstA?.department && <span className="cm-learner-identity-dept">{firstA.department}</span>}
-              </div>
-            )}
-            {assignments.length > 0 && (
-              <div className="cm-learner-header-metrics">
-                <div className="cm-learner-progress-ring">
-                  <svg viewBox="0 0 64 64" aria-hidden="true">
-                    <circle cx="32" cy="32" r="26" fill="none" stroke="#dce8ff" strokeWidth="7" />
+
+            {/* Career strip: Current Role | Donut | Next Role */}
+            {cp && emp?.role && (
+              <div className="cm-lch-strip">
+                <div className="cm-lch-role-col">
+                  <span className="cm-lch-label">Current Role</span>
+                  <span className="cm-lch-chip cm-lch-chip--current">{emp.role}</span>
+                </div>
+                <div className="cm-lch-center-col">
+                  <svg viewBox="0 0 80 80" className="cm-lch-donut" aria-hidden="true">
+                    <circle cx="40" cy="40" r="32" fill="none" stroke="#dce8ff" strokeWidth="8" />
                     {pct > 0 && (
                       <circle
-                        cx="32" cy="32" r="26" fill="none"
-                        stroke="#2463d6" strokeWidth="7"
+                        cx="40" cy="40" r="32" fill="none"
+                        stroke="#2463d6" strokeWidth="8"
                         strokeDasharray={`${circumference * pct / 100} ${circumference}`}
                         strokeLinecap="round"
-                        transform="rotate(-90 32 32)"
+                        transform="rotate(-90 40 40)"
                       />
                     )}
-                    <text x="32" y="37" textAnchor="middle" className="cm-lp-donut-txt">{pct}%</text>
+                    <text x="40" y="46" textAnchor="middle" className="cm-lch-donut-pct">{pct}%</text>
                   </svg>
-                  <span>Overall Progress</span>
+                  <span className="cm-lch-label">Role Competency Progress</span>
                 </div>
+                <div className="cm-lch-role-col cm-lch-role-col--right">
+                  <span className="cm-lch-label">{nextRole ? "Next Role" : "Status"}</span>
+                  <span className={`cm-lch-chip cm-lch-chip--next${meetsThreshold ? " ready" : ""}`}>
+                    {nextRole ?? "Top of Path"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Career chain */}
+            {cp && (
+              <div className="cm-lch-chain">
+                {cp.roles.map((role, i) => (
+                  <Fragment key={i}>
+                    <div className={`cm-lch-node${i < roleIdx ? " past" : i === roleIdx ? " current" : " future"}`}>
+                      <span className="cm-lch-node-num">
+                        {i < roleIdx ? <CheckCircle2 size={10} /> : i + 1}
+                      </span>
+                      <span className="cm-lch-node-name">{role}</span>
+                    </div>
+                    {i < cp.roles.length - 1 && (
+                      <div className="cm-lch-sep">
+                        <span className="cm-lch-arrow">›</span>
+                        {cp.thresholds[i] && <span className="cm-lch-threshold">{cp.thresholds[i]}%</span>}
+                      </div>
+                    )}
+                  </Fragment>
+                ))}
+              </div>
+            )}
+
+            {/* Stats row */}
+            {assignments.length > 0 && (
+              <div className="cm-learner-header-metrics">
+                {!cp && (
+                  <div className="cm-learner-progress-ring">
+                    <svg viewBox="0 0 64 64" aria-hidden="true">
+                      <circle cx="32" cy="32" r="26" fill="none" stroke="#dce8ff" strokeWidth="7" />
+                      {pct > 0 && (
+                        <circle
+                          cx="32" cy="32" r="26" fill="none"
+                          stroke="#2463d6" strokeWidth="7"
+                          strokeDasharray={`${2 * Math.PI * 26 * pct / 100} ${2 * Math.PI * 26}`}
+                          strokeLinecap="round"
+                          transform="rotate(-90 32 32)"
+                        />
+                      )}
+                      <text x="32" y="37" textAnchor="middle" className="cm-lp-donut-txt">{pct}%</text>
+                    </svg>
+                    <span>Overall Progress</span>
+                  </div>
+                )}
                 <div className="cm-learner-stat-grid">
                   <div className="cm-learner-stat-card cm-lsc--total">
                     <strong>{assignments.length}</strong>
@@ -844,7 +905,7 @@ export function Learning({
       })()}
       {manager && (
         <p className="cm-hint">
-          Manager preview Â· All demo employees are shown. Production access must be limited to authorized reportees.
+          Manager preview · All demo employees are shown. Production access must be limited to authorized reportees.
         </p>
       )}
 

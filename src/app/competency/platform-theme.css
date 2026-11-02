@@ -1424,6 +1424,150 @@ section.cm-learner {
 .cm-lsc--notstarted { border-top-color: #9ca3af; }
 .cm-lsc--notstarted strong { color: #9ca3af; }
 
+/* ── Career strip inside learner header ── */
+.cm-lch-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 18px 24px;
+  background: #f3f6fd;
+  border-radius: 14px;
+  border: 1px solid #dde7f8;
+}
+.cm-lch-role-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 130px;
+}
+.cm-lch-role-col--right {
+  align-items: flex-end;
+}
+.cm-lch-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #8a99b3;
+}
+.cm-lch-chip {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 30px;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.cm-lch-chip--current {
+  background: #2463d6;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(36, 99, 214, 0.28);
+}
+.cm-lch-chip--next {
+  background: #fff;
+  color: #2463d6;
+  border: 2px solid #2463d6;
+}
+.cm-lch-chip--next.ready {
+  background: #e9f0ff;
+}
+.cm-lch-center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+.cm-lch-donut {
+  width: 88px;
+  height: 88px;
+}
+.cm-lch-donut-pct {
+  font-size: 16px;
+  font-weight: 800;
+  fill: #1a2540;
+  font-family: inherit;
+}
+
+/* Career chain row */
+.cm-lch-chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #f8faff;
+  border-radius: 10px;
+  border: 1px solid #e8edf7;
+}
+.cm-lch-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1.5px solid #e0e6f2;
+  white-space: nowrap;
+}
+.cm-lch-node.current {
+  background: #2463d6;
+  color: #fff;
+  border-color: #2463d6;
+}
+.cm-lch-node.past {
+  background: #e9f5ee;
+  color: #16a34a;
+  border-color: #b3ddc4;
+}
+.cm-lch-node-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+.cm-lch-node.current .cm-lch-node-num { background: rgba(255, 255, 255, 0.22); }
+.cm-lch-node.past    .cm-lch-node-num { background: transparent; color: #16a34a; }
+.cm-lch-sep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  color: #b0bcd4;
+  flex-shrink: 0;
+}
+.cm-lch-arrow {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+}
+.cm-lch-threshold {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9ca3af;
+  line-height: 1.2;
+}
+
+@media (max-width: 680px) {
+  .cm-lch-strip { flex-direction: column; align-items: stretch; gap: 14px; padding: 14px 16px; }
+  .cm-lch-role-col, .cm-lch-role-col--right { align-items: center; }
+  .cm-lch-center-col { order: -1; }
+  .cm-lch-chain { overflow-x: auto; flex-wrap: nowrap; }
+}
+
 /* Overall progress bar — inside the blue banner (legacy, kept for manager view) */
 .cm-banner-progress {
   flex: 0 0 100%;
