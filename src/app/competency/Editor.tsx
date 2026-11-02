@@ -182,7 +182,6 @@ export function Editor({
                   value={draft.order ?? (item ? data.levels.length : data.levels.length + 1)}
                 />
               </label>
-              <p className="cm-hint">Defines the proficiency sequence, from lowest to highest.</p>
             </>
           )}
           {kind !== "levels" && (
