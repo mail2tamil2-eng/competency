@@ -122,7 +122,7 @@ export function BulkUpload({
     >
       <DialogContent className="cm-dialog cm-wide">
         <DialogHeader>
-          <DialogTitle>Bulk upload {kind}</DialogTitle>
+          <DialogTitle>Bulk Upload {kind}</DialogTitle>
           <DialogDescription>
             Add multiple {kind} together. Review every row before anything is
             saved.
@@ -130,12 +130,12 @@ export function BulkUpload({
         </DialogHeader>
         <div className="cm-steps">
           <span className="active">1 · Prepare CSV</span>
-          <span className={rows.length ? "active" : ""}>2 · Review rows</span>
+          <span className={rows.length ? "active" : ""}>2 · Review Rows</span>
           <span>3 · Import</span>
         </div>
         <div className="cm-template">
           <div>
-            <strong>Start with the template</strong>
+            <strong>Start with the Template</strong>
             <p>
               Use existing category{kind === "skills" ? " and competency" : ""}{" "}
               names. Up to 1,000 rows · CSV · 2 MB.
@@ -146,7 +146,7 @@ export function BulkUpload({
             onClick={() => download(kind + "-template.csv", [headers])}
           >
             <Download size={16} />
-            Download template
+            Download Template
           </button>
         </div>
         <label
@@ -161,7 +161,7 @@ export function BulkUpload({
           <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
           <span>Nothing is imported until you confirm.</span>
           <input
-            aria-label="CSV file"
+            aria-label="CSV File"
             type="file"
             accept=".csv,text/csv"
             disabled={busy}
@@ -178,11 +178,11 @@ export function BulkUpload({
           <>
             <div className="cm-toolbar">
               <strong>
-                <FileCheck2 size={18} /> {rows.length} rows reviewed
+                <FileCheck2 size={18} /> {rows.length} Rows Reviewed
               </strong>
               <span>
-                {rows.length - invalid.length} ready · {invalid.length} need
-                attention
+                {rows.length - invalid.length} Ready · {invalid.length} Need
+                Attention
               </span>
               {invalid.length > 0 && (
                 <button
@@ -198,7 +198,7 @@ export function BulkUpload({
                     ])
                   }
                 >
-                  Download errors
+                  Download Errors
                 </button>
               )}
             </div>

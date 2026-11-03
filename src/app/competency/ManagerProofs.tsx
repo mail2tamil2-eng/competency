@@ -1,3 +1,5 @@
+import { titleCaseLabel } from "./displayText";
+import { statusText } from "./displayText";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { ClipboardCheck, Search } from "lucide-react";
@@ -51,15 +53,15 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
     <div className="cm-manager">
       <ManagerNavigation />
       <div className="cm-manager-stats">
-        {["All submissions", "Under Review", "Approved", "Rejected"].map(
+        {["All Submissions", "Under Review", "Approved", "Rejected"].map(
           (label) => (
             <article key={label}>
               <div>
-                <span>{label}</span>
+                <span>{statusText(label)}</span>
                 <ClipboardCheck size={18} />
               </div>
               <strong>
-                {label === "All submissions"
+                {label === "All Submissions"
                   ? submissions.length
                   : submissions.filter((x) => x.proof.status === label).length}
               </strong>
@@ -75,7 +77,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
       <section className="cm-card">
         <div className="cm-section-head">
           <div>
-            <h3>Submitted evidence</h3>
+            <h3>Submitted Evidence</h3>
             <p>
               Open a submission to see its proof, mapped skill level, and review
               actions.
@@ -86,7 +88,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
           <label className="cm-search" style={{ flex: 1, minWidth: 220 }}>
             <Search size={16} />
             <input
-              aria-label="Search proof submissions"
+              aria-label="Search Proof Submissions"
               placeholder="Search reportee or skill…"
               value={query}
               onChange={(e) => {
@@ -96,16 +98,16 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
             />
           </label>
           <select
-            aria-label="Filter proof status"
+            aria-label="Filter Proof Status"
             value={status}
             onChange={(e) => {
               setParams(e.target.value ? { status: e.target.value } : {});
               setPage(0);
             }}
           >
-            <option value="">All proof statuses</option>
+            <option value="">All Proof Statuses</option>
             {["Under Review", "Approved", "Rejected"].map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>{statusText(s)}</option>
             ))}
           </select>
           {(query || status) && (
@@ -117,14 +119,14 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
                 setPage(0);
               }}
             >
-              Clear filters
+              Clear Filters
             </button>
           )}
         </div>
         <div
           className="cm-table-wrap"
           role="region"
-          aria-label="Proof submissions table"
+          aria-label="Proof Submissions Table"
           tabIndex={0}
         >
           <table className="cm-manager-table">
@@ -139,7 +141,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
                   "Action",
                 ].map((h) => (
                   <th key={h} scope="col">
-                    {h}
+                    {titleCaseLabel(h)}
                   </th>
                 ))}
               </tr>
@@ -169,7 +171,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
                       <span
                         className={`cm-manager-status ${proof.status === "Approved" ? "success" : proof.status === "Rejected" ? "rejected" : "pending"}`}
                       >
-                        {proof.status}
+                        {statusText(proof.status)}
                       </span>
                     </td>
                     <td>
@@ -179,8 +181,8 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
                         onClick={() => setSelected(proof.id)}
                       >
                         {proof.status === "Under Review"
-                          ? "Review proof"
-                          : "View decision"}
+                          ? "Review Proof"
+                          : "View Decision"}
                       </button>
                     </td>
                   </tr>

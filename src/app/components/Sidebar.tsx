@@ -34,7 +34,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     >
       {/* Toggle Button — placed below the header (top-20 = 80px) */}
       <button
-        aria-label="Toggle sidebar"
+        aria-label="Toggle Sidebar"
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-3 top-[88px] w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-md z-40"
       >
@@ -151,7 +151,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               exit={{ opacity: 0 }}
               className="text-center text-xs text-gray-400"
             >
-              Powered By{" "}
+              Powered by{" "}
               <span className="font-semibold text-gray-500">NOVACTECH</span>
             </motion.div>
           ) : (

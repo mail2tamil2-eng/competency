@@ -10,7 +10,7 @@ interface CreateCourseModalProps {
 const creationMethods = [
   {
     id: 'ppt-pdf',
-    title: 'PPT/PDF to SCORM',
+    title: "PPT/PDF to SCORM",
     description: 'Convert your existing PowerPoint or PDF files into SCORM packages. Quick and easy way to get started.',
     icon: FileText,
     iconColor: 'text-blue-600',
@@ -18,7 +18,7 @@ const creationMethods = [
   },
   {
     id: 'custom',
-    title: 'Custom Course Creation',
+    title: "Custom Course Creation",
     description: 'Build comprehensive courses with videos, PDFs, audio narration, and interactive quizzes.',
     icon: Layers,
     iconColor: 'text-purple-600',
@@ -26,7 +26,7 @@ const creationMethods = [
   },
   {
     id: 'ai-generated',
-    title: 'AI-Generated Course',
+    title: "AI-Generated Course",
     description: 'Let AI help you structure and create course content with smart learning paths and automated organization.',
     icon: Sparkles,
     iconColor: 'text-orange-600',

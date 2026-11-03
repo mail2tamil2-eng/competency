@@ -145,21 +145,21 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Role progression</h2>
+          <h2>Role Progression</h2>
           <p>Configure career paths and progression thresholds for employee development.</p>
         </div>
         <button className="cm-button primary" onClick={() => begin()}>
-          <Plus size={16} /> Create career path
+          <Plus size={16} /> Create Career Path
         </button>
       </div>
 
       {paths.length === 0 ? (
         <div className="cm-empty">
           <Route size={28} />
-          <h3>No career paths configured</h3>
+          <h3>No Career Paths Configured</h3>
           <p>Create a career path to define role progressions and help learners plan their growth.</p>
           <button className="cm-button" onClick={() => begin()}>
-            Create your first career path
+            Create Your First Career Path
           </button>
         </div>
       ) : (
@@ -239,7 +239,7 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
           <DialogContent className="cm-dialog cm-cp-dialog">
             <DialogHeader>
               <DialogTitle>
-                {paths.some((p) => p.id === draft.id) ? "Edit" : "Create"} career path
+                {paths.some((p) => p.id === draft.id) ? "Edit" : "Create"} Career Path
               </DialogTitle>
               <DialogDescription>
                 Define the role sequence and the completion threshold required for each transition.
@@ -254,7 +254,7 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
 
             <label>
               <span className="cm-req-label">
-                Career path name <span className="req">*</span>
+                Career Path Name <span className="req">*</span>
               </span>
               <input
                 autoFocus
@@ -275,7 +275,7 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
                       value={role}
                       onChange={(e) => updateRole(i, e.target.value)}
                     >
-                      <option value="">Select role</option>
+                      <option value="">Select Role</option>
                       {allRoles.map((r) => (
                         <option
                           key={r}
@@ -310,7 +310,7 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
                             value={draft.thresholds[i]}
                             onChange={(e) => updateThreshold(i, e.target.value)}
                           />
-                          <span>% completion required to advance</span>
+                          <span>% Completion Required to Advance</span>
                         </label>
                       </div>
                     </div>
@@ -320,7 +320,7 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
 
               {draft.roles.length < MAX_ROLES ? (
                 <button type="button" className="cm-cp-add-role-btn" onClick={addRole}>
-                  <Plus size={13} /> Add next role
+                  <Plus size={13} /> Add Next Role
                 </button>
               ) : (
                 <p className="cm-field-hint" style={{ marginTop: 8 }}>
@@ -331,7 +331,7 @@ export function CareerProgressionConfig({ data, work, save }: Props) {
 
             <div className="cm-dialog-actions">
               <button className="cm-button" onClick={() => setDraft(null)}>Cancel</button>
-              <button className="cm-button primary" onClick={savePath}>Save career path</button>
+              <button className="cm-button primary" onClick={savePath}>Save Career Path</button>
             </div>
           </DialogContent>
         </Dialog>

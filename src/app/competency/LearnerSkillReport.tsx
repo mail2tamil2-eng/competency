@@ -1,3 +1,5 @@
+import { titleCaseLabel } from "./displayText";
+import { statusText } from "./displayText";
 import { useState } from "react";
 import { Data, progress, download } from "./model";
 import { WorkflowData } from "./workflowModel";
@@ -54,18 +56,18 @@ export function LearnerSkillReport({
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Skill progress report</h2>
+          <h2>Skill Progress Report</h2>
           <p>Track assigned skills and progress towards expected levels across all learners.</p>
         </div>
       </div>
 
       <div className="cm-report-filters" style={{ alignItems: "flex-end", gap: 12 }}>
         <span style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 180 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>Skill name</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "none", lineHeight: 1 }}>Skill Name</span>
           <label className="cm-search">
             <Search size={15} />
             <input
-              aria-label="Search skill"
+              aria-label="Search Skill"
               placeholder="Search skill name…"
               value={query}
               onChange={(e) => { setQuery(e.target.value); setPage(0); }}
@@ -74,32 +76,32 @@ export function LearnerSkillReport({
         </span>
 
         <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>Status</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "none", lineHeight: 1 }}>Status</span>
           <select
-            aria-label="Filter by status"
+            aria-label="Filter by Status"
             value={statusFilter}
             onChange={(e) => { setStatus(e.target.value); setPage(0); }}
           >
-            <option value="">All statuses</option>
+            <option value="">All Statuses</option>
             {["Completed", "In Progress", "Yet to Start"].map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>{statusText(s)}</option>
             ))}
           </select>
         </span>
 
         <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>Enrol date</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "none", lineHeight: 1 }}>Enrol Date</span>
           <span className="cm-date-range">
             <input
               type="date"
-              aria-label="Enrol from"
+              aria-label="Enrol From"
               value={enrollFrom}
               onChange={(e) => { setEnrollFrom(e.target.value); setPage(0); }}
             />
             <span className="cm-date-range-sep">–</span>
             <input
               type="date"
-              aria-label="Enrol to"
+              aria-label="Enrol To"
               value={enrollTo}
               onChange={(e) => { setEnrollTo(e.target.value); setPage(0); }}
             />
@@ -107,18 +109,18 @@ export function LearnerSkillReport({
         </span>
 
         <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>Completed date</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#526176", letterSpacing: "0.04em", textTransform: "none", lineHeight: 1 }}>Completed Date</span>
           <span className="cm-date-range">
             <input
               type="date"
-              aria-label="Completed from"
+              aria-label="Completed From"
               value={completeFrom}
               onChange={(e) => { setCompleteFrom(e.target.value); setPage(0); }}
             />
             <span className="cm-date-range-sep">–</span>
             <input
               type="date"
-              aria-label="Completed to"
+              aria-label="Completed To"
               value={completeTo}
               onChange={(e) => { setCompleteTo(e.target.value); setPage(0); }}
             />
@@ -134,7 +136,7 @@ export function LearnerSkillReport({
           style={{ marginLeft: "auto" }}
           onClick={() =>
             download("skill-progress-report.csv", [
-              ["Learner", "Role", "Department", "Assigned skill", "Current level", "Expected level", "Skill gap", "Enrol date", "Completed date", "Status"],
+              ["Learner", "Role", "Department", "Assigned skill", "Current Level", "Expected Level", "Skill Gap", "Enrol date", "Completed Date", "Status"],
               ...rows.map((a) => {
                 const emp = employeeFor(work, a);
                 const gap = skillGap(data, a);
@@ -155,12 +157,12 @@ export function LearnerSkillReport({
         </button>
       </div>
 
-      <div className="cm-table-wrap" role="region" aria-label="Skill progress report" tabIndex={0}>
+      <div className="cm-table-wrap" role="region" aria-label="Skill Progress Report" tabIndex={0}>
         <table>
           <thead>
             <tr>
-              {["Assigned skill", "Current level", "Expected level", "Skill gap", "Enrol date", "Completed date", "Status"].map((h) => (
-                <th key={h}>{h}</th>
+              {["Assigned skill", "Current Level", "Expected Level", "Skill Gap", "Enrol date", "Completed Date", "Status"].map((h) => (
+                <th key={h}>{titleCaseLabel(h)}</th>
               ))}
             </tr>
           </thead>
@@ -174,14 +176,14 @@ export function LearnerSkillReport({
                   <td>{levelName(data, a.expected)}</td>
                   <td>
                     {gap != null ? gap : (
-                      <span className="cm-muted-dash" title="Current level needed to calculate gap">—</span>
+                      <span className="cm-muted-dash" title="Current Level Needed to Calculate Gap">—</span>
                     )}
                   </td>
                   <td>{a.assignedDate?.slice(0, 10) || <span className="cm-muted-dash">—</span>}</td>
                   <td>{a.completedDate?.slice(0, 10) || <span className="cm-muted-dash">—</span>}</td>
                   <td>
                     <span className={`cm-manager-status ${progress(data, a) === "Completed" ? "success" : progress(data, a) === "In Progress" ? "pending" : ""}`}>
-                      {progress(data, a)}
+                      {statusText(progress(data, a))}
                     </span>
                   </td>
                 </tr>

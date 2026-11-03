@@ -117,7 +117,7 @@ function ChipSelectField({
                 style={{ fontSize: 13 }}
                 onClick={() => { onChange([]); }}
               >
-                Clear all
+                Clear All
               </button>
               <button
                 type="button"
@@ -153,21 +153,18 @@ export function AssignmentConfiguration({
   return (
     <div className="cm-assignment-config">
       <section className="cm-config-section">
-        <h3>Assignment name</h3>
+        <h3>Assignment Details</h3>
         <label>
-          <span className="cm-req-label">Name <span className="req">*</span></span>
+          <span className="cm-req-label">Assignment Name <span className="req">*</span></span>
           <input
             autoFocus
-            aria-label="Assignment name"
+            aria-label="Assignment Name"
             value={draft.name}
             onChange={(e) => onChange({ ...draft, name: e.target.value })}
             placeholder="e.g. Sales communication skills"
           />
         </label>
-      </section>
-
-      <section className="cm-config-section">
-        <h3>Competencies &amp; skills</h3>
+        <h4>Competencies &amp; Skills</h4>
         <AssignmentSkills
           data={data}
           selected={draft.skills}
@@ -176,12 +173,12 @@ export function AssignmentConfiguration({
       </section>
 
       <section className="cm-config-section">
-        <h3>Enrolment &amp; audience</h3>
+        <h3>Enrolment &amp; Audience</h3>
         <div className="cm-config-grid">
           <label>
             Method
             <select
-              aria-label="Enrolment method"
+              aria-label="Enrolment Method"
               aria-describedby="enrolment-method-help"
               value={draft.method}
               onChange={(e) =>
@@ -205,7 +202,7 @@ export function AssignmentConfiguration({
           <label>
             Type
             <select
-              aria-label="Enrolment type"
+              aria-label="Enrolment Type"
               aria-describedby="enrolment-type-help"
               disabled={draft.method === "Manual"}
               value={draft.type}
@@ -231,7 +228,7 @@ export function AssignmentConfiguration({
           />
         ) : (
           <div className="cm-auto-audience">
-            <h4>User profile</h4>
+            <h4>User Profile</h4>
             <p>Users matching <strong>any</strong> value in each field will be enrolled. Leave empty to include all.</p>
             <div className="cm-audience-fields">
               <ChipSelectField label="Department" field="department" options={allDepts}
@@ -252,10 +249,10 @@ export function AssignmentConfiguration({
         <h3>Schedule</h3>
         <div className="cm-config-grid cm-schedule-grid">
           <label>
-            <span className="cm-req-label">Start date <span className="req">*</span></span>
+            <span className="cm-req-label">Start Date <span className="req">*</span></span>
             <input
               type="date"
-              aria-label="Start date"
+              aria-label="Start Date"
               min={today}
               value={draft.start}
               onChange={(e) => onChange({ ...draft, start: e.target.value })}
@@ -274,12 +271,12 @@ export function AssignmentConfiguration({
                   })
                 }
               />
-              End date
+              End Date
             </label>
             {draft.hasEndDate ? (
               <input
                 type="date"
-                aria-label="End date"
+                aria-label="End Date"
                 min={draft.start || today}
                 value={draft.end}
                 onChange={(e) => onChange({ ...draft, end: e.target.value })}
@@ -292,17 +289,17 @@ export function AssignmentConfiguration({
       </section>
 
       <section className="cm-config-section">
-        <h3>Learning progression</h3>
+        <h3>Learning Progression</h3>
         <label>
-          Progression type
+          Progression Type
           <select
-            aria-label="Learning progression type"
+            aria-label="Learning Progression Type"
             value={draft.progressionType || "level-wise"}
             onChange={(e) => onChange({ ...draft, progressionType: e.target.value as Plan["progressionType"] })}
           >
-            <option value="level-wise">Level-wise — L1 → L2 → L3 within each skill</option>
-            <option value="skill-wise">Skill-wise — complete one skill before the next</option>
-            <option value="competency-wise">Competency-wise — complete one competency before the next</option>
+            <option value="level-wise">Level-Wise — L1 → L2 → L3 within each skill</option>
+            <option value="skill-wise">Skill-Wise — complete one skill before the next</option>
+            <option value="competency-wise">Competency-Wise — complete one competency before the next</option>
             <option value="independent">Independent — all learning available at once</option>
           </select>
           <small>

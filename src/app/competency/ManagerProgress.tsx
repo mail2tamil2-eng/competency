@@ -1,3 +1,5 @@
+import { titleCaseLabel } from "./displayText";
+import { statusText } from "./displayText";
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { ManagerProofs } from "./ManagerProofs";
@@ -108,7 +110,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
         <div className="cm-actions">
           <button className="cm-button" onClick={() => go("all")}>
             <ArrowLeft size={16} />
-            Back to all reportees
+            Back to All Reportees
           </button>
         </div>
       )}
@@ -116,9 +118,9 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
       {view === "detail" && (
         <nav
           className="cm-manager-breadcrumb"
-          aria-label="Team progress navigation"
+          aria-label="Team Progress Navigation"
         >
-          <button onClick={() => go("all")}>All reportees</button>
+          <button onClick={() => go("all")}>All Reportees</button>
           <span>/</span>
           <span>{selectedPerson?.name}</span>
         </nav>
@@ -129,7 +131,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
             <h3>
               {view === "detail"
                 ? `${selectedPerson?.name || "Reportee"} — Skills & progress`
-                : "All reportees"}
+                : "All Reportees"}
             </h3>
             <p>
               {view === "detail"
@@ -159,11 +161,11 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
           <label className="cm-search" style={{ flex: 1, minWidth: 220 }}>
             <Search size={16} />
             <input
-              aria-label="Search team progress"
+              aria-label="Search Team Progress"
               placeholder={
                 view === "detail"
-                  ? "Search competency or skill…"
-                  : "Search name, email or skill…"
+                  ? "search competency or skill…"
+                  : "search name, email or skill…"
               }
               value={query}
               onChange={(e) => {
@@ -173,14 +175,14 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
             />
           </label>
           <select
-            aria-label="Filter competency"
+            aria-label="Filter Competency"
             value={competency}
             onChange={(e) => {
               setCompetency(e.target.value);
               setPage(0);
             }}
           >
-            <option value="">All competencies</option>
+            <option value="">All Competencies</option>
             {data.competencies.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -188,16 +190,16 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
             ))}
           </select>
           <select
-            aria-label="Filter progress status"
+            aria-label="Filter Progress Status"
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
               setPage(0);
             }}
           >
-            <option value="">All progress statuses</option>
+            <option value="">All Progress Statuses</option>
             {["Completed", "In Progress", "Yet to Start"].map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>{statusText(s)}</option>
             ))}
           </select>
           {(query || competency || status) && (
@@ -210,7 +212,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                 setPage(0);
               }}
             >
-              Clear filters
+              Clear Filters
             </button>
           )}
         </div>
@@ -230,28 +232,28 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                 {(view === "detail"
                   ? [
                       "Skill",
-                      "Current level",
-                      "Expected level",
+                      "Current Level",
+                      "Expected Level",
                       "Gap",
                       "Progress",
-                      "Assigned date",
-                      "Completed date",
+                      "Assigned Date",
+                      "Completed Date",
                       "Action",
                     ]
                   : [
                       "Reportee",
                       "Email ID",
                       "Role",
-                      "Assigned skills",
+                      "Assigned Skills",
                       "Completed",
-                      "In progress",
-                      "Yet to start",
+                      "In Progress",
+                      "Yet to Start",
                       "Completion %",
                       "Action",
                     ]
                 ).map((h) => (
                   <th key={h} scope="col">
-                    {h}
+                    {titleCaseLabel(h)}
                   </th>
                 ))}
               </tr>
@@ -293,7 +295,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                               aria-label={`Update level for ${skill(a)?.name}`}
                               onClick={() => setEditing(a.id)}
                             >
-                              Update level
+                              Update Level
                             </button>
                           </td>
                         </tr>
@@ -343,7 +345,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                               aria-label={`View skills for ${items[0].name}`}
                               onClick={() => go("detail", id)}
                             >
-                              View skills <ArrowRight size={14} />
+                              View Skills <ArrowRight size={14} />
                             </button>
                           </td>
                         </tr>
@@ -405,7 +407,7 @@ export function StatusBadge({ status }: { status: string }) {
     <span
       className={`cm-manager-status ${status === "Completed" || status === "Approved" ? "success" : status === "Rejected" ? "rejected" : status === "In Progress" || status === "Under Review" ? "pending" : ""}`}
     >
-      {status}
+      {statusText(status)}
     </span>
   );
 }

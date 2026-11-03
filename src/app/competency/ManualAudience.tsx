@@ -39,17 +39,17 @@ export function ManualAudience({
   return (
     <section
       className="cm-manual-audience"
-      aria-label="Manual learner selection"
+      aria-label="Manual Learner Selection"
     >
-      <h4>Select learners</h4>
+      <h4>Select Learners</h4>
       <p>
         Search by name, email or user ID. Selections stay selected when you
         change filters or pages.
       </p>
       <label>
-        Search learners
+        Search Learners
         <input
-          aria-label="Search learners"
+          aria-label="Search Learners"
           value={query}
           placeholder="Name, email or user ID"
           onChange={(e) => {
@@ -76,7 +76,7 @@ export function ManualAudience({
                 setPage(0);
               }}
             >
-              <option value="">All {label.toLowerCase()}s</option>
+              <option value="">All {label.toLowerCase()}S</option>
               {[...new Set(employees.map((e) => e[field]).filter(Boolean))]
                 .sort()
                 .map((v) => (
@@ -89,8 +89,8 @@ export function ManualAudience({
         ))}
       </div>
       <div className="cm-selection-summary">
-        <strong role="status">{selected.length} learners selected</strong>
-        <span>{matches.length} matching users</span>
+        <strong role="status">{selected.length} Learners Selected</strong>
+        <span>{matches.length} Matching Users</span>
         <label className="cm-inline-check">
           <input
             type="checkbox"
@@ -100,7 +100,7 @@ export function ManualAudience({
               setPage(0);
             }}
           />
-          Selected learners only
+          Selected Learners Only
         </label>
       </div>
       <div className="cm-actions cm-selection-actions">
@@ -110,7 +110,7 @@ export function ManualAudience({
           disabled={!shown.length}
           onClick={() => add(shown)}
         >
-          Select this page ({shown.length})
+          Select This Page ({shown.length})
         </button>
         <button
           type="button"
@@ -118,7 +118,7 @@ export function ManualAudience({
           disabled={!matches.length}
           onClick={() => add(matches)}
         >
-          Select all matching ({matches.length})
+          Select All Matching ({matches.length})
         </button>
         <button
           type="button"
@@ -126,7 +126,7 @@ export function ManualAudience({
           disabled={!selected.length}
           onClick={() => onChange([])}
         >
-          Clear selection
+          Clear Selection
         </button>
       </div>
       <ManagerPageSize
@@ -139,16 +139,16 @@ export function ManualAudience({
       <div
         className="cm-table-wrap"
         role="region"
-        aria-label="Available learners"
+        aria-label="Available Learners"
         tabIndex={0}
       >
         <table>
           <thead>
             <tr>
               <th>Select</th>
-              <th>Learner / email</th>
+              <th>Learner / Email</th>
               <th>User ID</th>
-              <th>Department / role</th>
+              <th>Department / Role</th>
               <th>Cohort</th>
             </tr>
           </thead>

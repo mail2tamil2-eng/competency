@@ -9,7 +9,7 @@ export function ManagerPageSize({
     <label className="cm-entry-count">
       Show{" "}
       <select
-        aria-label="Entries per page"
+        aria-label="Entries per Page"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       >
@@ -43,10 +43,10 @@ export function ManagerPagination({
   return (
     <div className="cm-pagination cm-platform-pagination">
       <span role="status">
-        Showing {total ? page * pageSize + 1 : 0} to{" "}
-        {Math.min((page + 1) * pageSize, total)} of {total} entries
+        Showing {total ? page * pageSize + 1 : 0} To{" "}
+        {Math.min((page + 1) * pageSize, total)} Of {total} Entries
       </span>
-      <nav aria-label="Table pagination">
+      <nav aria-label="Table Pagination">
         <button
           className="cm-button"
           disabled={page === 0}

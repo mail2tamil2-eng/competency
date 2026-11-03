@@ -1,3 +1,4 @@
+import { titleCaseLabel } from "./displayText";
 import { useState } from "react";
 import { ArrowLeft, Download, Search } from "lucide-react";
 import { Data, Assignment, download, progress } from "./model";
@@ -14,9 +15,9 @@ import { ManagerPageSize, ManagerPagination } from "./ManagerPagination";
 import { StatusBadge } from "./ManagerProgress";
 
 export const learnerReportHeaders = [
-  "User ID", "Learner name", "Email ID", "Role", "Department",
-  "Reporting manager", "Skill", "Current level", "Expected level",
-  "Skill gap", "Assigned date", "Completed date",
+  "User ID", "Learner Name", "Email ID", "Role", "Department",
+  "Reporting Manager", "Skill", "Current Level", "Expected Level",
+  "Skill Gap", "Assigned Date", "Completed Date",
 ];
 
 export function learnerReportRows(data: Data, work: WorkflowData) {
@@ -137,7 +138,7 @@ function DetailView({
       </div>
       <div className="cm-section-head">
         <div>
-          <h2>{ctxLabel} — detail view</h2>
+          <h2>{ctxLabel} — Detail View</h2>
           <p>Showing {filterLabel} records{ctx.filter !== "all" ? " only" : ""}.</p>
         </div>
         <button className="cm-button" onClick={exportRows}><Download size={16} /> Export CSV</button>
@@ -149,8 +150,8 @@ function DetailView({
             onChange={(e) => { setQuery(e.target.value); setPage(0); }} />
         </label>
         <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
-          <option value="">All statuses</option>
-          <option>In Progress</option>
+          <option value="">All Statuses</option>
+          <option value="In Progress">In Progress</option>
           <option>Yet to Start</option>
           <option>Completed</option>
         </select>
@@ -162,12 +163,12 @@ function DetailView({
         <ManagerPageSize value={size} onChange={(v) => { setSize(v); setPage(0); }} />
         <p className="cm-manager-caption">{total} records</p>
       </div>
-      <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Detail view table">
+      <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Detail View Table">
         <table className="cm-manager-table">
           <thead>
             <tr>
               {["Name", "Email", "Role", "Dept", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Assigned", "Completed", "Proof"].map((h) => (
-                <th key={h}>{h}</th>
+                <th key={h}>{titleCaseLabel(h)}</th>
               ))}
             </tr>
           </thead>
@@ -190,7 +191,7 @@ function DetailView({
                   <td>
                     {courseCount > 0 ? (
                       <button className="cm-link" onClick={() => setCoursePopup({ assignmentId: a.id, skillId: a.skillId })}>
-                        {courseCount} course{courseCount !== 1 ? "s" : ""}
+                        {courseCount} Course{courseCount !== 1 ? "s" : ""}
                       </button>
                     ) : <span>—</span>}
                   </td>
@@ -331,33 +332,33 @@ function SkillReport({
           <input placeholder="Search skill or competency…" value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(0); }} />
         </label>
-        <select aria-label="Filter competency" value={filterComp} onChange={(e) => { setFilterComp(e.target.value); setPage(0); }}>
-          <option value="">All competencies</option>
+        <select aria-label="Filter Competency" value={filterComp} onChange={(e) => { setFilterComp(e.target.value); setPage(0); }}>
+          <option value="">All Competencies</option>
           {data.competencies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <select aria-label="Filter department" value={filterDept} onChange={(e) => { setFilterDept(e.target.value); setPage(0); }}>
-          <option value="">All departments</option>
+        <select aria-label="Filter Department" value={filterDept} onChange={(e) => { setFilterDept(e.target.value); setPage(0); }}>
+          <option value="">All Departments</option>
           {allDepts.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
-        <select aria-label="Filter role" value={filterRole} onChange={(e) => { setFilterRole(e.target.value); setPage(0); }}>
-          <option value="">All job roles</option>
+        <select aria-label="Filter Role" value={filterRole} onChange={(e) => { setFilterRole(e.target.value); setPage(0); }}>
+          <option value="">All Job Roles</option>
           {allRoles.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
-        <select aria-label="Filter status" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
-          <option value="">All statuses</option>
-          <option>In Progress</option>
+        <select aria-label="Filter Status" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
+          <option value="">All Statuses</option>
+          <option value="In Progress">In Progress</option>
           <option>Yet to Start</option>
           <option>Completed</option>
         </select>
         {hasFilters && <button className="cm-text-button" onClick={clearFilters}>Clear</button>}
         <button className="cm-button" style={{ marginLeft: 'auto' }} onClick={exportReport}><Download size={16} /> Export CSV</button>
       </div>
-      <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Skill-wise report table">
+      <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Skill-Wise Report Table">
         <table>
           <thead>
             <tr>
               {["Skill", "Competency", "Enrolled Users", "Users with Skill Gap", "Completed Users", "Proficiency %", "Status"].map((h) => (
-                <th key={h}>{h}</th>
+                <th key={h}>{titleCaseLabel(h)}</th>
               ))}
             </tr>
           </thead>
@@ -368,7 +369,7 @@ function SkillReport({
                 <td>{r.compName}</td>
                 <td>
                   <button className="cm-link" onClick={() => onDrill(r.skillId, "all")}>
-                    {r.enrolled} learner{r.enrolled !== 1 ? "s" : ""}
+                    {r.enrolled} Learner{r.enrolled !== 1 ? "s" : ""}
                   </button>
                 </td>
                 <td>
@@ -483,34 +484,34 @@ function LearnerReport({
           <input placeholder="Search name, email or department…" value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(0); }} />
         </label>
-        <select aria-label="Filter reporting manager" value={filterManager} onChange={(e) => { setFilterManager(e.target.value); setPage(0); }}>
-          <option value="">All managers</option>
+        <select aria-label="Filter Reporting Manager" value={filterManager} onChange={(e) => { setFilterManager(e.target.value); setPage(0); }}>
+          <option value="">All Managers</option>
           {managerNames.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
-        <select aria-label="Filter status" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
-          <option value="">All statuses</option>
-          <option>In Progress</option>
+        <select aria-label="Filter Status" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
+          <option value="">All Statuses</option>
+          <option value="In Progress">In Progress</option>
           <option>Yet to Start</option>
           <option>Completed</option>
         </select>
         <span className="cm-date-range">
           <input type="date" value={filterAssignedFrom}
             onChange={(e) => { setFilterAssignedFrom(e.target.value); setPage(0); }}
-            aria-label="Assigned from" />
+            aria-label="Assigned From" />
           <span className="cm-date-range-sep">–</span>
           <input type="date" value={filterAssignedTo}
             onChange={(e) => { setFilterAssignedTo(e.target.value); setPage(0); }}
-            aria-label="Assigned to" />
+            aria-label="Assigned To" />
         </span>
         {hasFilters && <button className="cm-text-button" onClick={clearFilters}>Clear</button>}
         <button className="cm-button" style={{ marginLeft: 'auto' }} onClick={exportReport}><Download size={16} /> Export CSV</button>
       </div>
-      <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Learner-wise report table">
+      <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Learner-Wise Report Table">
         <table>
           <thead>
             <tr>
               {["User ID", "Name", "Email", "Role", "Dept", "Reporting Manager", "Assigned Skills", "Skills with Gap", "Completed Skills", "Overall Progress"].map((h) => (
-                <th key={h}>{h}</th>
+                <th key={h}>{titleCaseLabel(h)}</th>
               ))}
             </tr>
           </thead>
@@ -576,24 +577,24 @@ export function Reports({ data, work }: { data: Data; work: WorkflowData }) {
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Skill progress reports</h2>
+          <h2>Skill Progress Reports</h2>
         </div>
       </div>
       <div className="cm-settings-tabs-bar">
-        <div className="cm-settings-tabs" role="group" aria-label="Report type">
+        <div className="cm-settings-tabs" role="group" aria-label="Report Type">
           <button
             className={mode === "skill" ? "active" : ""}
             aria-pressed={mode === "skill"}
             onClick={() => { setMode("skill"); setDrill(null); }}
           >
-            Skill-wise learner progress
+            Skill-Wise Learner Progress
           </button>
           <button
             className={mode === "learner" ? "active" : ""}
             aria-pressed={mode === "learner"}
             onClick={() => { setMode("learner"); setDrill(null); }}
           >
-            Learner-wise skill report
+            Learner-Wise Skill Report
           </button>
         </div>
       </div>

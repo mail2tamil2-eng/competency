@@ -1,3 +1,4 @@
+import { statusText } from "./displayText";
 import { useState } from "react";
 import { FileText, Download, ArrowLeft, CheckCircle2, BookOpen } from "lucide-react";
 import {
@@ -55,7 +56,7 @@ export function ManagerSkillDialog({
     >
       <DialogContent className="cm-dialog cm-wide cm-progress-dialog">
         <DialogHeader>
-          <DialogTitle>Update current level</DialogTitle>
+          <DialogTitle>Update Current Level</DialogTitle>
           <DialogDescription>
             Only this learner’s selected skill will change when you save.
           </DialogDescription>
@@ -87,16 +88,16 @@ export function ManagerSkillDialog({
             </div>
           </dl>
           <label>
-            New current level
+            New Current Level
             <select
-              aria-label="New current level"
+              aria-label="New Current Level"
               value={level}
               onChange={(e) => setLevel(e.target.value)}
             >
               <option value="" disabled>
                 {higherLevels.length
-                  ? "Choose a higher level"
-                  : "No higher level available"}
+                  ? "Choose a Higher Level"
+                  : "No Higher Level Available"}
               </option>
               {data.levels.map((l, index) => (
                 <option
@@ -125,9 +126,9 @@ export function ManagerSkillDialog({
             </p>
           )}
           <label>
-            Remarks (optional)
+            Remarks (Optional)
             <textarea
-              aria-label="Remarks (optional)"
+              aria-label="Remarks (Optional)"
               value={remarks}
               maxLength={2000}
               onChange={(e) => setRemarks(e.target.value)}
@@ -164,7 +165,7 @@ export function ManagerSkillDialog({
             disabled={!higherLevels.some((l) => l.id === level)}
             onClick={submit}
           >
-            Save level
+            Save Level
           </button>
         </div>
       </DialogContent>
@@ -231,7 +232,7 @@ export function ManagerProofDialog({
     >
       <DialogContent className="cm-dialog cm-wide cm-progress-dialog cm-manager-proof-dialog">
         <DialogHeader>
-          <DialogTitle>Review proof submissions</DialogTitle>
+          <DialogTitle>Review Proof Submissions</DialogTitle>
           <DialogDescription>
             {a.name} · {skill?.name}. Inspect the evidence and record your
             decision.
@@ -254,7 +255,7 @@ export function ManagerProofDialog({
                   <option key={proof.id} value={proof.id}>
                     {work.courses.find((c) => c.id === proof.courseId)?.name ||
                       "Unavailable course"}{" "}
-                    · {proof.status}
+                    · {statusText(proof.status)}
                   </option>
                 ))}
               </select>
@@ -277,7 +278,7 @@ export function ManagerProofDialog({
                 </div>
                 <div>
                   <dt>Status</dt>
-                  <dd>{p.status}</dd>
+                  <dd>{statusText(p.status)}</dd>
                 </div>
               </dl>
               <div className="cm-manager-evidence">
@@ -307,7 +308,7 @@ export function ManagerProofDialog({
                   <object
                     data={p.document}
                     type="application/pdf"
-                    aria-label="Submitted proof preview"
+                    aria-label="Submitted Proof Preview"
                   >
                     <p>
                       PDF preview is unavailable in this browser. Download the
@@ -329,9 +330,9 @@ export function ManagerProofDialog({
                     higher. Other courses remain unchanged.
                   </p>
                   <label>
-                    Review feedback
+                    Review Feedback
                     <textarea
-                      aria-label="Review feedback"
+                      aria-label="Review Feedback"
                       placeholder="Required when rejecting evidence"
                       value={remarks}
                       maxLength={2000}
@@ -342,7 +343,7 @@ export function ManagerProofDialog({
               ) : (
                 <div className="cm-hint">
                   <strong>
-                    {p.status} by {p.reviewedBy || "Manager"}
+                    {statusText(p.status)} By {p.reviewedBy || "Manager"}
                   </strong>
                   {p.reviewedAt && (
                     <p>{new Date(p.reviewedAt).toLocaleString()}</p>
@@ -396,14 +397,14 @@ export function ManagerProofDialog({
                 className="cm-button cm-manager-reject"
                 onClick={() => decide(false)}
               >
-                Reject with feedback
+                Reject with Feedback
               </button>
               <button
                 className="cm-button primary"
                 disabled={!usable || !level}
                 onClick={() => decide(true)}
               >
-                Approve proof
+                Approve Proof
               </button>
             </>
           )}
@@ -546,8 +547,8 @@ export function ManagerProofReviewPage({
           <p>{a.name} · {skill?.name}</p>
         </div>
         <div className="cm-proof-header-meta">
-          <span><span className="cm-proof-meta-label">Target level</span>{levelName(data, a.expected)}</span>
-          <span><span className="cm-proof-meta-label">Current level</span>{levelName(data, a.current)}</span>
+          <span><span className="cm-proof-meta-label">Target Level</span>{levelName(data, a.expected)}</span>
+          <span><span className="cm-proof-meta-label">Current Level</span>{levelName(data, a.current)}</span>
           <span><span className="cm-proof-meta-label">Submitted</span>{proof?.submitted || "—"}</span>
         </div>
         <span className={`cm-manager-status ${proof?.status === "Approved" ? "success" : proof?.status === "Rejected" ? "rejected" : "pending"}`}>
@@ -576,7 +577,7 @@ export function ManagerProofReviewPage({
             {isImage ? (
               <img src={proof.document} alt={proof.fileName} />
             ) : usable ? (
-              <object data={proof.document} type="application/pdf" aria-label="Proof preview">
+              <object data={proof.document} type="application/pdf" aria-label="Proof Preview">
                 <p>PDF preview unavailable. Use the Download button above.</p>
               </object>
             ) : (
@@ -596,7 +597,7 @@ export function ManagerProofReviewPage({
               {relevantLevels.length > 0 && (
                 <>
                   <div className="cm-hier-header-row">
-                    <h4>Mark completed courses</h4>
+                    <h4>Mark Completed Courses</h4>
                     <span className="cm-hier-strip-text">Select courses completed, then approve below.</span>
                   </div>
                   <div className="cm-hier-levels">
@@ -653,7 +654,7 @@ export function ManagerProofReviewPage({
                   <div className="cm-proof-card-divider" />
                 </>
               )}
-              {relevantLevels.length === 0 && <h4>Review decision</h4>}
+              {relevantLevels.length === 0 && <h4>Review Decision</h4>}
               <label className="cm-proof-feedback-label">
                 Feedback <span className="cm-hint-inline">(required when rejecting)</span>
                 <textarea
@@ -667,14 +668,14 @@ export function ManagerProofReviewPage({
               {error && <p className="cm-error" role="alert">{error}</p>}
               <div className="cm-proof-action-btns">
                 <button className="cm-button cm-manager-reject" onClick={() => decide(false)}>
-                  Reject with feedback
+                  Reject with Feedback
                 </button>
                 <button
                   className="cm-button primary"
                   disabled={!usable}
                   onClick={() => decide(true)}
                 >
-                  Approve proof
+                  Approve Proof
                 </button>
               </div>
             </div>
@@ -684,7 +685,7 @@ export function ManagerProofReviewPage({
           {isApproved && relevantLevels.length > 0 && (
             <div className="cm-proof-actions-card">
               <div className="cm-hier-header-row">
-                <h4>Mark completed courses</h4>
+                <h4>Mark Completed Courses</h4>
                 <span className="cm-hier-strip-text">Complete each level to unlock the next.</span>
               </div>
               <div className="cm-hier-levels">
@@ -745,7 +746,7 @@ export function ManagerProofReviewPage({
                   disabled={saving || (!hasChanges && !saved)}
                   onClick={saveSelection}
                 >
-                  {saving ? "Saving…" : saved ? "Saved ✓" : "Save completion"}
+                  {saving ? "Saving…" : saved ? "Saved ✓" : "Save Completion"}
                 </button>
               </div>
             </div>
@@ -753,7 +754,7 @@ export function ManagerProofReviewPage({
 
           {proof?.status === "Rejected" && (
             <div className="cm-proof-actions-card">
-              <h4>Decision recorded</h4>
+              <h4>Decision Recorded</h4>
               <p><strong>Rejected</strong> by {proof.reviewedBy || "Manager"}</p>
               {proof.reviewedAt && <small>{new Date(proof.reviewedAt).toLocaleString()}</small>}
               <p className="cm-hint">{proof.remarks || "No feedback recorded."}</p>
@@ -762,12 +763,12 @@ export function ManagerProofReviewPage({
 
           {proof && (
             <div className="cm-proof-actions-card">
-              <h4>Activity log</h4>
+              <h4>Activity Log</h4>
               <div className="cm-activity-log">
                 <div className="cm-activity-entry">
                   <span className="cm-activity-dot cm-activity-dot--neutral" />
                   <div className="cm-activity-content">
-                    <strong>Proof submitted</strong>
+                    <strong>Proof Submitted</strong>
                     <span className="cm-activity-time">{proof.submitted}</span>
                     <span className="cm-activity-meta">{proof.fileName}</span>
                   </div>
@@ -814,8 +815,8 @@ export function ManagerProofReviewPage({
                     <div className="cm-activity-entry">
                       <span className="cm-activity-dot cm-activity-dot--courses" />
                       <div className="cm-activity-content">
-                        <strong>Completed courses saved</strong>
-                        <span className="cm-activity-time">{completedIds.length} course{completedIds.length !== 1 ? "s" : ""} marked</span>
+                        <strong>Completed Courses Saved</strong>
+                        <span className="cm-activity-time">{completedIds.length} Course{completedIds.length !== 1 ? "s" : ""} Marked</span>
                         <div className="cm-activity-levels">
                           {byLevel.map(({ lv, courses }) => (
                             <div key={lv.id} className="cm-activity-level-group">

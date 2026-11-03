@@ -52,14 +52,14 @@ export function LibrarySettings({
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Library settings</h2>
+          <h2>Library Settings</h2>
           <p>Manage categories and proficiency levels used across your competency framework.</p>
         </div>
         <div className="cm-settings-tabs-bar">
           <div
             className="cm-settings-tabs"
             role="group"
-            aria-label="Library settings sections"
+            aria-label="Library Settings Sections"
           >
             {(["categories", "levels"] as const).map((s) => (
               <button
@@ -72,14 +72,14 @@ export function LibrarySettings({
                   setStatus("");
                 }}
               >
-                {s === "categories" ? "Categories" : "Proficiency levels"}
+                {s === "categories" ? "Categories" : "Proficiency Levels"}
                 <span className="cm-tab-count">{data[s].length}</span>
               </button>
             ))}
           </div>
           <button className="cm-button primary" onClick={() => setEditing({})}>
             <Plus size={16} />
-            Add {section === "categories" ? "category" : "level"}
+            Add {section === "categories" ? "Category" : "Level"}
           </button>
         </div>
       </div>
@@ -87,18 +87,18 @@ export function LibrarySettings({
         <label className="cm-search">
           <Search size={17} />
           <input
-            aria-label="Search library settings"
+            aria-label="Search Library Settings"
             placeholder={"Search " + section + "…"}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
         <select
-          aria-label="Filter settings status"
+          aria-label="Filter Settings Status"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
-          <option value="">All statuses</option>
+          <option value="">All Statuses</option>
           <option>Active</option>
           <option>Inactive</option>
         </select>

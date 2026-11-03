@@ -3,7 +3,7 @@ export type Course = {
   id: string;
   name: string;
   duration: string;
-  mappings: { skillId: string; levelId: string; weightage?: number }[];
+  mappings: { skillId: string; levelId: string; weightage?: number; mandatory?: boolean }[];
 };
 export type Employee = {
   id: string;

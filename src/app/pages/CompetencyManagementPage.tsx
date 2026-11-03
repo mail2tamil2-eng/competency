@@ -32,6 +32,7 @@ import {
 import "../competency/competency.css";
 import "../competency/design-system.css";
 import "../competency/platform-theme.css";
+import "../competency/role-mapping.css";
 import {
   RoleMapping,
   Learning,
@@ -43,15 +44,15 @@ import {
   applyPlans,
 } from "../competency/workflowModel";
 const tabs = [
-  ["settings", "Library settings", Settings2],
-  ["library", "Competency framework", Layers],
-  ["roles", "Role mapping", Map],
-  ["assignments", "Progress", BarChart2],
-  ["career-progression", "Role progression", Route],
+  ["settings", "Library Settings", Settings2],
+  ["library", "Competency Framework", Layers],
+  ["roles", "Role Mapping", Map],
+  ["assignments", "User Level Update", BarChart2],
+  ["career-progression", "Role Progression", Route],
   ["reports", "Reports", ListChecks],
-  ["learner", "My learning", GraduationCap],
-  ["learner-report", "Skill progress report", TrendingUp],
-  ["manager", "Team progress", Users],
+  ["learner", "My Learning", GraduationCap],
+  ["learner-report", "Skill Progress Report", TrendingUp],
+  ["manager", "Team Progress", Users],
 ] as const;
 type Tab = (typeof tabs)[number][0];
 export function CompetencyManagementPage() {
@@ -190,7 +191,7 @@ export function CompetencyManagementPage() {
       </div>
 
       {tab !== "manager" && (
-        <nav className="cm-tabs" aria-label="Competency sections">
+        <nav className="cm-tabs" aria-label="Competency Sections">
           {tabs
             .filter(([id]) =>
               isLearner
@@ -293,7 +294,7 @@ export function CompetencyManagementPage() {
                   toast.success("Demo data restored");
                 }}
               >
-                Yes, reset
+                Yes, Reset
               </button>
             </div>
           </DialogContent>
@@ -344,7 +345,7 @@ function AssignmentForm({
     >
       <DialogContent className="cm-dialog">
         <DialogHeader>
-          <DialogTitle>Assign a skill</DialogTitle>
+          <DialogTitle>Assign a Skill</DialogTitle>
           <DialogDescription>
             Choose a learner and the proficiency they need to reach.
           </DialogDescription>
@@ -378,7 +379,7 @@ function AssignmentForm({
             </p>
           )}
           <label>
-            <span className="cm-req-label">Learner name <span className="req">*</span></span>
+            <span className="cm-req-label">Learner Name <span className="req">*</span></span>
             <input
               required
               value={a.name}
@@ -400,7 +401,7 @@ function AssignmentForm({
               value={a.skillId}
               onChange={(e) => setA({ ...a, skillId: e.target.value })}
             >
-              <option value="">Choose a skill</option>
+              <option value="">Choose a Skill</option>
               {data.skills
                 .filter((s) => s.status === "Active")
                 .map((s) => (
@@ -411,13 +412,13 @@ function AssignmentForm({
             </select>
           </label>
           <label>
-            <span className="cm-req-label">Expected level <span className="req">*</span></span>
+            <span className="cm-req-label">Expected Level <span className="req">*</span></span>
             <select
               required
               value={a.expected}
               onChange={(e) => setA({ ...a, expected: e.target.value })}
             >
-              <option value="">Choose expected level</option>
+              <option value="">Choose Expected Level</option>
               {data.levels
                 .filter((l) => l.status === "Active")
                 .map((l) => (
@@ -435,7 +436,7 @@ function AssignmentForm({
             <button type="button" className="cm-button" onClick={onClose}>
               Cancel
             </button>
-            <button className="cm-button primary">Assign skill</button>
+            <button className="cm-button primary">Assign Skill</button>
           </div>
         </form>
       </DialogContent>

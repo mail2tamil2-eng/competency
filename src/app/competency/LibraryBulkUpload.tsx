@@ -64,20 +64,20 @@ export function LibraryBulkUpload({
     >
       <DialogContent className="cm-dialog cm-wide">
         <DialogHeader>
-          <DialogTitle>Bulk upload competencies & skills</DialogTitle>
+          <DialogTitle>Bulk Upload Competencies & Skills</DialogTitle>
           <DialogDescription>
             One file for your library. Each row adds a skill; repeated
             competency names group the skills automatically.
           </DialogDescription>
         </DialogHeader>
         <div className="cm-steps">
-          <span className="active">1 · Prepare file</span>
+          <span className="active">1 · Prepare File</span>
           <span className={preview ? "active" : ""}>2 · Review</span>
-          <span>3 · Import together</span>
+          <span>3 · Import Together</span>
         </div>
         <div className="cm-template">
           <div>
-            <strong>Use one row per skill</strong>
+            <strong>Use One Row per Skill</strong>
             <p>
               Use an existing category. You can add skills to existing active
               competencies. Leave Skill blank to create an empty competency.
@@ -92,7 +92,7 @@ export function LibraryBulkUpload({
             }
           >
             <Download size={16} />
-            Download template
+            Download Template
           </button>
         </div>
         <div className="cm-import-example">
@@ -111,9 +111,9 @@ export function LibraryBulkUpload({
         >
           <Upload size={25} />
           <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
-          <span>CSV · Up to 1,000 rows · 2 MB</span>
+          <span>CSV · Up to 1,000 Rows · 2 MB</span>
           <input
-            aria-label="CSV file"
+            aria-label="CSV File"
             type="file"
             accept=".csv,text/csv"
             onChange={(e) => void load(e.target.files?.[0])}
@@ -128,9 +128,9 @@ export function LibraryBulkUpload({
         {preview && (
           <>
             <div className="cm-import-summary">
-              <strong>{preview.competencies.length} new competencies</strong>
-              <strong>{preview.skills.length} new skills</strong>
-              <span>{errors.length} rows need attention</span>
+              <strong>{preview.competencies.length} New Competencies</strong>
+              <strong>{preview.skills.length} New Skills</strong>
+              <span>{errors.length} Rows Need Attention</span>
             </div>
             {errors.length > 0 && (
               <div className="cm-error" role="alert">
@@ -149,7 +149,7 @@ export function LibraryBulkUpload({
                     ])
                   }
                 >
-                  Download errors
+                  Download Errors
                 </button>
               </div>
             )}

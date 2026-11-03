@@ -876,7 +876,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.3px;
-  text-transform: uppercase;
+  text-transform: none;
   color: #8590aa;
   display: block;
   margin-bottom: 10px;
@@ -954,7 +954,7 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.8px;
-  text-transform: uppercase;
+  text-transform: none;
   color: #8590aa;
   background: #fafbfe;
   padding: 10px 14px;
@@ -1420,7 +1420,7 @@
   font-size: 12px;
   font-weight: 700;
   color: #8a96a8;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.04em;
   padding: 10px 16px;
   border-bottom: 1px solid #dce8fb;
@@ -1911,7 +1911,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.8px;
-  text-transform: uppercase;
+  text-transform: none;
   color: #8590aa;
   padding-left: 2px;
 }
@@ -2081,7 +2081,7 @@
   font-size: 12px !important;
   font-weight: 700 !important;
   letter-spacing: 0.6px;
-  text-transform: uppercase;
+  text-transform: none;
   color: #8590aa !important;
   background: #edf2ff !important;
   padding: 9px 18px !important;
@@ -2575,7 +2575,7 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.9px;
-  text-transform: uppercase;
+  text-transform: none;
   color: #7a8198;
   margin: 0 0 10px;
 }
@@ -2660,7 +2660,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.8px;
-  text-transform: uppercase;
+  text-transform: none;
   color: #8a96aa;
 }
 .cm-lp-hero-role-chip {
@@ -2718,7 +2718,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.8px;
-  text-transform: uppercase;
+  text-transform: none;
   color: #8a96aa;
   margin-bottom: 10px;
 }
@@ -2815,7 +2815,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.8px;
-  text-transform: uppercase;
+  text-transform: none;
   color: #8a96aa;
   margin-bottom: 8px;
   padding-bottom: 4px;
@@ -2920,7 +2920,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.9px;
-  text-transform: uppercase;
+  text-transform: none;
   color: #8a96aa;
   margin-bottom: 12px;
 }
@@ -2952,7 +2952,7 @@
 .cm-lp-stat-label {
   font-size: 9px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.5px;
 }
 .cm-lp-stat--green .cm-lp-stat-label { color: #2463d6; }
@@ -2992,7 +2992,7 @@
 .cm-lp-focus-verb {
   font-size: 10px;
   color: #8590aa;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.6px;
   font-weight: 700;
 }
@@ -3203,7 +3203,7 @@
   font-size: 11px;
   font-weight: 700;
   color: #7a8198;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.05em;
   background: #f7f9ff;
   border-bottom: 1px solid #e4e8f0;
@@ -3397,7 +3397,7 @@
   font-size: 11px;
   font-weight: 700;
   color: #7a8198;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.05em;
   background: #f7f9ff;
   border-bottom: 1px solid #e4e8f0;
@@ -3582,7 +3582,7 @@
 .cm-proof-meta-label {
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.7px;
   color: #8a96a8;
 }
@@ -4059,7 +4059,7 @@
   display: inline-block;
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.5px;
   color: #2463d6;
   background: #edf4ff;

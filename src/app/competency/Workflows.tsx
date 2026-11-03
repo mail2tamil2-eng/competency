@@ -1,3 +1,4 @@
+import { statusText } from "./displayText";
 ﻿import { AssignmentConfiguration } from "./AssignmentConfiguration";
 export { Reports } from "./AdminReports";
 import { AssignmentSkills } from "./AssignmentSkills";
@@ -90,7 +91,7 @@ export function CourseMapping({ data, work, save }: Props) {
     <section className="cm-card">
       <div className="cm-section-head">
         <div>
-          <h2>Skill → course mapping</h2>
+          <h2>Skill → Course Mapping</h2>
           <p>
             Connect each skill level to learning content. Learners follow
             courses in level order.
@@ -98,7 +99,7 @@ export function CourseMapping({ data, work, save }: Props) {
         </div>
         <button className="cm-button primary" onClick={() => openDraft()}>
           <Plus size={16} />
-          Add course mapping
+          Add Course Mapping
         </button>
       </div>
       <div className="cm-table-wrap">
@@ -106,7 +107,7 @@ export function CourseMapping({ data, work, save }: Props) {
           <thead>
             <tr>
               <th>Course</th>
-              <th>Mapped skills & levels</th>
+              <th>Mapped Skills & Levels</th>
               <th style={{ textAlign: "right" }}>Action</th>
             </tr>
           </thead>
@@ -131,7 +132,7 @@ export function CourseMapping({ data, work, save }: Props) {
                   <div className="cm-row-actions">
                     <button
                       className="cm-icon-button"
-                      title="Edit mapping"
+                      title="Edit Mapping"
                       aria-label={"Edit mapping for " + c.name}
                       onClick={() => openDraft(c)}
                     >
@@ -153,7 +154,7 @@ export function CourseMapping({ data, work, save }: Props) {
         >
           <DialogContent className="cm-dialog">
             <DialogHeader>
-              <DialogTitle>Course mapping</DialogTitle>
+              <DialogTitle>Course Mapping</DialogTitle>
               <DialogDescription>
                 Map multiple skills to a course, with one level for each skill.
               </DialogDescription>
@@ -222,7 +223,7 @@ export function CourseMapping({ data, work, save }: Props) {
                 </p>
               )}
               <label>
-                <span className="cm-req-label">Course name <span className="req">*</span></span>
+                <span className="cm-req-label">Course Name <span className="req">*</span></span>
                 <input
                   required
                   value={draft.name}
@@ -237,7 +238,7 @@ export function CourseMapping({ data, work, save }: Props) {
                       value={mappingComps[i] || ""}
                       onChange={(e) => updateComp(i, e.target.value, m.skillId)}
                     >
-                      <option value="">All competencies</option>
+                      <option value="">All Competencies</option>
                       {activeComps.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name}
@@ -252,7 +253,7 @@ export function CourseMapping({ data, work, save }: Props) {
                       value={m.skillId}
                       onChange={(e) => updateSkill(i, e.target.value)}
                     >
-                      <option value="">Select skill</option>
+                      <option value="">Select Skill</option>
                       {data.skills
                         .filter(
                           (s) =>
@@ -280,7 +281,7 @@ export function CourseMapping({ data, work, save }: Props) {
                         })
                       }
                     >
-                      <option value="">Select level</option>
+                      <option value="">Select Level</option>
                       {data.levels
                         .filter((l) => l.status === "Active")
                         .map((l) => (
@@ -320,7 +321,7 @@ export function CourseMapping({ data, work, save }: Props) {
                   setMappingComps([...mappingComps, ""]);
                 }}
               >
-                + Add skill
+                + Add Skill
               </button>
               <div className="cm-dialog-actions">
                 <button
@@ -330,7 +331,7 @@ export function CourseMapping({ data, work, save }: Props) {
                 >
                   Cancel
                 </button>
-                <button className="cm-button primary">Save mapping</button>
+                <button className="cm-button primary">Save Mapping</button>
               </div>
             </form>
           </DialogContent>
@@ -477,12 +478,12 @@ export function RoleMapping({ data, work, save }: Props) {
       setDraft(null);
   }
   if (draft) return (
-    <section className="cm-inline-form" ref={formRef}>
+    <section className="cm-inline-form cm-role-form" ref={formRef}>
       <div className="cm-inline-form-head">
         <button type="button" className="cm-text-button cm-inline-back" onClick={() => setDraft(null)}>
           ← Assignments
         </button>
-        <h2>{draft.name.trim() || "New assignment"}</h2>
+        <h2>{draft.name.trim() || "New Assignment"}</h2>
         <p className="cm-inline-form-meta">
           {audience.length} matching learner{audience.length !== 1 ? "s" : ""} · {draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}
         </p>
@@ -491,29 +492,29 @@ export function RoleMapping({ data, work, save }: Props) {
       <AssignmentConfiguration data={data} work={work} draft={draft} onChange={setDraft} />
       <div className="cm-inline-form-actions">
         <button className="cm-button" onClick={() => setDraft(null)}>Cancel</button>
-        <button className="cm-button primary" onClick={assign}>Save &amp; assign</button>
+        <button className="cm-button primary" onClick={assign}>Save &amp; Assign</button>
       </div>
     </section>
   );
 
   return (
-    <section className="cm-card">
+    <section className="cm-card cm-role-mapping">
       <div className="cm-section-head">
         <div>
-          <h2>Competency → role mapping</h2>
+          <h2>Competency → Role Mapping</h2>
           <p>Choose required skills, define expectations, and assign them to the right people.</p>
         </div>
         <button className="cm-button primary" onClick={() => begin()}>
           <Plus size={16} />
-          Create assignment
+          Create Assignment
         </button>
       </div>
       {!work.plans.length ? (
         <div className="cm-empty">
-          <h3>Give every role a clear growth path</h3>
+          <h3>Give Every Role a Clear Growth Path</h3>
           <p>Start with a competency, then choose skills and your target audience.</p>
           <button className="cm-button" onClick={() => begin()}>
-            Create your first assignment
+            Create Your First Assignment
           </button>
         </div>
       ) : (
@@ -541,7 +542,7 @@ export function RoleMapping({ data, work, save }: Props) {
                   </td>
                   <td>{p.skills.length}</td>
                   <td>
-                    <span className={"cm-badge " + p.status.toLowerCase()}>{p.status}</span>
+                    <span className={"cm-badge " + p.status.toLowerCase()}>{statusText(p.status)}</span>
                   </td>
                   <td>
                     <div className="cm-row-actions">
@@ -576,7 +577,7 @@ export function RoleMapping({ data, work, save }: Props) {
         <Dialog open onOpenChange={(open) => { if (!open) setInactivatingPlan(null); }}>
           <DialogContent className="cm-dialog">
             <DialogHeader>
-              <DialogTitle>Are you sure you want to inactivate {inactivatingPlan.name}?</DialogTitle>
+              <DialogTitle>Are You Sure You Want to Inactivate {inactivatingPlan.name}?</DialogTitle>
               <DialogDescription>
                 The assignment will no longer apply to new users or trigger new learning assignments.
               </DialogDescription>
@@ -752,11 +753,11 @@ export function Learning({
       {manager ? (
         <div className="cm-section-head">
           <div>
-            <h2>Team skill progress</h2>
+            <h2>Team Skill Progress</h2>
             <p>Review evidence and help reportees close their skill gaps.</p>
           </div>
           <select
-            aria-label="Select reportee"
+            aria-label="Select Reportee"
             value={selectedKey}
             onChange={(e) => (onLearnerChange || setLocalKey)(e.target.value)}
           >
@@ -794,7 +795,7 @@ export function Learning({
                 <p>Track your skills, close learning gaps, and achieve your learning goals.</p>
               </div>
               <select
-                aria-label="Preview learner"
+                aria-label="Preview Learner"
                 value={selectedKey}
                 onChange={(e) => (onLearnerChange || setLocalKey)(e.target.value)}
               >
@@ -804,7 +805,7 @@ export function Learning({
               </select>
             </div>
 
-            {/* My Career Path widget */}
+            {/* My career path widget */}
             {cp && emp?.role && (
               <div className="cm-cp-widget">
                 <span className="cm-cp-title">My Career Path</span>
@@ -830,7 +831,7 @@ export function Learning({
                 </div>
                 <div className="cm-cp-progress-row">
                   <span className="cm-cp-progress-label">Role Competency Progress</span>
-                  <progress className="cm-cp-progress-bar" max={100} value={pct} aria-label="Role competency progress" />
+                  <progress className="cm-cp-progress-bar" max={100} value={pct} aria-label="Role Competency Progress" />
                   <span className="cm-cp-progress-pct">{pct}%</span>
                 </div>
                 {nextRole && threshold !== null && (
@@ -891,20 +892,20 @@ export function Learning({
 
       {/* View toggle — learner only */}
       {!manager && assignments.length > 0 && (
-        <div className="cm-view-toggle" role="group" aria-label="View mode">
+        <div className="cm-view-toggle" role="group" aria-label="View Mode">
           <button
             className={skillView === "skill" ? "active" : ""}
             aria-pressed={skillView === "skill"}
             onClick={() => setSkillView("skill")}
           >
-            <Target size={15} /> Skill view
+            <Target size={15} /> Skill View
           </button>
           <button
             className={skillView === "competency" ? "active" : ""}
             aria-pressed={skillView === "competency"}
             onClick={() => setSkillView("competency")}
           >
-            <Layers size={15} /> Competency view
+            <Layers size={15} /> Competency View
           </button>
         </div>
       )}
@@ -932,9 +933,9 @@ export function Learning({
                   <div className="cm-competency-group-header">
                     <div>
                       <strong>{comp?.name || "Uncategorised"}</strong>
-                      <span className="cm-category">{items.length} skill{items.length !== 1 ? "s" : ""}</span>
+                      <span className="cm-category">{items.length} Skill{items.length !== 1 ? "s" : ""}</span>
                       <span className={`cm-badge ${compStatus === "Completed" ? "active" : compStatus === "In Progress" ? "draft" : ""}`}>
-                        {compStatus}
+                        {statusText(compStatus)}
                       </span>
                     </div>
                     <div className="cm-competency-group-progress">
@@ -952,13 +953,13 @@ export function Learning({
                         <div key={a.id} className="cm-competency-skill-row">
                           <span><strong>{skill?.name}</strong></span>
                           <span className="cm-skill-progress-detail">
-                            {a.current ? data.levels.find((l) => l.id === a.current)?.name : "Not assessed"}
+                            {a.current ? data.levels.find((l) => l.id === a.current)?.name : "Not Assessed"}
                             {" → "}
                             {data.levels.find((l) => l.id === a.expected)?.name}
-                            {missing && <span className="cm-content-missing"><AlertTriangle size={12} /> Content missing</span>}
+                            {missing && <span className="cm-content-missing"><AlertTriangle size={12} /> Content Missing</span>}
                           </span>
-                          <span className={`cm-badge ${st === "Completed" ? "active" : st === "In Progress" ? "draft" : ""}`}>{st}</span>
-                          {st !== "Completed" && gap > 0 && <span className="cm-gap-chip">{gap} level{gap !== 1 ? "s" : ""} to go</span>}
+                          <span className={`cm-badge ${st === "Completed" ? "active" : st === "In Progress" ? "draft" : ""}`}>{statusText(st)}</span>
+                          {st !== "Completed" && gap > 0 && <span className="cm-gap-chip">{gap} Level{gap !== 1 ? "s" : ""} To Go</span>}
                         </div>
                       );
                     })}
@@ -996,14 +997,14 @@ export function Learning({
                     <button
                       className="cm-button cm-button-sm"
                       disabled={skillProof?.status === "Under Review"}
-                      title={skillProof?.status === "Under Review" ? "Proof already submitted — awaiting review" : ""}
+                      title={skillProof?.status === "Under Review" ? "Proof Already Submitted — Awaiting Review" : ""}
                       onClick={() => {
                         setError("");
                         setFile(null);
                         setSubmission({ assignmentId: a.id });
                       }}
                     >
-                      {skillProof?.status === "Under Review" ? "Under Review" : "Submit proof"}
+                      {skillProof?.status === "Under Review" ? "Under Review" : "Submit Proof"}
                     </button>
                   );
                 })()}
@@ -1046,7 +1047,7 @@ export function Learning({
             </div>
             {manager && (
               <label className="cm-manager-level">
-                Update current level
+                Update Current Level
                 <select
                   aria-label={"Manager current level for " + a.skillId}
                   value={a.current}
@@ -1065,7 +1066,7 @@ export function Learning({
                     );
                   }}
                 >
-                  <option value="">Not recorded</option>
+                  <option value="">Not Recorded</option>
                   {data.levels.slice(0, expectedIndex + 1).map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.name}
@@ -1076,7 +1077,7 @@ export function Learning({
             )}
             {!a.current && (
               <p className="cm-hint cm-not-assessed">
-                Not Assessed — your administrator or manager needs to record your current level before your learning plan can be generated.
+                Not assessed — your administrator or manager needs to record your current level before your learning plan can be generated.
               </p>
             )}
             {a.current &&
@@ -1090,7 +1091,7 @@ export function Learning({
                 return (
                   <p className="cm-hint cm-content-missing-hint">
                     <AlertTriangle size={14} />
-                    {" "}Learning Unavailable — required learning for {skillName} ({missingLevels.map((l) => l.name).join(", ")}) under {compName} has not been configured. Please contact your administrator.
+                    {" "}Learning unavailable — required learning for {skillName} ({missingLevels.map((l) => l.name).join(", ")}) under {compName} has not been configured. Please contact your administrator.
                   </p>
                 );
               })()}
@@ -1112,7 +1113,7 @@ export function Learning({
                         .at(-1);
                       const status = done.includes(c.id)
                         ? "Completed"
-                        : proof?.status ?? "Not started";
+                        : proof?.status ?? "Not Started";
                       const statusClass = done.includes(c.id)
                         ? "active"
                         : proof
@@ -1128,7 +1129,7 @@ export function Learning({
                           </td>
                           <td><span className="cm-level-badge">{c.level.name}</span></td>
                           <td className="cm-ct-dur">{c.duration}</td>
-                          <td><span className={`cm-badge cm-badge-sm ${statusClass}`}>{status}</span></td>
+                          <td><span className={`cm-badge cm-badge-sm ${statusClass}`}>{statusText(status)}</span></td>
                         </tr>
                       );
                     })}
@@ -1143,7 +1144,7 @@ export function Learning({
 
       {manager && (
         <>
-          <h3>Proof submissions</h3>
+          <h3>Proof Submissions</h3>
           {!work.proofs.length && (
             <p>
               No submissions yet. Learners can submit a certificate from their
@@ -1163,7 +1164,7 @@ export function Learning({
                       {p.submitted} · {p.fileName}
                     </p>
                   </div>
-                  <span className="cm-badge">{p.status}</span>
+                  <span className="cm-badge">{statusText(p.status)}</span>
                 </div>
                 <a className="cm-link" href={p.document} download={p.fileName}>
                   <FileText size={16} />
@@ -1172,7 +1173,7 @@ export function Learning({
                 {p.status === "Under Review" ? (
                   <>
                     <label>
-                      Review remarks
+                      Review Remarks
                       <textarea
                         value={remark[p.id] || ""}
                         onChange={(e) =>
@@ -1186,13 +1187,13 @@ export function Learning({
                         className="cm-button"
                         onClick={() => review(p, false)}
                       >
-                        Reject with feedback
+                        Reject with Feedback
                       </button>
                       <button
                         className="cm-button primary"
                         onClick={() => review(p, true)}
                       >
-                        Approve proof
+                        Approve Proof
                       </button>
                     </div>
                   </>
@@ -1212,14 +1213,14 @@ export function Learning({
         >
           <DialogContent className="cm-dialog">
             <DialogHeader>
-              <DialogTitle>Submit proof of completion</DialogTitle>
+              <DialogTitle>Submit Proof of Completion</DialogTitle>
               <DialogDescription>
                 Upload a certificate or supporting document for your manager to
                 review.
               </DialogDescription>
             </DialogHeader>
             <label>
-              Certificate or document
+              Certificate or Document
               <input
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg"
@@ -1248,7 +1249,7 @@ export function Learning({
                 disabled={!file || busy}
                 onClick={() => void submit()}
               >
-                {busy ? "Saving…" : "Submit for review"}
+                {busy ? "Saving…" : "Submit for Review"}
               </button>
             </div>
           </DialogContent>

@@ -57,7 +57,7 @@ export function ProfilePage() {
   return (
     <div className="max-w-[1200px] mx-auto space-y-6">
       {/* Breadcrumb */}
-      <Breadcrumb items={[{ label: 'Profile' }]} />
+      <Breadcrumb items={[{ label: "Profile" }]} />
 
       {/* Banner Section */}
       <motion.div
@@ -208,7 +208,7 @@ export function ProfilePage() {
         </div>
       </motion.div>
 
-      {/* Login History Section */}
+      {/* Login history Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

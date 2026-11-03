@@ -114,7 +114,7 @@ export function Editor({
           </label>
           {parent && (
             <div className="cm-hint">
-              <strong>Skill in {parent.name}</strong>
+              <strong>Skill In {parent.name}</strong>
               <br />
               Category and competency are already linked. Define the skill
               below.
@@ -128,7 +128,7 @@ export function Editor({
                 value={draft.categoryId || ""}
                 onChange={(e) => set("categoryId", e.target.value)}
               >
-                <option value="">Select a category</option>
+                <option value="">Select a Category</option>
                 {data.categories
                   .filter((x) => x.status === "Active")
                   .map((x) => (
@@ -146,7 +146,7 @@ export function Editor({
                   Choose a competency from the library to add a skill.
                 </p>
               )}
-              <h3>Proficiency expectations</h3>
+              <h3>Proficiency Expectations</h3>
               {data.levels
                 .filter((x) => x.status === "Active")
                 .map((l) => (
@@ -174,7 +174,7 @@ export function Editor({
           {kind === "levels" && (
             <>
               <label>
-                Level order
+                Level Order
                 <input
                   type="number"
                   readOnly

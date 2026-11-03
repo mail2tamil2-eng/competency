@@ -261,7 +261,7 @@
   font-size: 14px;
   color: var(--cm-muted);
   background: #f9fafb;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.025em;
   border-bottom: 1px solid var(--cm-border);
 }
@@ -614,13 +614,22 @@
 
 /* Step 1 */
 .cm-create-step1 {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   padding: 10px 0 8px;
 }
 .cm-create-step1 label {
   margin: 0;
+  min-width: 0;
+}
+.cm-create-step1 > label:nth-child(n + 3) {
+  grid-column: 1 / -1;
+}
+@media (max-width: 640px) {
+  .cm-create-step1 {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .cm-create-step1 input,
 .cm-create-step1 select,
@@ -739,7 +748,7 @@
 .cm-proficiency-label {
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.6px;
   color: #6b7280;
   margin-bottom: 8px;
@@ -932,14 +941,14 @@
   flex: 1;
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.06em;
   color: #8a99b3;
 }
 .cm-picker-col-weight-label {
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.06em;
   color: #8a99b3;
   width: 81px;
@@ -1197,7 +1206,7 @@
   text-align: left;
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.4px;
   color: #6b7280;
   border-bottom: 1px solid var(--cm-border);
@@ -1284,6 +1293,19 @@
 .cm-assignment-search .cm-search {
   flex: 1;
   min-width: 200px;
+}
+.cm-assignment-search .cm-assignment-category-filter {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  max-width: 100%;
+}
+.cm-assignment-category-filter select {
+  min-width: 160px;
+  width: auto;
+  max-width: 100%;
 }
 .cm-dialog .cm-assignment-filter {
   display: flex;
@@ -1815,7 +1837,7 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--cm-muted);
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.04em;
   margin-bottom: 10px;
 }
@@ -1903,3 +1925,9 @@
   .cm-cp-chain { row-gap: 6px; }
   .cm-cp-role-name { font-size: 12px; }
 }
+
+/* Per-course requirement control */
+.cm-course-mandatory { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 8px !important; margin: 0 0 0 auto; flex-shrink: 0; font-size: 12px; font-weight: 500; color: #526176; cursor: pointer; }
+.cm-course-mandatory input[type="checkbox"] { width: 16px !important; height: 16px !important; margin: 0 !important; accent-color: #2563eb; }
+.cm-course-mandatory:has(input:disabled) { opacity: .45; cursor: default; }
+.cm-course-mandatory:has(input:checked) { color: #1d4ed8; }

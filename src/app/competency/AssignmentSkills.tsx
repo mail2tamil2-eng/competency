@@ -18,21 +18,23 @@ export function AssignmentSkills({
   readOnly = false,
 }: Props) {
   const [query, setQuery] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [onlySelected, setOnlySelected] = useState(false);
   const term = query.trim().toLowerCase();
   const groups = data.competencies.filter(
     (c) =>
-      c.status === "Active" ||
+      (!categoryId || c.categoryId === categoryId) &&
+      (c.status === "Active" ||
       selected.some(
         (x) =>
           data.skills.find((s) => s.id === x.skillId)?.competencyId === c.id,
-      ),
+      )),
   );
   const missing = selected.filter((s) => !s.expected).length;
   return (
     <section
       className="cm-assignment-picker"
-      aria-label="Competency and skill selection"
+      aria-label="Competency and Skill Selection"
     >
       <p className="cm-assignment-help">
         {readOnly
@@ -40,10 +42,23 @@ export function AssignmentSkills({
           : "Open a competency, select its skills, then choose the expected level for each skill."}
       </p>
       <div className="cm-assignment-search">
+        <label className="cm-assignment-category-filter">
+          <span>Category</span>
+          <select
+            aria-label="Filter Assignment Competencies by Category"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+          >
+            <option value="">All Categories</option>
+            {data.categories.map((category) => (
+              <option key={category.id} value={category.id}>{category.name}</option>
+            ))}
+          </select>
+        </label>
         <div className="cm-search">
           <Search size={16} />
           <input
-            aria-label="Search assignment competencies and skills"
+            aria-label="Search Assignment Competencies and Skills"
             placeholder="Search competencies or skills…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -56,16 +71,16 @@ export function AssignmentSkills({
               checked={onlySelected}
               onChange={(e) => setOnlySelected(e.target.checked)}
             />
-            Selected only
+            Selected Only
           </label>
         )}
       </div>
       <div className="cm-assignment-count" role="status">
-        <strong>{selected.length} skills selected</strong>
+        <strong>{selected.length} Skills Selected</strong>
         <span>
           {missing
             ? `${missing} need an expected level`
-            : "All selected levels set"}
+            : "All Selected Levels Set"}
         </span>
       </div>
       <div className="cm-assignment-groups">
@@ -95,15 +110,15 @@ export function AssignmentSkills({
               levels={data.levels.filter((l) => l.status === "Active")}
               selected={selected}
               onChange={onChange}
-              filterKey={`${term}:${onlySelected}`}
+              filterKey={`${categoryId}:${term}:${onlySelected}`}
               searching={!!term || onlySelected || readOnly}
               readOnly={readOnly}
             />
           );
         })}
         <p className="cm-assignment-no-results">
-          No matching competencies or skills. Try another search or turn off
-          Selected only.
+          No matching competencies or skills. Try another category or search, or turn off
+          Selected Only.
         </p>
       </div>
     </section>
@@ -161,10 +176,10 @@ function SkillGroup({
           <Layers size={20} />
         </span>
         <span>
-          <small>COMPETENCY</small>
+          <small>Competency</small>
           <strong>{competency.name}</strong>
           <span>
-            {total} skills · {chosen.length} selected
+            {total} Skills · {chosen.length} Selected
           </span>
         </span>
         <ChevronDown size={18} className={expanded ? "cm-rotated" : ""} />
@@ -188,7 +203,7 @@ function SkillGroup({
                   ])
                 }
               >
-                Select this page ({rows.length})
+                Select This Page ({rows.length})
               </button>
               <button
                 type="button"
@@ -198,7 +213,7 @@ function SkillGroup({
                   onChange(selected.filter((s) => !ids.has(s.skillId)))
                 }
               >
-                Clear {filterKey.startsWith(":") ? "group" : "matching skills"}
+                Clear {filterKey.startsWith(":") ? "Group" : "Matching Skills"}
               </button>
               <select
                 aria-label={`Set level for selected skills in ${competency.name}`}
@@ -215,7 +230,7 @@ function SkillGroup({
                 }
               >
                 <option value="">
-                  Set level for {chosen.length} selected…
+                  Set Level For {chosen.length} Selected…
                 </option>
                 {levels.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -275,7 +290,7 @@ function SkillGroup({
                       onChange={(e) => setLevel(s.id, e.target.value)}
                     >
                       <option value="">
-                        {selection ? "Choose level" : "Select skill first"}
+                        {selection ? "Choose Level" : "Select Skill First"}
                       </option>
                       {levels.map((l) => (
                         <option key={l.id} value={l.id}>
@@ -297,8 +312,8 @@ function SkillGroup({
             <div className="cm-pagination">
               <span>
                 {page * PAGE_SIZE + 1}–
-                {Math.min((page + 1) * PAGE_SIZE, skills.length)} of{" "}
-                {skills.length} skills
+                {Math.min((page + 1) * PAGE_SIZE, skills.length)} Of{" "}
+                {skills.length} Skills
               </span>
               <div>
                 <button

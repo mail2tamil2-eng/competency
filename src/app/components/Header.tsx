@@ -31,7 +31,7 @@ export function Header({ userName, isCollapsed = false }: HeaderProps) {
 
   // Use authenticated user or fallback to prop
   const displayName = user?.name || userName || "User";
-  const displayRole = "Workspace administrator";
+  const displayRole = "Workspace Administrator";
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -70,7 +70,7 @@ export function Header({ userName, isCollapsed = false }: HeaderProps) {
           <input
             type="text"
             placeholder="Search competencies or skills..."
-            aria-label="Search competencies and skills globally"
+            aria-label="Search Competencies and Skills Globally"
             onChange={(e) =>
               window.dispatchEvent(
                 new CustomEvent("competency-search", {
@@ -100,10 +100,10 @@ export function Header({ userName, isCollapsed = false }: HeaderProps) {
               onClick={() => window.dispatchEvent(new CustomEvent("competency-reset"))}
               className="text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors whitespace-nowrap"
             >
-              Reset demo data
+              Reset Demo Data
             </button>
             <select
-              aria-label="Workspace view"
+              aria-label="Workspace View"
               value={competencyView}
               onChange={(e) =>
                 window.dispatchEvent(
@@ -113,15 +113,15 @@ export function Header({ userName, isCollapsed = false }: HeaderProps) {
               className="text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
             >
               <option value="admin">Administrator</option>
-              <option value="learner">Learner preview</option>
-              <option value="manager">Manager preview</option>
+              <option value="learner">Learner Preview</option>
+              <option value="manager">Manager Preview</option>
             </select>
             <div className="w-px h-6 bg-gray-200" />
           </>
         )}
         {/* Notifications */}
         <button
-          aria-label="Review notifications"
+          aria-label="Review Notifications"
           onClick={() => {
             const pending =
               readData().workflow?.proofs.filter(

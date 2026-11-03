@@ -184,7 +184,7 @@ export function LearnerProgress({
       {/* Header */}
       <div className="cm-section-head">
         <div>
-          <h2>Assignments &amp; progress</h2>
+          <h2>Assignments &amp; Progress</h2>
           <p>Expand one or more learners to compare and update proficiency levels.</p>
         </div>
         <div className="cm-actions">
@@ -194,7 +194,7 @@ export function LearnerProgress({
               download("learner-progress.csv", [
                 [
                   "Learner", "Role", "Email", "Department", "Competency",
-                  "Skill", "Current level", "Expected level", "Skill gap", "Status",
+                  "Skill", "Current Level", "Expected Level", "Skill Gap", "Status",
                 ],
                 ...data.assignments.map((a) => {
                   const emp = empFor(a);
@@ -223,7 +223,7 @@ export function LearnerProgress({
         <label className="cm-search cm-lp-search-field">
           <Search size={16} />
           <input
-            aria-label="Search learners"
+            aria-label="Search Learners"
             placeholder="Search name, role, email, department…"
             value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(0); }}
@@ -232,11 +232,11 @@ export function LearnerProgress({
         <div className="cm-cmp-legend cm-cmp-legend-inline">
           <span className="cm-cmp-legend-item">
             <span className="cm-cmp-legend-dot current" />
-            Current level
+            Current Level
           </span>
           <span className="cm-cmp-legend-item">
             <span className="cm-cmp-legend-dot target">★</span>
-            Target level
+            Target Level
           </span>
           <span className="cm-cmp-legend-item">
             <span className="cm-cmp-legend-dash" />
@@ -248,7 +248,7 @@ export function LearnerProgress({
             const allExpanded = pageGroups.length > 0 && pageGroups.every(([k]) => expanded.has(k));
             return (
               <button className="cm-button" onClick={allExpanded ? collapseAll : expandAll}>
-                {allExpanded ? "Collapse all" : "Extend"}
+                {allExpanded ? "Collapse All" : "Extend"}
               </button>
             );
           })()}
@@ -263,8 +263,8 @@ export function LearnerProgress({
               <th className="cm-exp-col"></th>
               <th>Learner</th>
               <th>Role</th>
-              <th>Assigned skills</th>
-              <th>Skill gaps</th>
+              <th>Assigned Skills</th>
+              <th>Skill Gaps</th>
             </tr>
           </thead>
           <tbody>
@@ -298,7 +298,7 @@ export function LearnerProgress({
                     <td>{emp?.role || <span className="cm-muted-dash">—</span>}</td>
                     <td>
                       <span className="cm-skill-count-badge">
-                        {items.length} skill{items.length !== 1 ? "s" : ""}
+                        {items.length} Skill{items.length !== 1 ? "s" : ""}
                       </span>
                     </td>
                     <td>
@@ -327,7 +327,7 @@ export function LearnerProgress({
                                   setBelowOnly((prev) => ({ ...prev, [key]: e.target.checked }))
                                 }
                               />
-                              Below target only
+                              Below Target Only
                             </label>
                           </div>
 
@@ -338,7 +338,7 @@ export function LearnerProgress({
                                 <tr>
                                   <th className="cm-sct-skill">Skill</th>
                                   <th className="cm-sct-cmp">
-                                    <span className="cm-sct-cmp-label">Proficiency comparison</span>
+                                    <span className="cm-sct-cmp-label">Proficiency Comparison</span>
                                     {n >= 2 && (
                                       <div
                                         className="cm-cmp-level-header"
@@ -440,7 +440,7 @@ export function LearnerProgress({
                                       </td>
                                       <td className="cm-sct-td-action">
                                         {isAtMax ? (
-                                          <span className="cm-lp-at-max">Highest level</span>
+                                          <span className="cm-lp-at-max">Highest Level</span>
                                         ) : (
                                           <button
                                             className="cm-button cm-lp-update-btn"
@@ -488,7 +488,7 @@ export function LearnerProgress({
           {total
             ? `${currentPage * PAGE_SIZE + 1}–${Math.min((currentPage + 1) * PAGE_SIZE, total)} of ${total}`
             : "0"}{" "}
-          learners
+          Learners
         </span>
         <div>
           <button className="cm-button" disabled={!currentPage} onClick={() => setPage(currentPage - 1)}>
@@ -516,18 +516,18 @@ export function LearnerProgress({
             className="cm-update-popover"
             style={{ top: updatePos.top, right: updatePos.right }}
             role="dialog"
-            aria-label="Update proficiency level"
+            aria-label="Update Proficiency Level"
           >
             <p className="cm-update-popover-skill">{skillOf(a)?.name}</p>
             <div className="cm-update-popover-field">
-              <span className="cm-update-popover-label">Current level</span>
+              <span className="cm-update-popover-label">Current Level</span>
               <span className="cm-update-popover-value">
                 {a.current ? lvlName(a.current) : <em>Not assessed</em>}
               </span>
             </div>
             <div className="cm-update-popover-field">
               <label className="cm-update-popover-label" htmlFor="cm-new-level">
-                New level
+                New Level
               </label>
               <select
                 id="cm-new-level"
@@ -535,7 +535,7 @@ export function LearnerProgress({
                 value={pendingLevel}
                 onChange={(e) => setPendingLevel(e.target.value)}
               >
-                {!a.current && <option value="" disabled>Select a level</option>}
+                {!a.current && <option value="" disabled>Select a Level</option>}
                 {levels
                   .filter((l) => l.status === "Active" || l.id === a.current)
                   .map((l) => {
@@ -543,7 +543,7 @@ export function LearnerProgress({
                     const disabled = ci >= 0 && li <= ci;
                     return (
                       <option key={l.id} value={l.id} disabled={disabled}>
-                        {l.name}{li === ci ? " (current)" : ""}
+                        {l.name}{li === ci ? " (Current)" : ""}
                       </option>
                     );
                   })}
