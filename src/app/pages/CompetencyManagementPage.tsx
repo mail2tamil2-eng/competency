@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Map,
   Route,
+  ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Data, Assignment, key, readData, seed, uid } from "../competency/model";
@@ -38,6 +39,7 @@ import {
   Learning,
   Reports,
 } from "../competency/Workflows";
+import { AdminProofs } from "../competency/AdminProofs";
 import {
   WorkflowData,
   workflowSeed,
@@ -50,6 +52,7 @@ const tabs = [
   ["assignments", "User Level Update", BarChart2],
   ["career-progression", "Role Progression", Route],
   ["reports", "Reports", ListChecks],
+  ["proof-submissions", "Proof Submissions", ClipboardCheck],
   ["learner", "My Learning", GraduationCap],
   ["learner-report", "Skill Progress Report", TrendingUp],
   ["manager", "Team Progress", Users],
@@ -264,6 +267,9 @@ export function CompetencyManagementPage() {
           <CareerProgressionConfig data={data} work={work} save={saveWorkflow} />
         )}
         {tab === "reports" && <Reports data={data} work={work} />}
+        {tab === "proof-submissions" && (
+          <AdminProofs data={data} work={work} save={saveWorkflow} />
+        )}
 
         {tab === "assignments" && (
           <LearnerProgress

@@ -386,7 +386,8 @@ export function RoleMapping({ data, work, save }: Props) {
             hasEndDate: false,
             cohort: "",
             method: "Auto",
-            type: "Static",
+            type: "Dynamic",
+            allUsers: false,
             department: "",
             role: "",
             location: "",
@@ -410,8 +411,8 @@ export function RoleMapping({ data, work, save }: Props) {
     }
     if (draft.end && draft.end < draft.start) { setError("End date must be on or after start date."); return false; }
     if (draft.method === "Manual" && !draft.employeeIds.length) { setError("Select at least one learner."); return false; }
-    if (draft.method === "Auto" && !draft.department && !draft.role && !draft.cohort && !draft.departments?.length && !draft.roles?.length && !draft.cohorts?.length) {
-      setError("Choose at least one audience criterion (department, role, or cohort)."); return false;
+    if (draft.method === "Auto" && !draft.allUsers && !draft.department && !draft.role && !draft.cohort && !draft.departments?.length && !draft.roles?.length && !draft.cohorts?.length) {
+      setError("Choose All Users or at least one audience criterion (department, role, or cohort)."); return false;
     }
     const old = work.plans.find((p) => p.id === draft.id);
     if (old && started(old) && old.skills.some((s) => !draft.skills.some((x) => x.skillId === s.skillId && x.expected === s.expected))) {

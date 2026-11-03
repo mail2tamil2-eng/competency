@@ -106,7 +106,7 @@ function DetailView({
           const mapping = c.mappings.find((m) => m.skillId === a.skillId && m.levelId === l.id);
           const proof = work.proofs.filter((p) => p.assignmentId === a.id && p.courseId === c.id).at(-1);
           const courseStatus = done.includes(c.id) ? "Completed" : c.id === firstRequired ? "In Progress" : "Not Started";
-          return { level: l, course: c, weightage: mapping?.weightage, courseStatus, proofStatus: proof?.status || "—" };
+          return { level: l, course: c, mandatory: mapping?.mandatory ?? false, courseStatus, proofStatus: proof?.status || "—" };
         }),
     );
   }
@@ -229,17 +229,21 @@ function DetailView({
                     <tr>
                       <th>Skill Level</th>
                       <th>Course Name</th>
-                      <th>Course Weightage</th>
+                      <th>Mandatory</th>
                       <th>Course Status</th>
                       <th>Proof Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {courseRows.map(({ level, course, weightage, courseStatus, proofStatus: ps }) => (
+                    {courseRows.map(({ level, course, mandatory, courseStatus, proofStatus: ps }) => (
                       <tr key={course.id + level.id}>
                         <td>{level.name}</td>
                         <td><strong>{course.name}</strong></td>
-                        <td>{weightage != null ? weightage + "%" : "—"}</td>
+                        <td>
+                          {mandatory
+                            ? <span className="cm-manager-status success">Yes</span>
+                            : <span className="cm-manager-status">No</span>}
+                        </td>
                         <td><StatusBadge status={courseStatus} /></td>
                         <td>{ps === "—" ? <span className="cm-muted">—</span> : <StatusBadge status={ps} />}</td>
                       </tr>

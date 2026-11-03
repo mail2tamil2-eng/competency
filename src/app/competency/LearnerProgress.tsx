@@ -1,9 +1,233 @@
 import { Fragment, useState, useEffect } from "react";
-import { Download, Search, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
-import { Data, Assignment, download } from "./model";
+import { Download, Upload, Search, CheckCircle2, ChevronDown, ChevronUp, FileCheck2 } from "lucide-react";
+import { Data, Assignment, download, parseCSV } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../components/ui/dialog";
 
 const personKey = (a: Assignment) => JSON.stringify([a.name, a.department]);
+
+/* ── Bulk level upload ─────────────────────────────────────────────────── */
+const BULK_HEADERS = ["Name", "Department", "Skill", "Current Level"];
+
+type BulkRow = {
+  line: number;
+  name: string;
+  department: string;
+  skill: string;
+  levelName: string;
+  assignmentId: string | null;
+  levelId: string | null;
+  errors: string[];
+};
+
+function BulkLevelUpload({
+  data,
+  onClose,
+  onImport,
+}: {
+  data: Data;
+  onClose: () => void;
+  onImport: (rows: BulkRow[]) => void;
+}) {
+  const [rows, setRows] = useState<BulkRow[]>([]);
+  const [error, setError] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const invalid = rows.filter((r) => r.errors.length);
+  const valid = rows.filter((r) => !r.errors.length);
+
+  async function load(file?: File) {
+    setRows([]);
+    setError("");
+    setFileName(file?.name || "");
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setError("Please upload a CSV file. Download the template to get started.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Keep the file under 2 MB.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const parsed = parseCSV(await file.text());
+      if (parsed.length < 2) throw Error("Add at least one data row below the column headings.");
+      if (parsed.length > 1001) throw Error("Upload up to 1,000 rows at a time.");
+      const cols = parsed[0].map((x) => x.toLowerCase().trim());
+      const missing = BULK_HEADERS.filter((h) => !cols.includes(h.toLowerCase()));
+      if (missing.length) throw Error("Missing columns: " + missing.join(", "));
+      const get = (cells: string[], col: string) =>
+        (cells[cols.indexOf(col.toLowerCase())] || "").trim();
+
+      setRows(
+        parsed.slice(1).map((cells, i) => {
+          const name = get(cells, "Name");
+          const department = get(cells, "Department");
+          const skill = get(cells, "Skill");
+          const levelName = get(cells, "Current Level");
+          const errors: string[] = [];
+
+          if (!name) errors.push("Name is required.");
+          if (!department) errors.push("Department is required.");
+          if (!skill) errors.push("Skill is required.");
+          if (!levelName) errors.push("Current Level is required.");
+
+          let assignmentId: string | null = null;
+          let levelId: string | null = null;
+
+          if (name && department && skill && levelName) {
+            const match = data.assignments.find(
+              (a) =>
+                a.name.toLowerCase() === name.toLowerCase() &&
+                a.department.toLowerCase() === department.toLowerCase() &&
+                (data.skills.find((s) => s.id === a.skillId)?.name || "").toLowerCase() === skill.toLowerCase(),
+            );
+            if (!match) {
+              errors.push(`No assignment found for "${name}" (${department}) — "${skill}".`);
+            } else {
+              assignmentId = match.id;
+              const level = data.levels.find(
+                (l) => l.name.toLowerCase() === levelName.toLowerCase() && l.status === "Active",
+              );
+              if (!level) {
+                errors.push(`"${levelName}" is not a valid active level.`);
+              } else {
+                levelId = level.id;
+                const ci = data.levels.findIndex((l) => l.id === match.current);
+                const ni = data.levels.findIndex((l) => l.id === level.id);
+                if (ci >= 0 && ni <= ci) {
+                  errors.push(`New level must be higher than current (${data.levels[ci]?.name}).`);
+                }
+              }
+            }
+          }
+
+          return { line: i + 2, name, department, skill, levelName, assignmentId, levelId, errors };
+        }),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to read this file.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="cm-dialog cm-wide">
+        <DialogHeader>
+          <DialogTitle>Bulk Level Update</DialogTitle>
+          <DialogDescription>
+            Upload a CSV to update current proficiency levels for multiple learners at once.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="cm-template">
+          <div>
+            <strong>Download the template first</strong>
+            <p>Fill in Name, Department, Skill and the new Current Level. Up to 1,000 rows · CSV · 2 MB.</p>
+          </div>
+          <button
+            className="cm-button"
+            onClick={() => download("level-update-template.csv", [BULK_HEADERS])}
+          >
+            <Download size={16} /> Download Template
+          </button>
+        </div>
+
+        <label
+          className="cm-drop"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); void load(e.dataTransfer.files[0]); }}
+        >
+          <Upload size={28} />
+          <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
+          <span>Nothing is saved until you confirm below.</span>
+          <input
+            aria-label="CSV File"
+            type="file"
+            accept=".csv,text/csv"
+            disabled={busy}
+            onChange={(e) => void load(e.target.files?.[0])}
+          />
+        </label>
+
+        {busy && <p role="status">Checking your file…</p>}
+        {error && <p className="cm-error" role="alert">{error}</p>}
+
+        {rows.length > 0 && (
+          <>
+            <div className="cm-toolbar">
+              <strong><FileCheck2 size={18} /> {rows.length} Rows Reviewed</strong>
+              <span>{valid.length} Ready · {invalid.length} Need Attention</span>
+              {invalid.length > 0 && (
+                <button
+                  className="cm-button"
+                  onClick={() =>
+                    download("level-update-errors.csv", [
+                      ["Row", "Name", "Skill", "Errors"],
+                      ...invalid.map((r) => [String(r.line), r.name, r.skill, r.errors.join(" ")]),
+                    ])
+                  }
+                >
+                  Download Errors
+                </button>
+              )}
+            </div>
+            {invalid.length > 0 && (
+              <p className="cm-error">Fix highlighted rows and re-upload. No changes have been saved.</p>
+            )}
+            <div className="cm-table-wrap cm-preview">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Row</th>
+                    <th>Learner</th>
+                    <th>Skill</th>
+                    <th>New Level</th>
+                    <th>Validation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.line} className={r.errors.length ? "cm-invalid" : ""}>
+                      <td>{r.line}</td>
+                      <td>{r.name || <em>Missing</em>}<br /><small>{r.department}</small></td>
+                      <td>{r.skill || <em>Missing</em>}</td>
+                      <td>{r.levelName || <em>Missing</em>}</td>
+                      <td className={r.errors.length ? "cm-invalid" : ""}>
+                        {r.errors.join(" ") || "Ready to update"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        <div className="cm-dialog-actions">
+          <button className="cm-button" onClick={onClose}>Cancel</button>
+          <button
+            className="cm-button primary"
+            disabled={busy || valid.length === 0 || invalid.length > 0}
+            onClick={() => onImport(valid)}
+          >
+            Update {valid.length || ""} Learner{valid.length !== 1 ? "s" : ""}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 type GapStatus = "below" | "met" | "above" | "not-assessed" | "no-target";
 
@@ -42,6 +266,7 @@ export function LearnerProgress({
   const [updateId, setUpdateId] = useState<string | null>(null);
   const [updatePos, setUpdatePos] = useState({ top: 0, right: 0 });
   const [pendingLevel, setPendingLevel] = useState("");
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   useEffect(() => {
     if (!updateId) return;
@@ -179,15 +404,29 @@ export function LearnerProgress({
     return "empty";
   }
 
+  function handleBulkImport(rows: BulkRow[]) {
+    let current = { data, work };
+    for (const r of rows) {
+      if (!r.assignmentId || !r.levelId) continue;
+      current = updateCurrent(current.data, current.work, r.assignmentId, r.levelId, "Admin");
+    }
+    if (save(current.data, current.work, `Bulk updated ${rows.length} learner level${rows.length !== 1 ? "s" : ""}`)) {
+      setShowBulkUpload(false);
+    }
+  }
+
   return (
-    <section className="cm-card">
+    <section className="cm-card cm-level-update">
       {/* Header */}
       <div className="cm-section-head">
         <div>
           <h2>Assignments &amp; Progress</h2>
-          <p>Expand one or more learners to compare and update proficiency levels.</p>
+          <p>Expand a learner to compare and update proficiency levels individually, or use Bulk Upload to update many at once.</p>
         </div>
         <div className="cm-actions">
+          <button className="cm-button" onClick={() => setShowBulkUpload(true)}>
+            <Upload size={16} /> Bulk Upload
+          </button>
           <button
             className="cm-button"
             onClick={() =>
@@ -503,6 +742,14 @@ export function LearnerProgress({
           </button>
         </div>
       </div>
+
+      {showBulkUpload && (
+        <BulkLevelUpload
+          data={data}
+          onClose={() => setShowBulkUpload(false)}
+          onImport={handleBulkImport}
+        />
+      )}
 
       {/* Update popover */}
       {updateId && (() => {

@@ -109,44 +109,21 @@ body {
   background: #edf4ff;
   color: #48617d;
 }
-.cm .cm-manager {
-  background: #fff;
-}
-.cm:has(.cm-manager) {
-  background: #fff;
-}
-.cm .cm-manager .cm-card {
-  box-shadow: none;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-}
-.cm .cm-manager .cm-table-wrap {
-  box-shadow: none;
-  border: 0;
-  border-radius: 0;
-  border-top: 1px solid #d9dfe7;
-  border-bottom: 1px solid #d9dfe7;
-}
 .cm .cm-manager-table th {
-  background: #fff;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 13px;
-  font-weight: 400;
-  color: #526176;
-  padding: 8px 12px;
+  padding: 10px 14px;
 }
 .cm .cm-manager-table td {
-  font-size: 14px;
-  padding: 10px 12px;
-  border-color: #d9dfe7;
+  padding: 10px 14px;
+  white-space: nowrap;
 }
 .cm .cm-manager-table td strong {
   font-weight: 600;
 }
-.cm .cm-manager-table td small {
-  font-size: 13px;
+.cm .cm-manager-table td small,
+.cm .cm-manager-table td p {
+  white-space: normal;
 }
 .cm .cm-manager .cm-button {
   font-weight: 400;
@@ -367,6 +344,22 @@ body {
 .cm .cm-library-explainer p {
   font-size: 14px;
 }
+/* Admin card screen heading hierarchy */
+.cm .cm-card > .cm-section-head h2,
+.cm .cm-level-update > .cm-section-head h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+}
+.cm .cm-card > .cm-section-head p,
+.cm .cm-level-update > .cm-section-head p {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+  line-height: 1.5;
+}
 .cm .cm-heading p,
 .cm .cm-manager-caption,
 .cm .cm-manager-stats small {
@@ -524,56 +517,132 @@ body {
 .cm-inline-form .cm-assignment-group-toggle > span > span {
   font-size: 13px;
 }
-/* ── Create Competency & Skills – compact layout ── */
+/* ── Create Competency & Skills – type hierarchy matches Role Mapping ── */
 
-/* Cards: 20px padding, no margin (gaps are explicit) */
-.cm-create-inline .cm-config-section {
-  padding: 20px;
-  margin: 0;
+/* Form shell */
+.cm-create-inline {
+  background: #f6f8fb;
+  border: 1px solid #e8edf4;
 }
-/* 20px gap between the two section cards */
+
+/* Back link */
+.cm-create-inline .cm-inline-back {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Page title */
+.cm-create-inline .cm-inline-form-head h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+  margin: 4px 0 0;
+}
+
+/* Section cards */
+.cm-create-inline .cm-config-section {
+  padding: 24px;
+  margin: 0;
+  border-color: #dfe6ef;
+  box-shadow: 0 2px 4px rgb(15 23 42 / 3%);
+}
 .cm-create-inline .cm-config-section + .cm-config-section {
   margin-top: 20px;
 }
-/* Section heading → content gap */
+
+/* Section headings */
 .cm-create-inline .cm-config-section > h3 {
-  margin-bottom: 16px;
-}
-/* Override platform margin-8px on labels inside the create form */
-.cm-create-inline .cm-config-section label {
-  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e8edf4;
+  margin-bottom: 20px;
 }
 
-/* ── Competency details (step 1) ── */
-.cm-create-inline .cm-create-step1 {
-  gap: 16px;
-  padding: 0;
+/* Field labels — step 1 and skill card body */
+.cm-create-inline .cm-config-section label,
+.cm-create-inline .cm-create-skill-card-body label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0;
 }
 .cm-create-inline .cm-create-step1 label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
+.cm-create-inline .cm-create-skill-card-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Inputs and selects */
 .cm-create-inline .cm-create-step1 input,
 .cm-create-inline .cm-create-step1 select {
-  height: 40px;
-  min-height: 40px;
+  height: 42px;
+  min-height: 42px;
+  font-size: 14px;
+  color: #1e293b;
 }
 .cm-create-inline .cm-create-step1 textarea {
-  height: 72px;
-  min-height: 72px;
+  height: 80px;
+  min-height: 80px;
+  font-size: 14px;
+  color: #1e293b;
   resize: vertical;
 }
 .cm-create-inline .cm-create-step1 .cm-field-hint {
+  font-size: 13px;
+  color: #64748b;
   margin-top: 2px;
   margin-bottom: 0;
 }
+.cm-create-inline .cm-create-step1 {
+  gap: 16px;
+  padding: 0;
+}
 
-/* ── Skills & courses (step 2) ── */
+/* Skill card body inputs */
+.cm-create-inline .cm-create-skill-card-body input:not([type="checkbox"]):not([type="number"]),
+.cm-create-inline .cm-create-skill-card-body select {
+  height: 42px;
+  min-height: 42px;
+  font-size: 14px;
+  color: #1e293b;
+}
+.cm-create-inline .cm-create-skill-card-body textarea {
+  height: 80px;
+  min-height: 80px;
+  font-size: 14px;
+  color: #1e293b;
+  resize: vertical;
+}
+
+/* Proficiency levels sub-label */
+.cm-create-inline .cm-proficiency-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #374151;
+}
+
+/* Helper / support text inside skill card */
+.cm-create-inline .cm-create-skill-card-body .cm-field-hint,
+.cm-create-inline .cm-create-skill-card-body p {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Skills & courses step 2 */
 .cm-create-inline .cm-create-step2 {
   margin: 0;
 }
-/* Right panel: 16px between groups, 6px label-to-input */
 .cm-create-inline .cm-skill-panel-right {
   gap: 16px;
   padding: 16px 20px;
@@ -582,18 +651,20 @@ body {
   gap: 6px;
 }
 .cm-create-inline .cm-skill-panel-right input {
-  height: 40px;
-  min-height: 40px;
+  height: 42px;
+  min-height: 42px;
 }
 .cm-create-inline .cm-skill-panel-right textarea {
-  height: 72px;
-  min-height: 72px;
+  height: 80px;
+  min-height: 80px;
 }
+
 /* Error banner spacing */
 .cm-create-inline > .cm-error {
   border-radius: 8px;
   margin-bottom: 4px;
 }
+
 /* Overflow fix (no dialog constraint) */
 .cm-create-inline .cm-create-content {
   overflow-y: visible;
@@ -610,7 +681,7 @@ body {
   gap: 8px;
 }
 .cm-create-skill-card {
-  border: 1px solid var(--cm-border);
+  border: 1px solid #dfe6ef;
   border-radius: 10px;
   background: #fff;
   overflow: hidden;
@@ -620,7 +691,7 @@ body {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 11px 14px;
+  padding: 13px 16px;
   background: none;
   border: none;
   cursor: pointer;
@@ -634,16 +705,16 @@ body {
   background: #f9fafb;
 }
 .cm-create-skill-card.is-open .cm-create-skill-card-header {
-  border-bottom: 1px solid var(--cm-border);
+  border-bottom: 1px solid #e8edf4;
 }
 .cm-create-skill-card-name {
   flex: 1;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #111827;
+  color: #1e293b;
 }
 .cm-create-skill-status {
   font-size: 12px;
@@ -656,24 +727,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px 20px;
+  padding: 20px 24px;
 }
-.cm-create-skill-card-body label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0;
-}
-.cm-create-skill-card-body input:not([type="checkbox"]):not([type="number"]),
-.cm-create-skill-card-body select {
-  height: 40px;
-  min-height: 40px;
-}
-.cm-create-skill-card-body textarea {
-  height: 72px;
-  min-height: 72px;
-  resize: vertical;
-}
+
+/* Add Skill button */
 .cm-create-add-skill {
   display: inline-flex;
   align-items: center;
@@ -876,21 +933,111 @@ body {
   gap: 8px;
   margin-bottom: 16px;
 }
+/* ── Manual Audience redesign ── */
+.cm-manual-audience h4 { margin: 20px 0 4px; }
+.cm-manual-audience > p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 14px;
+}
+
+/* Zone 1 – Search + filter bar */
+.cm-audience-search-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e8edf4;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.cm-audience-search-input { flex: 1; min-width: 180px; }
+.cm-audience-search-bar select {
+  flex: 0 0 auto;
+  width: 140px;
+  min-height: 36px;
+  font-size: 13px;
+}
+
+/* Zone 2 – Toolbar */
+.cm-audience-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 9px 14px;
+  background: #fff;
+  border: 1px solid #e8edf4;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.cm-audience-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #475569;
+  flex-wrap: wrap;
+}
+.cm-audience-selected-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2463d6;
+}
+.cm-audience-sep { color: #cbd5e1; }
+.cm-audience-only-toggle {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+.cm-audience-bulk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.cm-audience-bulk-btn {
+  padding: 5px 12px !important;
+  font-size: 13px !important;
+  min-height: 32px !important;
+}
+
+/* Zone 3 – Table */
 .cm-manual-audience .cm-table-wrap {
   overflow-x: auto;
-  margin-top: 12px;
+  border: 1px solid #e8edf4;
+  border-radius: 10px;
 }
-.cm-manual-audience table {
-  min-width: 690px;
+.cm-manual-audience table { min-width: 690px; }
+.cm-manual-audience td small { display: block; color: #526176; font-size: 12px; }
+.cm-manual-audience .cm-col-check { width: 44px; text-align: center; }
+.cm-manual-audience .cm-cell-muted { color: #64748b; font-size: 13px; }
+.cm-manual-audience .cm-table-empty {
+  text-align: center;
+  color: #64748b;
+  padding: 28px 16px !important;
+  font-size: 14px;
 }
-.cm-manual-audience td small {
-  display: block;
-  color: #526176;
-}
+.cm-manual-audience .cm-row-selected td { background: #eff6ff; }
 .cm-manual-audience input[type="checkbox"] {
   accent-color: #2d74fa;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Zone 4 – Footer */
+.cm-audience-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
 }
 .cm-dialog .cm-platform-pagination {
   display: flex;
@@ -1768,4 +1915,78 @@ section.cm-learner {
     width: 100%;
     margin-left: 0;
   }
+}
+
+/* All Users / Specific Audience scope toggle */
+.cm-scope-toggle {
+  display: inline-flex;
+  border: 1.5px solid #dfe6ef;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.cm-scope-btn {
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+.cm-scope-btn + .cm-scope-btn {
+  border-left: 1.5px solid #dfe6ef;
+}
+.cm-scope-btn:hover:not(.active) {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+.cm-scope-btn.active {
+  background: #2D74FA;
+  color: #fff;
+}
+.cm-audience-all-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 20px;
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  margin-top: 4px;
+}
+.cm-audience-all-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+  padding-right: 20px;
+  border-right: 1.5px solid #bfdbfe;
+  line-height: 1.2;
+}
+.cm-audience-all-stat strong {
+  font-size: 28px;
+  font-weight: 800;
+  color: #2D74FA;
+  letter-spacing: -0.5px;
+}
+.cm-audience-all-stat span {
+  font-size: 12px;
+  font-weight: 500;
+  color: #3b82f6;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cm-audience-all-banner > p {
+  font-size: 14px;
+  color: #1e40af;
+  line-height: 1.5;
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .cm-scope-btn { padding: 8px 14px; font-size: 13px; }
+  .cm-audience-all-banner { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .cm-audience-all-stat { border-right: none; padding-right: 0; flex-direction: row; gap: 8px; }
 }

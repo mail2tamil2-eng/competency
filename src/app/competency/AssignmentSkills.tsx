@@ -106,6 +106,7 @@ export function AssignmentSkills({
               key={c.id}
               competency={c}
               skills={visible}
+              all={all}
               total={all.length}
               levels={data.levels.filter((l) => l.status === "Active")}
               selected={selected}
@@ -128,6 +129,7 @@ export function AssignmentSkills({
 function SkillGroup({
   competency,
   skills,
+  all,
   total,
   levels,
   selected,
@@ -138,6 +140,7 @@ function SkillGroup({
 }: {
   competency: RecordItem;
   skills: RecordItem[];
+  all: RecordItem[];
   total: number;
   levels: RecordItem[];
   selected: Plan["skills"];
@@ -154,7 +157,15 @@ function SkillGroup({
   );
   const rows = skills.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const ids = new Set(skills.map((s) => s.id));
+  const allIds = new Set(all.map((s) => s.id));
   const chosen = selected.filter((s) => ids.has(s.skillId));
+  const allChosen = selected.filter((s) => allIds.has(s.skillId));
+  const allChecked = allChosen.length > 0 && allChosen.length === all.length;
+  const allIndeterminate = allChosen.length > 0 && allChosen.length < all.length;
+  const commonLevel =
+    allChosen.length > 0 && allChosen.every((s) => s.expected && s.expected === allChosen[0].expected)
+      ? allChosen[0].expected
+      : "";
   const expanded = searching || open;
   const setLevel = (id: string, expected: string) =>
     onChange(selected.map((s) => (s.skillId === id ? { ...s, expected } : s)));
@@ -163,83 +174,84 @@ function SkillGroup({
       className="cm-assignment-group"
       aria-label={`${competency.name} competency`}
     >
-      <button
-        type="button"
-        className="cm-assignment-group-toggle"
-        aria-label={competency.name}
-        aria-expanded={expanded}
-        aria-controls={`assignment-${competency.id}`}
-        onClick={() => setOpen(!open)}
-        disabled={searching}
-      >
-        <span className="cm-mini-icon">
-          <Layers size={20} />
-        </span>
-        <span>
-          <small>Competency</small>
-          <strong>{competency.name}</strong>
-          <span>
-            {total} Skills · {chosen.length} Selected
+      <div className="cm-assignment-group-header">
+        {!readOnly && (
+          <input
+            type="checkbox"
+            className="cm-competency-checkbox"
+            ref={(el) => { if (el) el.indeterminate = allIndeterminate; }}
+            checked={allChecked}
+            aria-label={`Select all skills in ${competency.name}`}
+            onChange={(e) => {
+              if (e.target.checked) {
+                onChange([
+                  ...selected.filter((s) => !allIds.has(s.skillId)),
+                  ...all
+                    .filter((s) => !selected.some((x) => x.skillId === s.id))
+                    .map((s) => ({ skillId: s.id, expected: "" })),
+                ]);
+              } else {
+                onChange(selected.filter((s) => !allIds.has(s.skillId)));
+              }
+            }}
+          />
+        )}
+        <div
+          className="cm-assignment-group-toggle"
+          role="button"
+          tabIndex={searching ? -1 : 0}
+          aria-label={competency.name}
+          aria-expanded={expanded}
+          aria-controls={`assignment-${competency.id}`}
+          onClick={() => !searching && setOpen(!open)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              if (!searching) setOpen(!open);
+            }
+          }}
+        >
+          <span className="cm-mini-icon">
+            <Layers size={20} />
           </span>
-        </span>
-        <ChevronDown size={18} className={expanded ? "cm-rotated" : ""} />
-      </button>
+          <span>
+            <small>Competency</small>
+            <strong>{competency.name}</strong>
+            <span>
+              {total} Skills · {chosen.length} Selected
+            </span>
+          </span>
+          {!readOnly && (
+            <select
+              className="cm-group-level-select"
+              aria-label={`Set level for selected skills in ${competency.name}`}
+              disabled={!allChosen.length}
+              value={commonLevel}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                if (!e.target.value) return;
+                onChange(
+                  selected.map((s) =>
+                    allIds.has(s.skillId) ? { ...s, expected: e.target.value } : s,
+                  ),
+                );
+              }}
+            >
+              <option value="">Set Expected Level</option>
+              {levels.map((l) => (
+                <option key={l.id} value={l.id}>{l.name}</option>
+              ))}
+            </select>
+          )}
+          <ChevronDown size={18} className={expanded ? "cm-rotated" : ""} />
+        </div>
+      </div>
       {expanded && (
         <div
           id={`assignment-${competency.id}`}
           className="cm-assignment-group-body"
         >
-          {!readOnly && !!skills.length && (
-            <div className="cm-assignment-bulk">
-              <button
-                type="button"
-                className="cm-text-button"
-                onClick={() =>
-                  onChange([
-                    ...selected,
-                    ...rows
-                      .filter((s) => !selected.some((x) => x.skillId === s.id))
-                      .map((s) => ({ skillId: s.id, expected: "" })),
-                  ])
-                }
-              >
-                Select This Page ({rows.length})
-              </button>
-              <button
-                type="button"
-                className="cm-text-button"
-                disabled={!chosen.length}
-                onClick={() =>
-                  onChange(selected.filter((s) => !ids.has(s.skillId)))
-                }
-              >
-                Clear {filterKey.startsWith(":") ? "Group" : "Matching Skills"}
-              </button>
-              <select
-                aria-label={`Set level for selected skills in ${competency.name}`}
-                disabled={!chosen.length}
-                value=""
-                onChange={(e) =>
-                  onChange(
-                    selected.map((s) =>
-                      ids.has(s.skillId)
-                        ? { ...s, expected: e.target.value }
-                        : s,
-                    ),
-                  )
-                }
-              >
-                <option value="">
-                  Set Level For {chosen.length} Selected…
-                </option>
-                {levels.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
           <div className="cm-assignment-columns">
             <span>SKILL</span>
             <span>EXPECTED LEVEL</span>

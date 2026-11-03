@@ -146,9 +146,11 @@ export function AssignmentConfiguration({
   draft: Plan;
   onChange: (plan: Plan) => void;
 }) {
-  const allDepts   = [...new Set(work.employees.map((e) => e.department).filter(Boolean))].sort();
-  const allRoles   = [...new Set(work.employees.map((e) => e.role).filter(Boolean))].sort();
-  const allCohorts = [...new Set(work.employees.map((e) => e.cohort).filter((v): v is string => Boolean(v)))].sort();
+  const allDepts     = [...new Set(work.employees.map((e) => e.department).filter(Boolean))].sort();
+  const allRoles     = [...new Set(work.employees.map((e) => e.role).filter(Boolean))].sort();
+  const allCohorts   = [...new Set(work.employees.map((e) => e.cohort).filter((v): v is string => Boolean(v)))].sort();
+  const allLocations = [...new Set(work.employees.map((e) => e.location).filter(Boolean))].sort();
+  const allVerticals = [...new Set(work.employees.map((e) => e.vertical).filter((v): v is string => Boolean(v)))].sort();
 
   return (
     <div className="cm-assignment-config">
@@ -229,24 +231,58 @@ export function AssignmentConfiguration({
         ) : (
           <div className="cm-auto-audience">
             <h4>User Profile</h4>
-            <p>Users matching <strong>any</strong> value in each field will be enrolled. Leave empty to include all.</p>
-            <div className="cm-audience-fields">
-              <ChipSelectField label="Department" field="department" options={allDepts}
-                selected={draft.departments ?? []}
-                onChange={(departments) => onChange({ ...draft, departments, department: "" })} />
-              <ChipSelectField label="Role" field="role" options={allRoles}
-                selected={draft.roles ?? []}
-                onChange={(roles) => onChange({ ...draft, roles, role: "" })} />
-              <ChipSelectField label="Cohort" field="cohort" options={allCohorts}
-                selected={draft.cohorts ?? []}
-                onChange={(cohorts) => onChange({ ...draft, cohorts, cohort: "" })} />
+            <div className="cm-scope-toggle">
+              <button
+                type="button"
+                className={`cm-scope-btn${draft.allUsers ? " active" : ""}`}
+                onClick={() => onChange({ ...draft, allUsers: true, departments: [], roles: [], cohorts: [], department: "", role: "", cohort: "" })}
+              >
+                All Users
+              </button>
+              <button
+                type="button"
+                className={`cm-scope-btn${!draft.allUsers ? " active" : ""}`}
+                onClick={() => onChange({ ...draft, allUsers: false })}
+              >
+                Specific Audience
+              </button>
             </div>
+            {draft.allUsers ? (
+              <div className="cm-audience-all-banner">
+                <div className="cm-audience-all-stat">
+                  <strong>{work.employees.length.toLocaleString()}</strong>
+                  <span>employees</span>
+                </div>
+                <p>All users in the system will be enrolled in this assignment.</p>
+              </div>
+            ) : (
+              <>
+                <p>Users matching <strong>any</strong> value in each field will be enrolled. Leave empty to include all.</p>
+                <div className="cm-audience-fields cm-audience-fields-grid">
+                  <ChipSelectField label="Department" field="department" options={allDepts}
+                    selected={draft.departments ?? []}
+                    onChange={(departments) => onChange({ ...draft, departments, department: "" })} />
+                  <ChipSelectField label="Role" field="role" options={allRoles}
+                    selected={draft.roles ?? []}
+                    onChange={(roles) => onChange({ ...draft, roles, role: "" })} />
+                  <ChipSelectField label="Cohort" field="cohort" options={allCohorts}
+                    selected={draft.cohorts ?? []}
+                    onChange={(cohorts) => onChange({ ...draft, cohorts, cohort: "" })} />
+                  <ChipSelectField label="Location" field="location" options={allLocations}
+                    selected={draft.locations ?? []}
+                    onChange={(locations) => onChange({ ...draft, locations, location: "" })} />
+                  <ChipSelectField label="Vertical" field="vertical" options={allVerticals}
+                    selected={draft.verticals ?? []}
+                    onChange={(verticals) => onChange({ ...draft, verticals })} />
+                </div>
+              </>
+            )}
           </div>
         )}
       </section>
 
       <section className="cm-config-section">
-        <h3>Schedule</h3>
+        <h3>Schedule &amp; Learning Progression</h3>
         <div className="cm-config-grid cm-schedule-grid">
           <label>
             <span className="cm-req-label">Start Date <span className="req">*</span></span>
@@ -286,10 +322,6 @@ export function AssignmentConfiguration({
             )}
           </div>
         </div>
-      </section>
-
-      <section className="cm-config-section">
-        <h3>Learning Progression</h3>
         <label>
           Progression Type
           <select
@@ -300,13 +332,11 @@ export function AssignmentConfiguration({
             <option value="level-wise">Level-Wise — L1 → L2 → L3 within each skill</option>
             <option value="skill-wise">Skill-Wise — complete one skill before the next</option>
             <option value="competency-wise">Competency-Wise — complete one competency before the next</option>
-            <option value="independent">Independent — all learning available at once</option>
           </select>
           <small>
             {(!draft.progressionType || draft.progressionType === "level-wise") && "Each level must be completed before the next unlocks within the same skill."}
             {draft.progressionType === "skill-wise" && "Each skill must be completed before the next skill is unlocked."}
             {draft.progressionType === "competency-wise" && "Each competency must be completed before the next is unlocked."}
-            {draft.progressionType === "independent" && "No prerequisite sequence — learners can start any skill at any time."}
           </small>
         </label>
       </section>

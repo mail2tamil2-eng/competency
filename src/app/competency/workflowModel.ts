@@ -14,6 +14,7 @@ export type Employee = {
   department: string;
   role: string;
   location: string;
+  vertical?: string;
 };
 export type Plan = {
   id: string;
@@ -36,6 +37,9 @@ export type Plan = {
   departments?: string[];
   roles?: string[];
   cohorts?: string[];
+  locations?: string[];
+  verticals?: string[];
+  allUsers?: boolean;
 };
 export type RoleProgression = {
   id: string;
@@ -201,6 +205,7 @@ export function matching(work: WorkflowData, p: Plan) {
   const selected = new Set(p.employeeIds);
   return work.employees.filter((e) => {
     if (p.method === "Manual") return selected.has(e.id);
+    if (p.allUsers) return true;
     const deptOk = p.departments?.length
       ? p.departments.includes(e.department)
       : !p.department || p.department === e.department;
@@ -210,7 +215,13 @@ export function matching(work: WorkflowData, p: Plan) {
     const cohortOk = p.cohorts?.length
       ? p.cohorts.includes(e.cohort || "")
       : !p.cohort || p.cohort === e.cohort;
-    return deptOk && roleOk && cohortOk && (!p.location || p.location === e.location);
+    const locationOk = p.locations?.length
+      ? p.locations.includes(e.location)
+      : !p.location || p.location === e.location;
+    const verticalOk = p.verticals?.length
+      ? p.verticals.includes(e.vertical || "")
+      : true;
+    return deptOk && roleOk && cohortOk && locationOk && verticalOk;
   });
 }
 export function applyPlans(data: Data, work: WorkflowData, today: string) {
