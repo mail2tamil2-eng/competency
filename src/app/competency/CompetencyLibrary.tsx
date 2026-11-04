@@ -14,6 +14,7 @@ import {
   ChevronRight,
   BookOpen,
   X,
+  Send,
 } from "lucide-react";
 import { Data, RecordItem, Kind, used, download, uid, validate } from "./model";
 import { WorkflowData, Course } from "./workflowModel";
@@ -38,7 +39,7 @@ export type LibraryIntent = {
 type ViewState = { kind: "list" } | { kind: "skills"; cId: string };
 
 /* ── Inline skill edit form ── */
-function SkillInlineEdit({
+export function SkillInlineEdit({
   skill,
   data,
   onSave,
@@ -393,6 +394,7 @@ export function CompetencyLibrary({
   commit,
   work,
   onSaveWork,
+  onAssign,
 }: {
   data: Data;
   query: string;
@@ -402,6 +404,7 @@ export function CompetencyLibrary({
   commit: (data: Data, message: string) => boolean;
   work?: WorkflowData;
   onSaveWork?: (work: WorkflowData, message: string) => boolean;
+  onAssign?: (competencyId: string) => void;
 }) {
   const [view, setView] = useState<ViewState>({ kind: "list" });
   const [category, setCategory] = useState("");
@@ -517,17 +520,21 @@ export function CompetencyLibrary({
     return (
       <LibraryCreate
         data={data}
+        work={work}
         onSaveWork={onSaveWork}
         initial={{ competency: editingCompInline, skills: existingSkills }}
         onClose={() => setEditingCompInline(null)}
         onSave={(updatedComp, updatedSkills) => {
-          const otherSkills = data.skills.filter((s) => s.competencyId !== updatedComp.id);
+          const updatedIds = new Set(updatedSkills.map((s) => s.id));
+          const prevSkills = data.skills.filter((s) => s.competencyId === updatedComp.id);
+          const toUnlink = prevSkills.filter((s) => !updatedIds.has(s.id)).map((s) => ({ ...s, competencyId: "" }));
+          const unrelated = data.skills.filter((s) => s.competencyId !== updatedComp.id && !updatedIds.has(s.id));
           if (
             commit(
               {
                 ...data,
                 competencies: data.competencies.map((c) => (c.id === updatedComp.id ? updatedComp : c)),
-                skills: [...otherSkills, ...updatedSkills],
+                skills: [...unrelated, ...toUnlink, ...updatedSkills],
               },
               `Saved "${updatedComp.name}"`,
             )
@@ -543,21 +550,24 @@ export function CompetencyLibrary({
     return (
       <LibraryCreate
         data={data}
+        work={work}
         onSaveWork={onSaveWork}
         onClose={() => setCreating(false)}
         onSave={(competency, skills) => {
+          const updatedIds = new Set(skills.map((s) => s.id));
+          const others = data.skills.filter((s) => s.competencyId !== competency.id && !updatedIds.has(s.id));
           if (
             commit(
               {
                 ...data,
                 competencies: [...data.competencies, competency],
-                skills: [...data.skills, ...skills],
+                skills: [...others, ...skills],
               },
               `Created "${competency.name}" with ${skills.length} ${skills.length === 1 ? "skill" : "skills"}`,
             )
           ) {
             setCreating(false);
-            setView({ kind: "skills", cId: competency.id });
+            onAssign?.(competency.id);
           }
         }}
       />
@@ -1171,6 +1181,18 @@ export function CompetencyLibrary({
                       </td>
                       <td>
                         <div className="cm-row-actions">
+                          {onAssign && (
+                            <button
+                              className="cm-button"
+                              style={{ padding: "5px 12px", fontSize: 13, minHeight: 30, gap: 5 }}
+                              aria-label={"Assign " + c.name}
+                              title="Create Assignment from this Competency"
+                              disabled={c.status !== "Active" || !data.skills.some((s) => s.competencyId === c.id && s.status === "Active")}
+                              onClick={() => onAssign(c.id)}
+                            >
+                              <Send size={14} /> Assign
+                            </button>
+                          )}
                           <button
                             className="cm-icon-button"
                             aria-label={"Edit " + c.name}

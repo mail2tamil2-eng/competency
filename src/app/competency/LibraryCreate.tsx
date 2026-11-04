@@ -1,223 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, ChevronDown, ChevronRight, Search, X } from "lucide-react";
+import { ChevronDown, X, Check, BookOpen, Search } from "lucide-react";
 import { Data, RecordItem, uid, validate } from "./model";
-import { WorkflowData, Course } from "./workflowModel";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "../components/ui/dialog";
+import { WorkflowData } from "./workflowModel";
 
-type CourseMappings = Record<string, Record<string, string[]>>;
-type CourseRequirements = Record<string, Record<string, Record<string, boolean>>>;
-
-const blankSkill = (): RecordItem => ({
-  id: uid(),
-  name: "",
-  description: "",
-  status: "Active",
-  levels: {},
-});
-
-/* ── Skill accordion card ─────────────────────────────────────────────────── */
-function SkillAccordionCard({
-  skill,
-  index,
-  isOpen,
-  canRemove,
-  levels,
-  hasIssues,
-  expandedLevels,
-  onToggle,
-  onRemove,
-  onUpdate,
-  onToggleLevel,
-  getLevelCourses,
-  courseRequirements,
-  onOpenPicker,
-  onSetLevelCourses,
-  onSetMandatory,
-  courseMappings,
-}: {
-  skill: RecordItem;
-  index: number;
-  isOpen: boolean;
-  canRemove: boolean;
-  levels: RecordItem[];
-  hasIssues: boolean;
-  expandedLevels: Set<string>;
-  onToggle: () => void;
-  onRemove: () => void;
-  onUpdate: (patch: Partial<RecordItem>) => void;
-  onToggleLevel: (levelId: string) => void;
-  getLevelCourses: (levelId: string) => Course[];
-  courseRequirements: CourseRequirements;
-  onOpenPicker: (levelId: string) => void;
-  onSetLevelCourses: (levelId: string, ids: string[]) => void;
-  onSetMandatory: (levelId: string, courseId: string, raw: boolean) => void;
-  courseMappings: CourseMappings;
-}) {
-  const label = skill.name.trim() || `Skill ${index + 1}`;
-
-  return (
-    <div className={`cm-create-skill-card${isOpen ? " is-open" : ""}`}>
-      <button
-        type="button"
-        className="cm-create-skill-card-header"
-        aria-expanded={isOpen}
-        onClick={onToggle}
-      >
-        <ChevronDown
-          size={16}
-          className={isOpen ? "cm-rotated" : ""}
-          style={{ flexShrink: 0, color: "#526176", transition: "transform 0.15s" }}
-        />
-        <span className="cm-create-skill-card-name">{label}</span>
-        <span className={`cm-create-skill-status${hasIssues ? " needs" : " ready"}`}>
-          {hasIssues ? "Needs Details" : "Ready"}
-        </span>
-        {canRemove && (
-          <button
-            type="button"
-            className="cm-icon-button danger"
-            aria-label={`Remove ${label}`}
-            style={{ marginLeft: 4 }}
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          >
-            <Trash2 size={14} />
-          </button>
-        )}
-      </button>
-
-      {isOpen && (
-        <div className="cm-create-skill-card-body">
-          <label>
-            <span className="cm-req-label">Skill Name <span className="req">*</span></span>
-            <input
-              aria-label="Skill Name"
-              maxLength={120}
-              value={skill.name}
-              onChange={(e) => onUpdate({ name: e.target.value })}
-              placeholder="e.g. Active Listening"
-            />
-          </label>
-
-          <label>
-            <span>Description <span className="cm-field-optional">Optional</span></span>
-            <textarea
-              rows={2}
-              value={skill.description}
-              onChange={(e) => onUpdate({ description: e.target.value })}
-              placeholder="What will the learner be able to do?"
-            />
-          </label>
-
-          {levels.length > 0 && (
-            <div className="cm-proficiency-section">
-              <p className="cm-proficiency-label">Proficiency levels</p>
-              {levels.map((l) => {
-                const key = `${skill.id}:${l.id}`;
-                const expanded = expandedLevels.has(key);
-                const desc = skill.levels?.[l.id]?.trim() ?? "";
-                const mapped = getLevelCourses(l.id);
-                return (
-                  <div key={l.id} className={`cm-level-row${expanded ? " expanded" : ""}`}>
-                    <button
-                      type="button"
-                      className="cm-level-row-toggle"
-                      aria-expanded={expanded}
-                      onClick={() => onToggleLevel(l.id)}
-                    >
-                      {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                      <span className="cm-level-row-name">{l.name}</span>
-                      <span className="cm-level-row-preview">
-                        {desc || <em>No description</em>}
-                      </span>
-                      <span className="cm-level-row-meta">
-                        {mapped.length > 0 ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}` : ""}
-                      </span>
-                    </button>
-                    {expanded && (
-                      <div className="cm-level-row-body">
-                        <label>
-                          <span>Proficiency Description <span className="cm-field-optional">Optional</span></span>
-                          <textarea
-                            rows={3}
-                            aria-label={`${l.name} proficiency description`}
-                            value={skill.levels?.[l.id] ?? ""}
-                            onChange={(e) =>
-                              onUpdate({ levels: { ...skill.levels, [l.id]: e.target.value } })
-                            }
-                            placeholder={`What can someone do at ${l.name.toLowerCase()} level?`}
-                          />
-                        </label>
-                        <div className="cm-level-courses">
-                          <div className="cm-level-courses-hd">
-                            <span>Mapped Courses ({mapped.length})</span>
-                            <button type="button" className="cm-map-courses-btn" onClick={() => onOpenPicker(l.id)}>
-                              <Plus size={11} /> Map Courses
-                            </button>
-                          </div>
-                          {mapped.length === 0 ? (
-                            <p className="cm-level-no-courses">No courses mapped.</p>
-                          ) : (() => {
-                              return (
-                                <>
-                                  <div className="cm-course-list">
-                                    {mapped.map((c) => {
-                                      const w = courseRequirements[skill.id]?.[l.id]?.[c.id];
-                                      return (
-                                        <div key={c.id} className="cm-course-row">
-                                          <span className="cm-course-row-name">{c.name}</span>
-                                          <label className="cm-course-mandatory"><input type="checkbox" checked={w ?? false} aria-label={`Mandatory for ${c.name}`} onChange={(e) => onSetMandatory(l.id, c.id, e.target.checked)} /><span>Mandatory</span></label>
-                                          <button
-                                            type="button"
-                                            aria-label={`Remove ${c.name}`}
-                                            className="cm-course-row-remove"
-                                            onClick={() =>
-                                              onSetLevelCourses(
-                                                l.id,
-                                                (courseMappings[skill.id]?.[l.id] ?? []).filter((id) => id !== c.id),
-                                              )
-                                            }
-                                          >
-                                            <X size={12} />
-                                          </button>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </>
-                              );
-                            })()}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {levels.length === 0 && (
-            <p className="cm-field-hint">No active levels — manage in Library settings.</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Main component ───────────────────────────────────────────────────────── */
 export function LibraryCreate({
   data,
+  work,
   onClose,
   onSave,
   onSaveWork,
   initial,
 }: {
   data: Data;
+  work?: WorkflowData;
   onClose: () => void;
   onSave: (competency: RecordItem, skills: RecordItem[]) => void;
   onSaveWork?: (work: WorkflowData, msg: string) => boolean;
@@ -228,50 +23,39 @@ export function LibraryCreate({
   const [competency, setCompetency] = useState<RecordItem>(() =>
     initial ? structuredClone(initial.competency) : { id: uid(), name: "", description: "", categoryId: "", status: "Active" },
   );
-  const [skills, setSkills] = useState<RecordItem[]>(() =>
-    initial ? initial.skills.map((s) => structuredClone(s)) : [blankSkill()],
+  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>(
+    initial ? initial.skills.map((s) => s.id) : [],
   );
-  const [openSkillId, setOpenSkillId] = useState<string | null>(
-    initial ? (initial.skills[0]?.id ?? null) : null,
-  );
-  const [courseMappings, setCourseMappings] = useState<CourseMappings>(() => {
-    if (!initial) return {};
-    const maps: CourseMappings = {};
-    for (const course of data.workflow?.courses ?? []) {
-      for (const m of course.mappings) {
-        if (!initial.skills.some((s) => s.id === m.skillId)) continue;
-        if (!maps[m.skillId]) maps[m.skillId] = {};
-        if (!maps[m.skillId][m.levelId]) maps[m.skillId][m.levelId] = [];
-        maps[m.skillId][m.levelId].push(course.id);
-      }
-    }
-    return maps;
-  });
-  const [courseRequirements, setCourseRequirements] = useState<CourseRequirements>(() => {
-    if (!initial) return {};
-    const weights: CourseRequirements = {};
-    for (const course of data.workflow?.courses ?? []) {
-      for (const m of course.mappings) {
-        if (!initial.skills.some((s) => s.id === m.skillId) || m.mandatory == null) continue;
-        if (!weights[m.skillId]) weights[m.skillId] = {};
-        if (!weights[m.skillId][m.levelId]) weights[m.skillId][m.levelId] = {};
-        weights[m.skillId][m.levelId][course.id] = m.mandatory;
-      }
-    }
-    return weights;
-  });
-  // Keys are `${skillId}:${levelId}` so each skill tracks its own expanded levels
-  const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
-  const [pickerKey, setPickerKey] = useState<{ skillId: string; levelId: string } | null>(null);
-  const [pickerDraft, setPickerDraft] = useState<string[]>([]);
-  const [pickerOriginal, setPickerOriginal] = useState<string[]>([]);
-  const [pickerRequirements, setPickerRequirements] = useState<Record<string, boolean>>({});
-  const [pickerSearch, setPickerSearch] = useState("");
-  const [pickerShowSelected, setPickerShowSelected] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [skillSearch, setSkillSearch] = useState("");
+  const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
+  const [mandatoryMap, setMandatoryMap] = useState<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {};
+    if (!work) return map;
+    for (const course of work.courses) {
+      for (const m of course.mappings) {
+        map[`${course.id}:${m.skillId}:${m.levelId}`] = m.mandatory ?? false;
+      }
+    }
+    return map;
+  });
   const errorRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLElement>(null);
   const competencyNameRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    searchRef.current?.focus();
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
+        setDropdownOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownOpen]);
 
   useEffect(() => {
     competencyNameRef.current?.focus({ preventScroll: true });
@@ -282,126 +66,39 @@ export function LibraryCreate({
     if (errors.length) errorRef.current?.focus();
   }, [errors]);
 
-  const levels = data.levels.filter((l) => l.status === "Active");
-  const allCourses = data.workflow?.courses ?? [];
+  const availableSkills = data.skills.filter(
+    (s) =>
+      s.status === "Active" &&
+      (!s.competencyId || s.competencyId === "" || s.competencyId === competency.id),
+  );
 
-  function updateSkill(id: string, patch: Partial<RecordItem>) {
-    setSkills((cur) => cur.map((s) => (s.id === id ? { ...s, ...patch } : s)));
-  }
-
-  function getLevelCourses(skillId: string, levelId: string): Course[] {
-    return (courseMappings[skillId]?.[levelId] ?? [])
-      .map((id) => allCourses.find((c) => c.id === id))
-      .filter((c): c is Course => c != null);
-  }
-
-  function setLevelCourses(skillId: string, levelId: string, ids: string[]) {
-    setCourseMappings((prev) => ({ ...prev, [skillId]: { ...prev[skillId], [levelId]: ids } }));
-    setCourseRequirements((prev) => {
-      const existing = prev[skillId]?.[levelId] ?? {};
-      const next: Record<string, boolean> = {};
-      ids.forEach((id) => { if (id in existing) next[id] = existing[id]; });
-      return { ...prev, [skillId]: { ...prev[skillId], [levelId]: next } };
-    });
-  }
-
-  function setMandatory(skillId: string, levelId: string, courseId: string, raw: boolean) {
-    const v = raw;
-    setCourseRequirements((prev) => ({
-      ...prev,
-      [skillId]: { ...prev[skillId], [levelId]: { ...prev[skillId]?.[levelId], [courseId]: v } },
-    }));
-  }
-
-  function addSkill() {
-    const s = blankSkill();
-    setSkills((cur) => [...cur, s]);
-    setOpenSkillId(s.id);
-    setErrors([]);
-  }
-
-  function removeSkill(id: string) {
-    const idx = skills.findIndex((s) => s.id === id);
-    const remaining = skills.filter((s) => s.id !== id);
-    setSkills(remaining);
-    if (openSkillId === id)
-      setOpenSkillId(remaining[Math.max(0, idx - 1)]?.id ?? null);
-    setCourseMappings((prev) => { const next = { ...prev }; delete next[id]; return next; });
-  }
-
-  function toggleLevel(skillId: string, levelId: string) {
-    const key = `${skillId}:${levelId}`;
-    setExpandedLevels((prev) => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  }
-
-  function openPicker(skillId: string, levelId: string) {
-    const existing = [...(courseMappings[skillId]?.[levelId] ?? [])];
-    setPickerDraft(existing);
-    setPickerOriginal(existing);
-    setPickerRequirements(courseRequirements[skillId]?.[levelId] ?? {});
-    setPickerSearch("");
-    setPickerShowSelected(false);
-    setPickerKey({ skillId, levelId });
-  }
-
-  function applyPicker() {
-    if (!pickerKey) return;
-    const { skillId, levelId } = pickerKey;
-    setCourseMappings((prev) => ({ ...prev, [skillId]: { ...prev[skillId], [levelId]: pickerDraft } }));
-    setCourseRequirements((prev) => ({
-      ...prev,
-      [skillId]: {
-        ...prev[skillId],
-        [levelId]: Object.fromEntries(pickerDraft.map((id) => [id, pickerRequirements[id] ?? false])),
-      },
-    }));
-    setPickerKey(null);
-  }
+  const filteredSkills = availableSkills.filter(
+    (s) => !skillSearch || s.name.toLowerCase().includes(skillSearch.toLowerCase()),
+  );
 
   const clean = {
     ...competency,
     name: competency.name.trim(),
     description: competency.description.trim(),
   };
-  const linked = skills.map((s) => ({
-    ...s,
-    name: s.name.trim(),
-    description: s.description.trim(),
-    categoryId: competency.categoryId,
-    competencyId: competency.id,
-  }));
 
-  function skillIssues(s: RecordItem, i: number, proficiency = true) {
-    const issues: string[] = [];
-    const name = s.name.trim();
-    const label = name || `Skill ${i + 1}`;
-    if (!name) issues.push(`Skill ${i + 1}: enter a name.`);
-    if (name.length > 120) issues.push(`${label}: use 120 characters or fewer.`);
-    if (
-      name &&
-      (skills.some((x) => x.id !== s.id && x.name.trim().toLowerCase() === name.toLowerCase()) ||
-        data.skills.some((x) => x.id !== s.id && x.name.trim().toLowerCase() === name.toLowerCase()))
-    )
-      issues.push(`${label}: this skill name already exists.`);
-    return issues;
+  function getLinkedSkills() {
+    return selectedSkillIds
+      .map((id) => data.skills.find((s) => s.id === id))
+      .filter((s): s is RecordItem => s != null)
+      .map((s) => ({ ...s, competencyId: clean.id, categoryId: clean.categoryId }));
   }
 
   function saveDraft() {
-    const kept = linked.filter(
-      (s) => s.name || s.description || Object.values(s.levels ?? {}).some((v) => v.trim()),
-    );
-    const issues = [
-      ...validate(clean, "competencies", data),
-      ...kept.flatMap((s) => skillIssues(s, skills.findIndex((x) => x.id === s.id), false)),
-    ];
-    const deduped = [...new Set(issues)];
-    setErrors(deduped);
-    if (!deduped.length)
-      onSave({ ...clean, status: "Draft" }, kept.map((s) => ({ ...s, status: "Draft" })));
+    const dataForValidate = isEdit
+      ? { ...data, competencies: data.competencies.filter((c) => c.id !== clean.id) }
+      : data;
+    const issues = [...new Set(validate(clean, "competencies", dataForValidate))];
+    setErrors(issues);
+    if (!issues.length) {
+      const linked = getLinkedSkills();
+      onSave({ ...clean, status: "Draft" }, linked.map((s) => ({ ...s, status: "Draft" as const })));
+    }
   }
 
   function handleFinalSave() {
@@ -410,39 +107,12 @@ export function LibraryCreate({
       : data;
     const issues = [
       ...validate(clean, "competencies", dataForValidate),
-      ...(linked.length === 0 ? ["Add at least one skill, or save as draft."] : []),
-      ...linked.flatMap((s, i) => skillIssues(s, i)),
+      ...(!isEdit && selectedSkillIds.length === 0 ? ["Select at least one skill, or save as draft."] : []),
     ];
     const deduped = [...new Set(issues)];
     setErrors(deduped);
-    if (deduped.length) {
-      const bad = skills.find((s, i) => skillIssues(s, i).length);
-      if (bad) setOpenSkillId(bad.id);
-      return;
-    }
-    if (onSaveWork && data.workflow) {
-      const updatedCourses = data.workflow.courses.map((course) => {
-        const newMaps: { skillId: string; levelId: string; mandatory?: boolean }[] = [];
-        for (const skill of linked) {
-          for (const [levelId, ids] of Object.entries(courseMappings[skill.id] ?? {})) {
-            if (
-              ids.includes(course.id)
-            )
-              newMaps.push({
-                skillId: skill.id,
-                levelId,
-                mandatory: courseRequirements[skill.id]?.[levelId]?.[course.id],
-              });
-          }
-        }
-        const others = course.mappings.filter((m) => !linked.some((skill) => skill.id === m.skillId));
-        const mappings = [...others, ...newMaps];
-        return JSON.stringify(mappings) !== JSON.stringify(course.mappings) ? { ...course, mappings } : course;
-      });
-      if (updatedCourses.some((c, i) => c !== data.workflow!.courses[i]))
-        onSaveWork({ ...data.workflow, courses: updatedCourses }, `Mapped courses for "${clean.name}"`);
-    }
-    onSave(clean, linked);
+    if (deduped.length) return;
+    onSave(clean, getLinkedSkills());
   }
 
   function handleClose() {
@@ -450,98 +120,50 @@ export function LibraryCreate({
       competency.name.trim() ||
       competency.description.trim() ||
       competency.categoryId ||
-      skills.some(
-        (s) =>
-          s.name.trim() ||
-          s.description.trim() ||
-          Object.values(s.levels ?? {}).some((v) => v.trim()),
-      );
+      selectedSkillIds.length > 0;
     if (dirty && !window.confirm("Discard unsaved changes and close?")) return;
     onClose();
   }
 
-  const pickerFiltered = allCourses.filter((c) => {
-    if (pickerShowSelected && !pickerDraft.includes(c.id)) return false;
-    return !pickerSearch || c.name.toLowerCase().includes(pickerSearch.toLowerCase());
-  });
-
-  // ── COURSE PICKER ──────────────────────────────────────────────────────────
-  if (pickerKey) {
-    const skillName = skills.find((s) => s.id === pickerKey.skillId)?.name.trim() ?? "";
-    const levelName = levels.find((l) => l.id === pickerKey.levelId)?.name ?? pickerKey.levelId;
-    const subtitle = skillName ? `${skillName} · ${levelName}` : levelName;
-    const hasChanged =
-      pickerDraft.length !== pickerOriginal.length ||
-      pickerDraft.some((id) => !pickerOriginal.includes(id)) ||
-      pickerOriginal.some((id) => !pickerDraft.includes(id)) ||
-      pickerDraft.some((id) => (pickerRequirements[id] ?? false) !== (courseRequirements[pickerKey.skillId]?.[pickerKey.levelId]?.[id] ?? false));
-
-    return (
-      <Dialog open onOpenChange={(open) => { if (!open) setPickerKey(null); }}>
-        <DialogContent className="cm-dialog cm-picker-dialog">
-          <DialogHeader className="cm-picker-header">
-            <DialogTitle>Map Courses</DialogTitle>
-            <DialogDescription>{subtitle}</DialogDescription>
-            <p className="cm-picker-hint">Select courses for this proficiency level. Mark courses as mandatory when completion is required.</p>
-          </DialogHeader>
-          <div className="cm-picker-controls">
-            <div className="cm-picker-search">
-              <Search size={15} className="cm-picker-search-icon" />
-              <input
-                autoFocus type="text" placeholder="Search courses…"
-                value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)}
-              />
-              {pickerSearch && (
-                <button type="button" className="cm-picker-clear-btn" onClick={() => setPickerSearch("")} aria-label="Clear Search">
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-            <div className="cm-picker-filter-row">
-              <button type="button" className={`cm-picker-filter-btn${!pickerShowSelected ? " active" : ""}`} onClick={() => setPickerShowSelected(false)}>
-                All Courses ({allCourses.length})
-              </button>
-              <button type="button" className={`cm-picker-filter-btn${pickerShowSelected ? " active" : ""}`} onClick={() => setPickerShowSelected(true)}>
-                Selected ({pickerDraft.length})
-              </button>
-            </div>
-          </div>
-          <div className="cm-picker-list" role="list">
-            {pickerFiltered.length === 0 && (
-              <p className="cm-picker-empty">
-                {pickerShowSelected ? "No courses selected yet." : pickerSearch ? `No results for "${pickerSearch}".` : "No courses available."}
-              </p>
-            )}
-            {pickerFiltered.map((course) => {
-              const checked = pickerDraft.includes(course.id);
-              return (
-                <div role="listitem" key={course.id} className={`cm-picker-row${checked ? " checked" : ""}`}>
-                  <input
-                    type="checkbox" checked={checked} aria-label={`Select ${course.name}`}
-                    onChange={(e) => {
-                      if (e.target.checked) setPickerDraft((d) => [...d, course.id]);
-                      else setPickerDraft((d) => d.filter((id) => id !== course.id));
-                    }}
-                  />
-                  <span className="cm-picker-name">{course.name}</span>
-                  <label className="cm-course-mandatory"><input type="checkbox" disabled={!checked} checked={checked && (pickerRequirements[course.id] ?? false)} aria-label={`Mandatory for ${course.name}`} onChange={(e) => setPickerRequirements((prev) => ({ ...prev, [course.id]: e.target.checked }))} /><span>Mandatory</span></label>
-                </div>
-              );
-            })}
-          </div>
-          <div className="cm-dialog-actions cm-picker-footer">
-            <span className="cm-picker-count">{pickerDraft.length} Selected</span>
-            <button type="button" className="cm-button" onClick={() => setPickerKey(null)}>Cancel</button>
-            <button type="button" className="cm-button primary" disabled={!hasChanged} onClick={applyPicker}>
-              Apply Selection
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+  function toggleSkill(id: string) {
+    setSelectedSkillIds((ids) =>
+      ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id],
     );
   }
 
-  // ── MAIN FORM ────────────────────────────────────────────────────────────
+  function getCoursesForLevel(skillId: string, levelId: string) {
+    if (!work) return [];
+    return work.courses.filter((c) =>
+      c.mappings.some((m) => m.skillId === skillId && m.levelId === levelId),
+    );
+  }
+
+  function toggleLevelExpand(skillId: string, levelId: string) {
+    const key = `${skillId}:${levelId}`;
+    setExpandedLevels((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
+
+  function toggleMandatory(courseId: string, skillId: string, levelId: string) {
+    const key = `${courseId}:${skillId}:${levelId}`;
+    const newVal = !(mandatoryMap[key] ?? false);
+    setMandatoryMap((prev) => ({ ...prev, [key]: newVal }));
+    if (work && onSaveWork) {
+      const updatedCourses = work.courses.map((c) =>
+        c.id !== courseId ? c : {
+          ...c,
+          mappings: c.mappings.map((m) =>
+            m.skillId !== skillId || m.levelId !== levelId ? m : { ...m, mandatory: newVal },
+          ),
+        },
+      );
+      onSaveWork({ ...work, courses: updatedCourses }, "Course settings updated");
+    }
+  }
+
   return (
     <section ref={formRef} className="cm-inline-form cm-create-inline">
       <div className="cm-inline-form-head">
@@ -610,40 +232,301 @@ export function LibraryCreate({
         </div>
       </div>
 
-      {/* ── Skills & courses ── */}
+      {/* ── Skill picker ── */}
       <div className="cm-config-section">
-        <h3>Skills &amp; Courses</h3>
-        <div className="cm-create-skills">
-          {skills.map((s, i) => (
-            <SkillAccordionCard
-              key={s.id}
-              skill={s}
-              index={i}
-              isOpen={openSkillId === s.id || (openSkillId === null && i === 0)}
-              canRemove={skills.length > 1}
-              levels={levels}
-              hasIssues={skillIssues(s, i).length > 0}
-              expandedLevels={expandedLevels}
-              onToggle={() =>
-                setOpenSkillId(
-                  (openSkillId === s.id || (openSkillId === null && i === 0)) ? "__none__" : s.id,
-                )
-              }
-              onRemove={() => removeSkill(s.id)}
-              onUpdate={(patch) => updateSkill(s.id, patch)}
-              onToggleLevel={(levelId) => toggleLevel(s.id, levelId)}
-              getLevelCourses={(levelId) => getLevelCourses(s.id, levelId)}
-              courseRequirements={courseRequirements}
-              onOpenPicker={(levelId) => openPicker(s.id, levelId)}
-              onSetLevelCourses={(levelId, ids) => setLevelCourses(s.id, levelId, ids)}
-              onSetMandatory={(levelId, courseId, raw) => setMandatory(s.id, levelId, courseId, raw)}
-              courseMappings={courseMappings}
-            />
-          ))}
-          <button type="button" className="cm-create-add-skill" onClick={addSkill}>
-            <Plus size={15} /> Add Skill
-          </button>
-        </div>
+        <h3>Skills</h3>
+
+        {availableSkills.length === 0 ? (
+          <div className="cm-skill-pick-empty">
+            <p>No skills available yet.</p>
+            <p>Go to <strong>Library Settings → Skill Master</strong> to create skills first.</p>
+          </div>
+        ) : (
+          <>
+            {/* ── Multi-select chip input ── */}
+            <div ref={dropdownRef} style={{ position: "relative" }}>
+              {/* Input area showing chips + open trigger */}
+              <div
+                onClick={() => setDropdownOpen((o) => !o)}
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  gap: 6,
+                  minHeight: 44,
+                  padding: "6px 36px 6px 10px",
+                  border: dropdownOpen ? "1.5px solid #2463d6" : "1.5px solid #d1d5db",
+                  borderRadius: 8,
+                  background: "#fff",
+                  cursor: "pointer",
+                  position: "relative",
+                  boxShadow: dropdownOpen ? "0 0 0 3px rgba(36,99,214,0.10)" : "none",
+                  transition: "border-color 0.15s, box-shadow 0.15s",
+                }}
+              >
+                {selectedSkillIds.length === 0 ? (
+                  <span style={{ fontSize: 14, color: "#9ca3af" }}>Select skills from Skill Master…</span>
+                ) : (
+                  selectedSkillIds.map((id) => {
+                    const s = data.skills.find((sk) => sk.id === id);
+                    return s ? (
+                      <span
+                        key={id}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                          background: "#e8f0fe",
+                          color: "#1a56db",
+                          borderRadius: 6,
+                          padding: "2px 8px 2px 10px",
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {s.name}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleSkill(id); }}
+                          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#4b7bec", lineHeight: 1, display: "flex" }}
+                          aria-label={`Remove ${s.name}`}
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ) : null;
+                  })
+                )}
+                {/* Chevron icon */}
+                <span style={{ position: "absolute", right: 10, top: "50%", transform: `translateY(-50%) rotate(${dropdownOpen ? 180 : 0}deg)`, transition: "transform 0.2s", color: "#9ca3af", display: "flex" }}>
+                  <ChevronDown size={16} />
+                </span>
+              </div>
+
+              {/* ── Dropdown panel ── */}
+              {dropdownOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 4px)",
+                    left: 0,
+                    right: 0,
+                    background: "#fff",
+                    border: "1.5px solid #d1d5db",
+                    borderRadius: 8,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                    zIndex: 200,
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Search bar */}
+                  <div style={{ padding: "8px 10px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
+                    <Search size={14} style={{ color: "#9ca3af", flexShrink: 0 }} />
+                    <input
+                      ref={searchRef}
+                      type="text"
+                      placeholder="Search skills…"
+                      value={skillSearch}
+                      onChange={(e) => setSkillSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        border: "none",
+                        outline: "none",
+                        fontSize: 13,
+                        width: "100%",
+                        background: "transparent",
+                        color: "#263047",
+                      }}
+                    />
+                  </div>
+
+                  {/* Options list */}
+                  <div style={{ maxHeight: 220, overflowY: "auto" }}>
+                    {filteredSkills.length === 0 ? (
+                      <div style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af" }}>No skills match your search.</div>
+                    ) : filteredSkills.map((s) => {
+                      const selected = selectedSkillIds.includes(s.id);
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={(e) => { e.stopPropagation(); toggleSkill(s.id); }}
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            alignItems: "flex-start",
+                            gap: 10,
+                            padding: "10px 14px",
+                            cursor: "pointer",
+                            background: selected ? "#f0f5ff" : "transparent",
+                          }}
+                          onMouseEnter={(e) => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "#f9fafb"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = selected ? "#f0f5ff" : "transparent"; }}
+                        >
+                          {/* Check/circle indicator */}
+                          <span style={{
+                            width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                            border: selected ? "none" : "1.5px solid #d1d5db",
+                            background: selected ? "#2463d6" : "transparent",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>
+                            {selected && <Check size={11} color="#fff" />}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <strong style={{ fontSize: 14, fontWeight: 600, color: "#111827", display: "block" }}>{s.name}</strong>
+                            {s.description && (
+                              <span style={{ fontSize: 12, color: "#6b7280", display: "block", marginTop: 1 }}>{s.description}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Selected skill detail cards ── */}
+            {selectedSkillIds.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 20 }}>
+                {selectedSkillIds.map((id) => {
+                  const skill = data.skills.find((s) => s.id === id);
+                  if (!skill) return null;
+                  const activeLevels = data.levels.filter((l) => l.status === "Active");
+                  const levelsWithData = activeLevels.filter((l) => skill.levels?.[l.id]);
+
+                  return (
+                    <div
+                      key={id}
+                      style={{
+                        border: "1px solid #e5e7eb",
+                        borderRadius: 12,
+                        background: "#fff",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {/* Card header */}
+                      <div style={{ padding: "14px 18px 10px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                        <div>
+                          <strong style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>{skill.name}</strong>
+                          {skill.description && (
+                            <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.5 }}>{skill.description}</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${skill.name}`}
+                          onClick={() => setSelectedSkillIds((ids) => ids.filter((i) => i !== id))}
+                          style={{ background: "none", border: "none", padding: "2px 4px", cursor: "pointer", color: "#9ca3af", display: "flex", alignItems: "center", flexShrink: 0, marginLeft: 8, borderRadius: 4 }}
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+
+                      {/* Proficiency levels */}
+                      {levelsWithData.length > 0 && (
+                        <div style={{ borderTop: "1px solid #f3f4f6" }}>
+                          <div style={{ padding: "8px 18px 4px", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9ca3af" }}>
+                            Proficiency Levels
+                          </div>
+                          {levelsWithData.map((l, idx) => {
+                            const courses = getCoursesForLevel(skill.id, l.id);
+                            return (
+                              <div
+                                key={l.id}
+                                style={{
+                                  borderTop: idx > 0 ? "1px solid #f3f4f6" : "none",
+                                }}
+                              >
+                                <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 18px" }}>
+                                  {/* Numbered circle */}
+                                  <span style={{
+                                    width: 28, height: 28, borderRadius: "50%",
+                                    background: "#1e293b", color: "#fff",
+                                    fontSize: 12, fontWeight: 700,
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    flexShrink: 0, marginTop: 2,
+                                  }}>
+                                    {l.order ?? idx + 1}
+                                  </span>
+                                  {/* Level name + description */}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <strong style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{l.name}</strong>
+                                    <p style={{ margin: "2px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.4 }}>{skill.levels![l.id]}</p>
+                                  </div>
+                                  {/* Clickable course count chip */}
+                                  {courses.length > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleLevelExpand(skill.id, l.id)}
+                                      style={{
+                                        display: "inline-flex", alignItems: "center", gap: 5,
+                                        padding: "3px 10px", borderRadius: 20,
+                                        border: "1px solid #e5e7eb", background: "#f9fafb",
+                                        color: "#6b7280", fontSize: 12, fontWeight: 500,
+                                        whiteSpace: "nowrap", flexShrink: 0, cursor: "pointer",
+                                      }}
+                                    >
+                                      <BookOpen size={11} />
+                                      {courses.length} course{courses.length > 1 ? "s" : ""}
+                                      <ChevronDown size={11} style={{ transform: expandedLevels.has(`${skill.id}:${l.id}`) ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+                                    </button>
+                                  )}
+                                </div>
+                                {/* Expanded course panel */}
+                                {expandedLevels.has(`${skill.id}:${l.id}`) && (
+                                  <div style={{ margin: "0 18px 12px 60px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f9fafb", overflow: "hidden" }}>
+                                    {courses.map((c, ci) => (
+                                      <div
+                                        key={c.id}
+                                        style={{
+                                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                                          padding: "10px 14px",
+                                          borderTop: ci > 0 ? "1px solid #e5e7eb" : "none",
+                                        }}
+                                      >
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                          <BookOpen size={13} color="#6b7280" />
+                                          <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{c.name}</span>
+                                          {c.duration && (
+                                            <span style={{ fontSize: 12, color: "#9ca3af" }}>{c.duration}</span>
+                                          )}
+                                        </div>
+                                        {/* Mandatory toggle */}
+                                        <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", userSelect: "none" }}>
+                                          <span style={{ fontSize: 12, color: "#6b7280" }}>Mandatory</span>
+                                          <span
+                                            onClick={() => toggleMandatory(c.id, skill.id, l.id)}
+                                            style={{
+                                              width: 36, height: 20, borderRadius: 10, display: "inline-flex", alignItems: "center",
+                                              background: mandatoryMap[`${c.id}:${skill.id}:${l.id}`] ? "#2463d6" : "#d1d5db",
+                                              transition: "background 0.2s", cursor: "pointer", flexShrink: 0, padding: "0 2px",
+                                            }}
+                                          >
+                                            <span style={{
+                                              width: 16, height: 16, borderRadius: "50%", background: "#fff",
+                                              transform: mandatoryMap[`${c.id}:${skill.id}:${l.id}`] ? "translateX(16px)" : "translateX(0)",
+                                              transition: "transform 0.2s", display: "block",
+                                              boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                            }} />
+                                          </span>
+                                        </label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* ── Actions ── */}
@@ -651,15 +534,13 @@ export function LibraryCreate({
         <button type="button" className="cm-button" onClick={handleClose}>
           Cancel
         </button>
-        {!isEdit && skills.some(
-          (s) => s.name.trim() || s.description.trim() || Object.values(s.levels ?? {}).some((v) => v.trim()),
-        ) && (
+        {!isEdit && selectedSkillIds.length > 0 && (
           <button type="button" className="cm-button" onClick={saveDraft}>
             Save as Draft
           </button>
         )}
         <button type="button" className="cm-button primary" onClick={handleFinalSave}>
-          {isEdit ? "Save Changes" : "Create Competency"}
+          {isEdit ? "Save Changes" : "Assign"}
         </button>
       </div>
     </section>

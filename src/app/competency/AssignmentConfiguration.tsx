@@ -140,11 +140,13 @@ export function AssignmentConfiguration({
   work,
   draft,
   onChange,
+  step = 1,
 }: {
   data: Data;
   work: WorkflowData;
   draft: Plan;
   onChange: (plan: Plan) => void;
+  step?: 1 | 2;
 }) {
   const allDepts     = [...new Set(work.employees.map((e) => e.department).filter(Boolean))].sort();
   const allRoles     = [...new Set(work.employees.map((e) => e.role).filter(Boolean))].sort();
@@ -154,7 +156,7 @@ export function AssignmentConfiguration({
 
   return (
     <div className="cm-assignment-config">
-      <section className="cm-config-section">
+      {step === 1 && <section className="cm-config-section">
         <h3>Assignment Details</h3>
         <label>
           <span className="cm-req-label">Assignment Name <span className="req">*</span></span>
@@ -172,9 +174,9 @@ export function AssignmentConfiguration({
           selected={draft.skills}
           onChange={(skills) => onChange({ ...draft, skills })}
         />
-      </section>
+      </section>}
 
-      <section className="cm-config-section">
+      {step === 2 && <section className="cm-config-section">
         <h3>Enrolment &amp; Audience</h3>
         <div className="cm-config-grid">
           <label>
@@ -279,9 +281,9 @@ export function AssignmentConfiguration({
             )}
           </div>
         )}
-      </section>
+      </section>}
 
-      <section className="cm-config-section">
+      {step === 2 && <section className="cm-config-section">
         <h3>Schedule &amp; Learning Progression</h3>
         <div className="cm-config-grid cm-schedule-grid">
           <label>
@@ -339,7 +341,7 @@ export function AssignmentConfiguration({
             {draft.progressionType === "competency-wise" && "Each competency must be completed before the next is unlocked."}
           </small>
         </label>
-      </section>
+      </section>}
     </div>
   );
 }

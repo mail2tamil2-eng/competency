@@ -48,7 +48,6 @@ import {
 const tabs = [
   ["settings", "Library Settings", Settings2],
   ["library", "Competency Framework", Layers],
-  ["roles", "Role Mapping", Map],
   ["assignments", "User Level Update", BarChart2],
   ["career-progression", "Role Progression", Route],
   ["reports", "Reports", ListChecks],
@@ -57,7 +56,7 @@ const tabs = [
   ["learner-report", "Skill Progress Report", TrendingUp],
   ["manager", "Team Progress", Users],
 ] as const;
-type Tab = (typeof tabs)[number][0];
+type Tab = (typeof tabs)[number][0] | "roles";
 export function CompetencyManagementPage() {
   const location = useLocation();
   const routeNavigate = useNavigate();
@@ -77,8 +76,10 @@ export function CompetencyManagementPage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [libraryIntent, setLibraryIntent] = useState<LibraryIntent>(null);
   const [settingsSection, setSettingsSection] = useState<
-    "categories" | "levels"
+    "categories" | "levels" | "skills"
   >("categories");
+  const [assignNonce, setAssignNonce] = useState(0);
+  const [assignSkills, setAssignSkills] = useState<{ skillId: string; expected: string }[]>([]);
   const commit = (next: Data, message: string) => {
     try {
       localStorage.setItem(key, JSON.stringify(next));
@@ -160,13 +161,17 @@ export function CompetencyManagementPage() {
     }
   }, []);
   const navigate = (
-    next: Tab | "categories" | "levels" | "competencies" | "skills",
+    next: Tab | "categories" | "levels" | "skill-master" | "competencies",
   ) => {
     if (next === "categories" || next === "levels") {
       setSettingsSection(next);
       next = "settings";
     }
-    if (next === "competencies" || next === "skills") next = "library";
+    if (next === "skill-master") {
+      setSettingsSection("skills");
+      next = "settings";
+    }
+    if (next === "competencies") next = "library";
     setLibraryIntent(null);
 
     setTab(next === "manager" ? "library" : next);
@@ -227,6 +232,14 @@ export function CompetencyManagementPage() {
             commit={commit}
             work={work}
             onSaveWork={(next, msg) => saveWorkflow(data, next, msg)}
+            onAssign={(compId) => {
+              const skills = data.skills
+                .filter((s) => s.competencyId === compId && s.status === "Active")
+                .map((s) => ({ skillId: s.id, expected: "" }));
+              setAssignSkills(skills);
+              setAssignNonce((n) => n + 1);
+              setTab("roles");
+            }}
           />
         )}
         {tab === "settings" && (
@@ -234,11 +247,19 @@ export function CompetencyManagementPage() {
             data={data}
             initialSection={settingsSection}
             commit={commit}
+            work={work}
+            onSaveWork={(next, msg) => saveWorkflow(data, next, msg)}
           />
         )}
 
         {tab === "roles" && (
-          <RoleMapping data={data} work={work} save={saveWorkflow} />
+          <RoleMapping
+            key={`roles-${assignNonce}`}
+            data={data}
+            work={work}
+            save={saveWorkflow}
+            initialSkills={assignNonce > 0 ? assignSkills : undefined}
+          />
         )}
         {tab === "learner" && (
           <Learning

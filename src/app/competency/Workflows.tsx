@@ -340,16 +340,45 @@ export function CourseMapping({ data, work, save }: Props) {
     </section>
   );
 }
-export function RoleMapping({ data, work, save }: Props) {
+export function RoleMapping({
+  data,
+  work,
+  save,
+  initialSkills,
+}: Props & { initialSkills?: { skillId: string; expected: string }[] }) {
   const formRef = useRef<HTMLDivElement>(null);
-  const [draft, setDraft] = useState<Plan | null>(null),
-    [error, setError] = useState(""),
+  const today = new Date().toLocaleDateString("en-CA");
+  const blankDraft = (): Plan => ({
+    id: uid(),
+    name: "",
+    start: today,
+    end: "",
+    hasEndDate: false,
+    cohort: "",
+    method: "Auto",
+    type: "Dynamic",
+    allUsers: false,
+    department: "",
+    role: "",
+    location: "",
+    employeeIds: [],
+    skills: initialSkills ?? [],
+    status: "Active",
+    assignedNames: [],
+    departments: [],
+    roles: [],
+    cohorts: [],
+  });
+  const [draft, setDraft] = useState<Plan | null>(
+    initialSkills?.length ? blankDraft() : null,
+  );
+  const [wizardStep, setWizardStep] = useState<1 | 2>(1);
+  const [error, setError] = useState(""),
     [inactivatingPlan, setInactivatingPlan] = useState<Plan | null>(null),
     [deletingPlan, setDeletingPlan] = useState<Plan | null>(null);
   useEffect(() => {
     if (error) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [error]);
-  const today = new Date().toLocaleDateString("en-CA");
   const started = (p: Plan) =>
     data.assignments.some(
       (a) =>
@@ -367,8 +396,9 @@ export function RoleMapping({ data, work, save }: Props) {
           : p.assignedNames.includes(a.name)) &&
         p.skills.some((s) => s.skillId === a.skillId),
     );
-  function begin(p?: Plan) {
+  function begin(p?: Plan, preSkills?: { skillId: string; expected: string }[]) {
     setError("");
+    setWizardStep(1);
     window.scrollTo({ top: 0, behavior: "smooth" });
     setDraft(
       p
@@ -392,7 +422,7 @@ export function RoleMapping({ data, work, save }: Props) {
             role: "",
             location: "",
             employeeIds: [],
-            skills: [],
+            skills: preSkills ?? [],
             status: "Active",
             assignedNames: [],
             departments: [],
@@ -400,6 +430,17 @@ export function RoleMapping({ data, work, save }: Props) {
             cohorts: [],
           },
     );
+  }
+
+  function validateStep1(): boolean {
+    if (!draft) return false;
+    if (!draft.name.trim()) { setError("Enter an assignment name."); return false; }
+    if (!draft.skills.length || draft.skills.some((s) => !s.expected)) {
+      setError("Select at least one skill and set an expected level for each.");
+      return false;
+    }
+    setError("");
+    return true;
   }
   const audience = draft ? matching(work, draft) : [];
 
@@ -485,15 +526,40 @@ export function RoleMapping({ data, work, save }: Props) {
           ← Assignments
         </button>
         <h2>{draft.name.trim() || "New Assignment"}</h2>
-        <p className="cm-inline-form-meta">
-          {audience.length} matching learner{audience.length !== 1 ? "s" : ""} · {draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}
-        </p>
+        {wizardStep === 2 && (
+          <p className="cm-inline-form-meta">
+            {audience.length} matching learner{audience.length !== 1 ? "s" : ""} · {draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}
+          </p>
+        )}
       </div>
+
+      {/* 2-step progress bar */}
+      <div className="cm-wizard-steps">
+        <div className={`cm-wizard-step${wizardStep >= 1 ? " active" : ""}${wizardStep > 1 ? " done" : ""}`}>
+          <span className="cm-wizard-step-num">{wizardStep > 1 ? "✓" : "1"}</span>
+          <span>Details &amp; Skills</span>
+        </div>
+        <div className={`cm-wizard-connector${wizardStep > 1 ? " done" : ""}`} />
+        <div className={`cm-wizard-step${wizardStep >= 2 ? " active" : ""}`}>
+          <span className="cm-wizard-step-num">2</span>
+          <span>Audience &amp; Schedule</span>
+        </div>
+      </div>
+
       {error && <div className="cm-error" role="alert">{error}</div>}
-      <AssignmentConfiguration data={data} work={work} draft={draft} onChange={setDraft} />
+      <AssignmentConfiguration data={data} work={work} draft={draft} onChange={setDraft} step={wizardStep} />
       <div className="cm-inline-form-actions">
         <button className="cm-button" onClick={() => setDraft(null)}>Cancel</button>
-        <button className="cm-button primary" onClick={assign}>Save &amp; Assign</button>
+        {wizardStep === 1 ? (
+          <button className="cm-button primary" onClick={() => { if (validateStep1()) setWizardStep(2); }}>
+            Next: Audience &amp; Schedule →
+          </button>
+        ) : (
+          <>
+            <button className="cm-button" onClick={() => { setError(""); setWizardStep(1); }}>← Back</button>
+            <button className="cm-button primary" onClick={assign}>Save &amp; Assign</button>
+          </>
+        )}
       </div>
     </section>
   );

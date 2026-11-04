@@ -4084,6 +4084,178 @@
   color: #526176;
   margin-top: 2px;
   line-height: 1.5;
+
+/* ── Assignment wizard: 2-step progress bar ── */
+.cm-wizard-steps {
+  display: flex;
+  align-items: center;
+  padding: 0 0 24px;
+}
+.cm-wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #8c99a8;
+  white-space: nowrap;
+}
+.cm-wizard-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #526176;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cm-wizard-step.active { color: #2463d6; }
+.cm-wizard-step.active .cm-wizard-step-num { background: #2463d6; color: #fff; }
+.cm-wizard-step.done { color: #16a34a; }
+.cm-wizard-step.done .cm-wizard-step-num { background: #16a34a; color: #fff; }
+.cm-wizard-connector {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  margin: 0 12px;
+  max-width: 60px;
+  min-width: 20px;
+}
+.cm-wizard-connector.done { background: #16a34a; }
+
+/* ── Skill picker (LibraryCreate dropdown replacement) ── */
+.cm-skill-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.cm-skill-pick-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: border-color 0.1s, background 0.1s;
+}
+.cm-skill-pick-item:hover { border-color: #93b4f5; background: #fafbfe; }
+.cm-skill-pick-item.checked { border-color: #2463d6; background: #f0f5ff; }
+.cm-skill-pick-item input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; }
+.cm-skill-pick-item div { flex: 1; }
+.cm-skill-pick-item small { display: block; color: #526176; font-size: 13px; margin-top: 2px; }
+.cm-skill-pick-empty {
+  padding: 18px;
+  background: #f7f8fc;
+  border-radius: 8px;
+  border: 1.5px dashed #d1d5db;
+  color: #526176;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.cm-skill-pick-empty p { margin: 0 0 4px; }
+
+/* ── Skill dropdown (LibraryCreate) ── */
+.cm-skill-dropdown { position: relative; }
+.cm-skill-dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 15px;
+  color: #263047;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.cm-skill-dropdown-trigger:hover { border-color: #93b4f5; }
+.cm-skill-dropdown-trigger svg { flex-shrink: 0; color: #8c99a8; transition: transform 0.2s; }
+.cm-skill-dropdown-trigger svg.cm-chevron-open { transform: rotate(180deg); }
+.cm-skill-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 6px;
+}
+.cm-skill-dropdown-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.cm-skill-dropdown-option:hover { background: #f0f5ff; }
+.cm-skill-dropdown-option.selected { background: #eef3ff; }
+.cm-skill-dropdown-option input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; accent-color: #2463d6; }
+.cm-skill-dropdown-option div { flex: 1; }
+.cm-skill-dropdown-option strong { font-size: 14px; font-weight: 600; color: #263047; }
+.cm-skill-dropdown-option small { display: block; font-size: 13px; color: #526176; margin-top: 2px; }
+
+/* ── Selected skill detail cards ── */
+.cm-skill-detail-cards { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.cm-skill-detail-card {
+  border: 1.5px solid #2463d6;
+  border-radius: 10px;
+  background: #f8faff;
+  padding: 14px 16px;
+}
+.cm-skill-detail-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.cm-skill-detail-card-head strong { font-size: 15px; font-weight: 700; color: #1a2947; }
+.cm-skill-detail-remove {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: #8c99a8;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.cm-skill-detail-remove:hover { color: #d1382a; background: #fff0ee; }
+.cm-skill-detail-desc { font-size: 14px; color: #526176; margin: 0 0 10px; line-height: 1.5; }
+.cm-skill-detail-levels { margin-top: 8px; }
+.cm-skill-detail-levels-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #8c99a8; display: block; margin-bottom: 8px; }
+.cm-skill-detail-level-rows { display: flex; flex-direction: column; gap: 6px; }
+.cm-skill-detail-level-row { display: flex; align-items: baseline; gap: 10px; }
+.cm-skill-level-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #e8eeff;
+  color: #2463d6;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cm-skill-detail-level-desc { font-size: 13px; color: #263047; line-height: 1.5; }
+
+/* ── Skill Master inline form (LibrarySettings) ── */
+.cm-skill-master-view { margin-top: 8px; }
+.cm-skill-master-actions { display: flex; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
 }
 .cm-activity-levels {
   display: flex;
