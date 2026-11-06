@@ -178,7 +178,7 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
                       <p>
                         {submissions.length
                           ? "Try another search or clear the status filter."
-                          : "When a reportee submits a certificate or supporting document from My learning, it will appear here for review."}
+                          : "When a reportee submits a certificate or supporting document from My Skill, it will appear here for review."}
                       </p>
                     </div>
                   </td>
