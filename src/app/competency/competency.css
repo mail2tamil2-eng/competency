@@ -1429,8 +1429,28 @@
   border-color: #7bad91;
   color: #526176;
 }
+.cm-level-track > div.current {
+  border-color: #e67e22;
+  background: #fff8f2;
+  color: #263047;
+}
 .cm-level-track > div.beyond {
   opacity: 0.35;
+}
+.cm-level-current-badge {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #fff3e0;
+  color: #7a3800;
+  border: 1px solid #e67e22;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  vertical-align: middle;
+  line-height: 1.6;
 }
 .cm-level-track span {
   font-size: 14px;
@@ -4084,46 +4104,80 @@
   color: #526176;
   margin-top: 2px;
   line-height: 1.5;
+}
 
 /* ── Assignment wizard: 2-step progress bar ── */
 .cm-wizard-steps {
   display: flex;
   align-items: center;
-  padding: 0 0 24px;
+  justify-content: center;
+  gap: 0;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  background: #f8fafc;
+  border: 1px solid #e8edf4;
+  border-radius: 12px;
 }
 .cm-wizard-step {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #8c99a8;
-  white-space: nowrap;
+  gap: 12px;
+  flex-shrink: 0;
 }
 .cm-wizard-step-num {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #e5e7eb;
-  color: #526176;
+  color: #8c99a8;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   flex-shrink: 0;
+  border: 2px solid transparent;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
-.cm-wizard-step.active { color: #2463d6; }
-.cm-wizard-step.active .cm-wizard-step-num { background: #2463d6; color: #fff; }
-.cm-wizard-step.done { color: #16a34a; }
-.cm-wizard-step.done .cm-wizard-step-num { background: #16a34a; color: #fff; }
+.cm-wizard-step-label {
+  display: flex;
+  flex-direction: column;
+}
+.cm-wizard-step-label strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #8c99a8;
+  line-height: 1.3;
+  transition: color 0.2s;
+}
+.cm-wizard-step-label span {
+  font-size: 12px;
+  color: #b0b8cc;
+  line-height: 1.3;
+}
+.cm-wizard-step.active .cm-wizard-step-num {
+  background: #2463d6;
+  color: #fff;
+  border-color: #2463d6;
+  box-shadow: 0 0 0 4px #2463d620;
+}
+.cm-wizard-step.active .cm-wizard-step-label strong { color: #2463d6; }
+.cm-wizard-step.active .cm-wizard-step-label span { color: #6b93e8; }
+.cm-wizard-step.done .cm-wizard-step-num {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
+}
+.cm-wizard-step.done .cm-wizard-step-label strong { color: #16a34a; }
 .cm-wizard-connector {
   flex: 1;
   height: 2px;
   background: #e5e7eb;
-  margin: 0 12px;
-  max-width: 60px;
-  min-width: 20px;
+  margin: 0 20px;
+  max-width: 80px;
+  min-width: 32px;
+  border-radius: 2px;
+  transition: background 0.2s;
 }
 .cm-wizard-connector.done { background: #16a34a; }
 
@@ -4256,7 +4310,6 @@
 /* ── Skill Master inline form (LibrarySettings) ── */
 .cm-skill-master-view { margin-top: 8px; }
 .cm-skill-master-actions { display: flex; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
-}
 .cm-activity-levels {
   display: flex;
   flex-direction: column;

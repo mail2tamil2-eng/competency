@@ -236,7 +236,7 @@ export function SkillInlineEdit({
                     {expanded && (
                       <div className="cm-level-row-body">
                         <label>
-                          <span className="cm-req-label">Proficiency Description <span className="req">*</span></span>
+                          <span className="cm-req-label">Proficiency Description</span>
                           <textarea rows={3} aria-label={`${l.name} proficiency description`}
                             value={draft.levels?.[l.id] ?? ""}
                             onChange={(e) => setDraft((d) => ({ ...d, levels: { ...d.levels, [l.id]: e.target.value } }))}
@@ -404,7 +404,7 @@ export function CompetencyLibrary({
   commit: (data: Data, message: string) => boolean;
   work?: WorkflowData;
   onSaveWork?: (work: WorkflowData, message: string) => boolean;
-  onAssign?: (competencyId: string) => void;
+  onAssign?: (competencyId: string, skills?: { skillId: string; expected: string }[]) => void;
 }) {
   const [view, setView] = useState<ViewState>({ kind: "list" });
   const [category, setCategory] = useState("");
@@ -567,7 +567,12 @@ export function CompetencyLibrary({
             )
           ) {
             setCreating(false);
-            onAssign?.(competency.id);
+            onAssign?.(
+              competency.id,
+              skills
+                .filter((s) => s.status === "Active")
+                .map((s) => ({ skillId: s.id, expected: "" })),
+            );
           }
         }}
       />

@@ -52,32 +52,10 @@ export function ManagerProofs({ data, work, save }: ManagerProps) {
   return (
     <div className="cm-manager">
       <ManagerNavigation />
-      <div className="cm-manager-stats">
-        {["All Submissions", "Under Review", "Approved", "Rejected"].map(
-          (label) => (
-            <article key={label}>
-              <div>
-                <span>{statusText(label)}</span>
-                <ClipboardCheck size={18} />
-              </div>
-              <strong>
-                {label === "All Submissions"
-                  ? submissions.length
-                  : submissions.filter((x) => x.proof.status === label).length}
-              </strong>
-              <small>
-                {label === "Under Review"
-                  ? "Awaiting your decision"
-                  : "Latest submission per course"}
-              </small>
-            </article>
-          ),
-        )}
-      </div>
       <section className="cm-card">
         <div className="cm-section-head">
           <div>
-            <h3>Submitted Evidence</h3>
+            <h2>Submitted Evidence</h2>
             <p>
               Open a submission to see its proof, mapped skill level, and review
               actions.

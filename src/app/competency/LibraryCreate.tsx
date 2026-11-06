@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, X, Check, BookOpen, Search } from "lucide-react";
+import { ChevronDown, X, BookOpen, Search } from "lucide-react";
 import { Data, RecordItem, uid, validate } from "./model";
 import { WorkflowData } from "./workflowModel";
 
@@ -66,11 +66,7 @@ export function LibraryCreate({
     if (errors.length) errorRef.current?.focus();
   }, [errors]);
 
-  const availableSkills = data.skills.filter(
-    (s) =>
-      s.status === "Active" &&
-      (!s.competencyId || s.competencyId === "" || s.competencyId === competency.id),
-  );
+  const availableSkills = data.skills.filter((s) => s.status === "Active");
 
   const filteredSkills = availableSkills.filter(
     (s) => !skillSearch || s.name.toLowerCase().includes(skillSearch.toLowerCase()),
@@ -243,64 +239,47 @@ export function LibraryCreate({
           </div>
         ) : (
           <>
-            {/* ── Multi-select chip input ── */}
+            {/* ── Skill picker trigger ── */}
             <div ref={dropdownRef} style={{ position: "relative" }}>
-              {/* Input area showing chips + open trigger */}
               <div
+                role="combobox"
+                aria-expanded={dropdownOpen}
+                aria-haspopup="listbox"
                 onClick={() => setDropdownOpen((o) => !o)}
                 style={{
                   display: "flex",
-                  flexWrap: "wrap",
                   alignItems: "center",
-                  gap: 6,
-                  minHeight: 44,
-                  padding: "6px 36px 6px 10px",
-                  border: dropdownOpen ? "1.5px solid #2463d6" : "1.5px solid #d1d5db",
-                  borderRadius: 8,
+                  justifyContent: "space-between",
+                  minHeight: 38,
+                  padding: "10px 12px",
+                  border: dropdownOpen ? "1px solid #2d74fa" : "1px solid #dfe2ed",
+                  borderRadius: 7,
                   background: "#fff",
                   cursor: "pointer",
-                  position: "relative",
-                  boxShadow: dropdownOpen ? "0 0 0 3px rgba(36,99,214,0.10)" : "none",
+                  boxShadow: dropdownOpen ? "0 0 0 3px #2d74fa20" : "none",
                   transition: "border-color 0.15s, box-shadow 0.15s",
+                  color: "#424b61",
+                  fontSize: 14,
+                  fontFamily: "inherit",
+                  userSelect: "none",
                 }}
               >
-                {selectedSkillIds.length === 0 ? (
-                  <span style={{ fontSize: 14, color: "#9ca3af" }}>Select skills from Skill Master…</span>
-                ) : (
-                  selectedSkillIds.map((id) => {
-                    const s = data.skills.find((sk) => sk.id === id);
-                    return s ? (
-                      <span
-                        key={id}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 5,
-                          background: "#e8f0fe",
-                          color: "#1a56db",
-                          borderRadius: 6,
-                          padding: "2px 8px 2px 10px",
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {s.name}
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); toggleSkill(id); }}
-                          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#4b7bec", lineHeight: 1, display: "flex" }}
-                          aria-label={`Remove ${s.name}`}
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    ) : null;
-                  })
-                )}
-                {/* Chevron icon */}
-                <span style={{ position: "absolute", right: 10, top: "50%", transform: `translateY(-50%) rotate(${dropdownOpen ? 180 : 0}deg)`, transition: "transform 0.2s", color: "#9ca3af", display: "flex" }}>
-                  <ChevronDown size={16} />
+                <span style={{ color: selectedSkillIds.length === 0 ? "#9ca3af" : "#424b61" }}>
+                  {selectedSkillIds.length === 0
+                    ? "Select skills…"
+                    : selectedSkillIds.length === 1
+                      ? (data.skills.find((s) => s.id === selectedSkillIds[0])?.name ?? "1 skill selected")
+                      : `${selectedSkillIds.length} skills selected`}
                 </span>
+                <ChevronDown
+                  size={16}
+                  style={{
+                    color: "#9ca3af",
+                    flexShrink: 0,
+                    transform: dropdownOpen ? "rotate(180deg)" : "none",
+                    transition: "transform 0.2s",
+                  }}
+                />
               </div>
 
               {/* ── Dropdown panel ── */}
@@ -311,17 +290,17 @@ export function LibraryCreate({
                     top: "calc(100% + 4px)",
                     left: 0,
                     right: 0,
-                    background: "#fff",
-                    border: "1.5px solid #d1d5db",
-                    borderRadius: 8,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                    background: "#f8fafc",
+                    border: "1px solid #e8edf4",
+                    borderRadius: 10,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
                     zIndex: 200,
                     overflow: "hidden",
                   }}
                 >
-                  {/* Search bar */}
-                  <div style={{ padding: "8px 10px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: 8 }}>
-                    <Search size={14} style={{ color: "#9ca3af", flexShrink: 0 }} />
+                  {/* Search */}
+                  <div style={{ padding: "10px 12px", borderBottom: "1px solid #e8edf4", display: "flex", alignItems: "center", gap: 8, background: "#fff" }}>
+                    <Search size={14} style={{ color: "#526176", flexShrink: 0 }} />
                     <input
                       ref={searchRef}
                       type="text"
@@ -332,58 +311,105 @@ export function LibraryCreate({
                       style={{
                         border: "none",
                         outline: "none",
-                        fontSize: 13,
+                        fontSize: 14,
                         width: "100%",
                         background: "transparent",
-                        color: "#263047",
+                        color: "#424b61",
+                        fontFamily: "inherit",
                       }}
                     />
                   </div>
 
-                  {/* Options list */}
-                  <div style={{ maxHeight: 220, overflowY: "auto" }}>
+                  {/* Options */}
+                  <div style={{ maxHeight: 220, overflowY: "auto", background: "#fff" }}>
                     {filteredSkills.length === 0 ? (
-                      <div style={{ padding: "12px 14px", fontSize: 13, color: "#9ca3af" }}>No skills match your search.</div>
+                      <div style={{ padding: "12px 14px", fontSize: 14, color: "#9ca3af" }}>No skills match your search.</div>
                     ) : filteredSkills.map((s) => {
-                      const selected = selectedSkillIds.includes(s.id);
+                      const isSelected = selectedSkillIds.includes(s.id);
                       return (
-                        <div
+                        <label
                           key={s.id}
-                          onClick={(e) => { e.stopPropagation(); toggleSkill(s.id); }}
                           style={{
                             display: "flex",
-                            flexDirection: "row",
                             alignItems: "flex-start",
                             gap: 10,
                             padding: "10px 14px",
                             cursor: "pointer",
-                            background: selected ? "#f0f5ff" : "transparent",
+                            background: isSelected ? "#eef3fb" : "transparent",
+                            borderBottom: "1px solid #f0f2f7",
                           }}
-                          onMouseEnter={(e) => { if (!selected) (e.currentTarget as HTMLDivElement).style.background = "#f9fafb"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = selected ? "#f0f5ff" : "transparent"; }}
                         >
-                          {/* Check/circle indicator */}
-                          <span style={{
-                            width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 2,
-                            border: selected ? "none" : "1.5px solid #d1d5db",
-                            background: selected ? "#2463d6" : "transparent",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>
-                            {selected && <Check size={11} color="#fff" />}
-                          </span>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSkill(s.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ marginTop: 3, accentColor: "#2463d6", width: 15, height: 15, flexShrink: 0, cursor: "pointer" }}
+                          />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <strong style={{ fontSize: 14, fontWeight: 600, color: "#111827", display: "block" }}>{s.name}</strong>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#263047", display: "block" }}>{s.name}</span>
                             {s.description && (
-                              <span style={{ fontSize: 12, color: "#6b7280", display: "block", marginTop: 1 }}>{s.description}</span>
+                              <span style={{ fontSize: 13, color: "#6b7280", display: "block", marginTop: 2 }}>{s.description}</span>
                             )}
                           </div>
-                        </div>
+                        </label>
                       );
                     })}
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{ padding: "10px 14px", borderTop: "1px solid #e8edf4", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
+                    <span style={{ fontSize: 13, color: "#526176" }}>
+                      {selectedSkillIds.length} selected
+                    </span>
+                    <button
+                      type="button"
+                      className="cm-button primary"
+                      onClick={() => { setDropdownOpen(false); setSkillSearch(""); }}
+                    >
+                      Done
+                    </button>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* ── Selected chips ── */}
+            {selectedSkillIds.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                {selectedSkillIds.map((id) => {
+                  const s = data.skills.find((sk) => sk.id === id);
+                  return s ? (
+                    <span
+                      key={id}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        background: "#eef3fb",
+                        color: "#1a56db",
+                        border: "1px solid #c7d8f7",
+                        borderRadius: 6,
+                        padding: "3px 10px",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      {s.name}
+                      <button
+                        type="button"
+                        onClick={() => toggleSkill(id)}
+                        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#4b7bec", lineHeight: 1, display: "flex" }}
+                        aria-label={`Remove ${s.name}`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            )}
 
             {/* ── Selected skill detail cards ── */}
             {selectedSkillIds.length > 0 && (

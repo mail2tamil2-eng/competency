@@ -21,15 +21,22 @@ export function AssignmentSkills({
   const [categoryId, setCategoryId] = useState("");
   const [onlySelected, setOnlySelected] = useState(false);
   const term = query.trim().toLowerCase();
-  const groups = data.competencies.filter(
-    (c) =>
-      (!categoryId || c.categoryId === categoryId) &&
-      (c.status === "Active" ||
-      selected.some(
-        (x) =>
-          data.skills.find((s) => s.id === x.skillId)?.competencyId === c.id,
-      )),
+  const selectedCompIds = new Set(
+    selected.map((x) => data.skills.find((s) => s.id === x.skillId)?.competencyId).filter(Boolean),
   );
+  const groups = data.competencies
+    .filter(
+      (c) =>
+        (!categoryId || c.categoryId === categoryId) &&
+        (c.status === "Active" || selected.some((x) => data.skills.find((s) => s.id === x.skillId)?.competencyId === c.id)),
+    )
+    .sort((a, b) => {
+      const aSelected = selectedCompIds.has(a.id);
+      const bSelected = selectedCompIds.has(b.id);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return 0;
+    });
   const missing = selected.filter((s) => !s.expected).length;
   return (
     <section
@@ -149,7 +156,7 @@ function SkillGroup({
   searching: boolean;
   readOnly: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => all.some((s) => selected.some((x) => x.skillId === s.id)));
   const [paging, setPaging] = useState({ key: filterKey, page: 0 });
   const page = Math.min(
     paging.key === filterKey ? paging.page : 0,

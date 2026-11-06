@@ -51,31 +51,10 @@ export function AdminProofs({ data, work, save }: ManagerProps) {
 
   return (
     <div>
-      <div className="cm-manager-stats" style={{ marginBottom: 20 }}>
-        {["All Submissions", "Under Review", "Approved", "Rejected"].map((label) => (
-          <article key={label}>
-            <div>
-              <span>{statusText(label)}</span>
-              <ClipboardCheck size={18} />
-            </div>
-            <strong>
-              {label === "All Submissions"
-                ? submissions.length
-                : submissions.filter((x) => x.proof.status === label).length}
-            </strong>
-            <small>
-              {label === "Under Review"
-                ? "Awaiting your decision"
-                : "Latest submission per course"}
-            </small>
-          </article>
-        ))}
-      </div>
-
       <section className="cm-card">
         <div className="cm-section-head">
           <div>
-            <h3>Submitted Evidence</h3>
+            <h2>Proof Submissions</h2>
             <p>Open a submission to view the proof and approve or reject it.</p>
           </div>
         </div>

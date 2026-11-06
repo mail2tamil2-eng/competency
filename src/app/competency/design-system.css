@@ -1741,80 +1741,90 @@
   font-weight: 600;
   color: #111827;
 }
+/* ── Admin config: role progression chain ──────────────────────────────── */
 .cm-cp-chain {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: flex-start;
   gap: 0;
-  row-gap: 8px;
+  row-gap: 12px;
 }
-.cm-cp-role {
-  display: inline-flex;
+/* Each role is a fixed-width vertical card — same size regardless of how many
+   roles are in the path. Scoped to .cm-cp-chain so the learner widget
+   (.cm-cp-roles) keeps its own flex:1 sizing from platform-theme.css. */
+.cm-cp-chain .cm-cp-role {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  flex: 0 0 128px;
+  width: 128px;
+  min-height: 90px;
   background: #f0f4ff;
   border: 1px solid #d4e0ff;
-  border-radius: 20px;
-  padding: 4px 12px 4px 6px;
-  white-space: nowrap;
+  border-radius: 10px;
+  padding: 14px 10px;
+  text-align: center;
+  gap: 8px;
+  box-sizing: border-box;
 }
-.cm-cp-role-num {
-  width: 18px;
-  height: 18px;
+.cm-cp-chain .cm-cp-role-num {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: #2463d6;
-  color: white;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  line-height: 1;
 }
-.cm-cp-role-name {
+/* Step 1 (starting role): solid blue badge */
+.cm-cp-chain > .cm-cp-role:first-child .cm-cp-role-num {
+  background: #2563eb;
+  color: #fff;
+}
+/* Steps 2–5 (advancement roles): light blue badge, dark blue number */
+.cm-cp-chain > .cm-cp-role:not(:first-child) .cm-cp-role-num {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+/* Inactive path: muted grey badges */
+.cm-cp-card.inactive .cm-cp-chain .cm-cp-role-num {
+  background: #e5e7eb;
+  color: #374151;
+}
+.cm-cp-chain .cm-cp-role-name {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: #1e3a5f;
+  line-height: 1.3;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
+/* Connector arrow + threshold between cards */
 .cm-cp-connector {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 4px;
-  gap: 0;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  min-height: 90px;
+  gap: 3px;
+  padding: 0;
 }
 .cm-cp-arrow {
-  color: #9ca3af;
+  color: #93c5fd;
 }
 .cm-cp-pct {
   font-size: 11px;
   color: #526176;
   font-weight: 700;
   line-height: 1;
-}
-.cm-cp-role.current {
-  background: #2463d6;
-  border-color: #1d52b8;
-}
-.cm-cp-role.current .cm-cp-role-num {
-  background: rgba(255,255,255,0.25);
-}
-.cm-cp-role.current .cm-cp-role-name {
-  color: #fff;
-  font-weight: 600;
-}
-.cm-cp-role.past {
-  background: #e8f5e9;
-  border-color: #a5d6a7;
-}
-.cm-cp-role.past .cm-cp-role-num {
-  background: #43a047;
-}
-.cm-cp-role.past .cm-cp-role-name {
-  color: #2e7d32;
-}
-.cm-cp-role.future {
-  opacity: 0.55;
 }
 
 /* ── Career path builder (modal) ─────────────────────────────────────────── */
@@ -1882,17 +1892,18 @@
   min-width: 0;
 }
 .cm-cp-builder-num {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: #2463d6;
-  color: white;
-  font-size: 11px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  line-height: 1;
 }
 .cm-cp-builder-transition {
   display: flex;
@@ -1953,8 +1964,10 @@
   box-shadow: 0 0 0 3px #dce8ff;
 }
 @media (max-width: 600px) {
-  .cm-cp-chain { row-gap: 6px; }
-  .cm-cp-role-name { font-size: 12px; }
+  .cm-cp-chain { row-gap: 8px; }
+  .cm-cp-chain .cm-cp-role { flex: 0 0 100px; width: 100px; min-height: 82px; padding: 12px 8px; }
+  .cm-cp-chain .cm-cp-role-name { font-size: 12px; }
+  .cm-cp-connector { flex: 0 0 24px; width: 24px; min-height: 82px; }
 }
 
 /* Per-course requirement control */

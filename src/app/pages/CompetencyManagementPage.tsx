@@ -48,15 +48,16 @@ import {
 const tabs = [
   ["settings", "Library Settings", Settings2],
   ["library", "Competency Framework", Layers],
+  ["roles", "Role Mapping", Map],
   ["assignments", "User Level Update", BarChart2],
   ["career-progression", "Role Progression", Route],
   ["reports", "Reports", ListChecks],
   ["proof-submissions", "Proof Submissions", ClipboardCheck],
-  ["learner", "My Learning", GraduationCap],
+  ["learner", "My Skill", GraduationCap],
   ["learner-report", "Skill Progress Report", TrendingUp],
   ["manager", "Team Progress", Users],
 ] as const;
-type Tab = (typeof tabs)[number][0] | "roles";
+type Tab = (typeof tabs)[number][0];
 export function CompetencyManagementPage() {
   const location = useLocation();
   const routeNavigate = useNavigate();
@@ -232,8 +233,8 @@ export function CompetencyManagementPage() {
             commit={commit}
             work={work}
             onSaveWork={(next, msg) => saveWorkflow(data, next, msg)}
-            onAssign={(compId) => {
-              const skills = data.skills
+            onAssign={(compId, prebuilt) => {
+              const skills = prebuilt ?? data.skills
                 .filter((s) => s.competencyId === compId && s.status === "Active")
                 .map((s) => ({ skillId: s.id, expected: "" }));
               setAssignSkills(skills);

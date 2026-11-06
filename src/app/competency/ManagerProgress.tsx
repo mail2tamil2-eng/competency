@@ -128,11 +128,11 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
       <section className="cm-card">
         <div className="cm-section-head">
           <div>
-            <h3>
+            <h2>
               {view === "detail"
                 ? `${selectedPerson?.name || "Reportee"} — Skills & progress`
                 : "All Reportees"}
-            </h3>
+            </h2>
             <p>
               {view === "detail"
                 ? `${selectedPerson ? employeeFor(work, selectedPerson)?.email || "Email not recorded" : ""} · See this person’s skills, their current level, and where they need to get to. Use "Update level" to record an assessment.`

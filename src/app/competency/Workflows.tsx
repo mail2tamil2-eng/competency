@@ -525,24 +525,26 @@ export function RoleMapping({
         <button type="button" className="cm-text-button cm-inline-back" onClick={() => setDraft(null)}>
           ← Assignments
         </button>
-        <h2>{draft.name.trim() || "New Assignment"}</h2>
-        {wizardStep === 2 && (
-          <p className="cm-inline-form-meta">
-            {audience.length} matching learner{audience.length !== 1 ? "s" : ""} · {draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}
-          </p>
-        )}
-      </div>
-
-      {/* 2-step progress bar */}
-      <div className="cm-wizard-steps">
-        <div className={`cm-wizard-step${wizardStep >= 1 ? " active" : ""}${wizardStep > 1 ? " done" : ""}`}>
-          <span className="cm-wizard-step-num">{wizardStep > 1 ? "✓" : "1"}</span>
-          <span>Details &amp; Skills</span>
-        </div>
-        <div className={`cm-wizard-connector${wizardStep > 1 ? " done" : ""}`} />
-        <div className={`cm-wizard-step${wizardStep >= 2 ? " active" : ""}`}>
-          <span className="cm-wizard-step-num">2</span>
-          <span>Audience &amp; Schedule</span>
+        <div className="cm-role-form-heading-row">
+          <div>
+            <h2>{draft.name.trim() || "New Assignment"}</h2>
+            {wizardStep === 2 && (
+              <p className="cm-inline-form-meta">
+                {audience.length} matching learner{audience.length !== 1 ? "s" : ""} · {draft.skills.length} skill{draft.skills.length !== 1 ? "s" : ""}
+              </p>
+            )}
+          </div>
+          <div className="cm-role-stepper" aria-label="Steps">
+            <div className={`cm-role-step${wizardStep >= 1 ? " active" : ""}${wizardStep > 1 ? " done" : ""}`}>
+              <span className="cm-role-step-num">{wizardStep > 1 ? "✓" : "1"}</span>
+              <span className="cm-role-step-label">Details &amp; Skills</span>
+            </div>
+            <span className={`cm-role-step-connector${wizardStep > 1 ? " done" : ""}`} />
+            <div className={`cm-role-step${wizardStep >= 2 ? " active" : ""}`}>
+              <span className="cm-role-step-num">2</span>
+              <span className="cm-role-step-label">Audience &amp; Schedule</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1047,7 +1049,7 @@ export function Learning({
           <article className="cm-learning-card" key={a.id}>
             <div className="cm-section-head">
               <div>
-                <h3>{data.skills.find((s) => s.id === a.skillId)?.name}</h3>
+                <h2>{data.skills.find((s) => s.id === a.skillId)?.name}</h2>
                 <p>
                   {a.current === a.expected
                     ? (data.levels.find((l) => l.id === a.current)?.name || "Not assessed")
@@ -1091,17 +1093,24 @@ export function Learning({
                 <div
                   key={l.id}
                   className={
-                    i <= currentIndex
-                      ? "done"
-                      : i > expectedIndex
-                        ? "beyond"
-                        : ""
+                    i === currentIndex
+                      ? "current"
+                      : i < currentIndex
+                        ? "done"
+                        : i > expectedIndex
+                          ? "beyond"
+                          : ""
                   }
                 >
                   <span>
-                    {i <= currentIndex ? <CheckCircle2 size={17} /> : i + 1}
+                    {i < currentIndex ? <CheckCircle2 size={17} /> : i + 1}
                   </span>
-                  <strong>{l.name}</strong>
+                  <strong>
+                    {l.name}
+                    {i === currentIndex && (
+                      <span className="cm-level-current-badge">Current</span>
+                    )}
+                  </strong>
                   <small>
                     {
                       data.skills.find((s) => s.id === a.skillId)?.levels?.[

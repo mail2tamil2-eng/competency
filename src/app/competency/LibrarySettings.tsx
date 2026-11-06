@@ -184,24 +184,18 @@ export function LibrarySettings({
               <thead>
                 <tr>
                   <th>Skill</th>
-                  <th>Category</th>
-                  <th>Competency</th>
                   <th>Status</th>
                   <th className="cm-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {skillRecords.map((s) => {
-                  const catName = data.categories.find((c) => c.id === s.categoryId)?.name ?? "—";
-                  const compName = data.competencies.find((c) => c.id === s.competencyId)?.name ?? <em style={{ color: "#8c99a8" }}>Unassigned</em>;
                   return (
                     <tr key={s.id}>
                       <td>
                         <strong>{s.name}</strong>
                         <small>{s.description || "No description added"}</small>
                       </td>
-                      <td><span className="cm-category">{catName}</span></td>
-                      <td style={{ fontSize: 14, color: "#526176" }}>{compName}</td>
                       <td><span className={"cm-badge " + s.status.toLowerCase()}>{s.status}</span></td>
                       <td>
                         <div className="cm-row-actions">

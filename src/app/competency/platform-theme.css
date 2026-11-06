@@ -1810,8 +1810,8 @@ section.cm-learner {
   border-bottom: 1px solid #f0f4fb;
   margin-bottom: 16px;
 }
-.cm-learner .cm-learning-card h3 {
-  font-size: 17px;
+.cm-learner .cm-learning-card h2 {
+  font-size: 18px;
   font-weight: 700;
   color: #1a2540;
 }
