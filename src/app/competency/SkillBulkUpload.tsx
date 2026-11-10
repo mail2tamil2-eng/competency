@@ -11,12 +11,12 @@ import {
   DialogDescription,
 } from "../components/ui/dialog";
 
-const FIELDS: [string, string][] = [
+const FIELDS: [string, "Required" | "Optional" | "Auto"][] = [
   ["Skill Name", "Required"],
   ["Skill Description", "Optional"],
-  ["Level Name", "System generated"],
+  ["Level Name", "Auto"],
   ["Level Description", "Optional"],
-  ["Course ID", "Optional · only when mapping courses"],
+  ["Course ID", "Optional"],
 ];
 
 export function SkillBulkUpload({
@@ -81,43 +81,44 @@ export function SkillBulkUpload({
           <span className={preview ? "active" : ""}>2 · Review</span>
           <span>3 · Import</span>
         </div>
-        <div className="cm-template">
-          <div>
-            <strong>Download the Template</strong>
-            <p>Level names are already filled in for your active proficiency levels. Copy the rows for each new skill.</p>
-          </div>
-          <button className="cm-button" onClick={() => download("skill-master-template.csv", skillTemplate(data))}>
-            <Download size={16} /> Download Template
-          </button>
-        </div>
-        <div className="cm-table-wrap cm-skill-upload-fields">
-          <table>
-            <thead>
-              <tr><th>Field</th><th>Mandatory</th></tr>
-            </thead>
-            <tbody>
-              {FIELDS.map(([f, m]) => (
-                <tr key={f}><td><strong>{f}</strong></td><td>{m}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="cm-upload-hint">
-          To map more than one course to a level, separate Course IDs with a semicolon (c1;c2).{" "}
-          <button type="button" className="cm-text-button" onClick={() => download("course-ids.csv", courseList(courses))}>
-            Download Course IDs
-          </button>
-        </p>
+        {/* Upload first so it stays visible on small screens */}
         <label
-          className="cm-drop"
+          className="cm-drop cm-drop-compact"
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { e.preventDefault(); void load(e.dataTransfer.files[0]); }}
         >
-          <Upload size={25} />
-          <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
-          <span>CSV · Up to 5,000 Rows · 2 MB</span>
+          <Upload size={22} />
+          <span className="cm-drop-text">
+            <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
+            <span>CSV · Up to 5,000 Rows · 2 MB</span>
+          </span>
           <input aria-label="Skill CSV File" type="file" accept=".csv,text/csv" onChange={(e) => void load(e.target.files?.[0])} />
         </label>
+        <div className="cm-upload-guide">
+          <div className="cm-upload-guide-head">
+            <strong>File Columns</strong>
+            <div className="cm-upload-guide-links">
+              <button type="button" className="cm-text-button" onClick={() => download("skill-master-template.csv", skillTemplate(data))}>
+                <Download size={15} /> Download Template
+              </button>
+              <button type="button" className="cm-text-button" onClick={() => download("course-ids.csv", courseList(courses))}>
+                <Download size={15} /> Course IDs
+              </button>
+            </div>
+          </div>
+          <ul className="cm-column-chips" aria-label="File columns">
+            {FIELDS.map(([f, note]) => (
+              <li key={f} className={note === "Required" ? "required" : ""}>
+                {f}
+                {note === "Required" && <span aria-label="required"> *</span>}
+                {note === "Auto" && <em> · auto</em>}
+              </li>
+            ))}
+          </ul>
+          <p className="cm-upload-hint">
+            <span className="cm-req-mark">*</span> Required. Level names are pre-filled in the template. Use Course ID only to map courses; separate several with a semicolon (c1;c2).
+          </p>
+        </div>
         {error && <p role="alert" className="cm-error">{error}</p>}
         {busy && <p role="status">Checking your file…</p>}
         {preview && (

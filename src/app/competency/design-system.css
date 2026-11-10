@@ -1992,8 +1992,6 @@
 .cm-comp-popover li { padding: 7px 0; font-size: 14px; color: #334155; border-top: 1px solid #eef2f6; }
 .cm-usage-list { margin: 4px 0 8px; padding: 12px 16px 12px 32px; background: #f6f8fb; border: 1px solid #e3e8ef; border-radius: 8px; color: #334155; font-size: 14px; line-height: 1.5; list-style: disc; }
 .cm-usage-list li + li { margin-top: 4px; }
-.cm-skill-upload-fields { margin: 4px 0 0; }
-.cm-skill-upload-fields table td, .cm-skill-upload-fields table th { padding: 8px 14px; font-size: 14px; }
 .cm-upload-hint { margin: 0; font-size: 14px; color: #526176; }
 .cm-upload-hint .cm-text-button { display: inline; padding: 0; font-size: 14px; }
 .cm-also-in { display: inline-block; margin-top: 4px; padding: 1px 8px; border-radius: 10px; background: #f1f5fb; color: #526176; font-size: 14px; }
@@ -2021,3 +2019,24 @@
 .cm .cm-manager-table.cm-detail-table td.cm-cell-dates small { display: block; margin: 0; color: #526176; font-size: 13px; }
 .cm .cm-manager-table.cm-detail-table td.cm-cell-dates span + span { margin-top: 4px; }
 .cm-no-courses-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; border: 1px dashed #d5dbe5; background: #fff; color: #526176; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
+
+/* ── Skill Master bulk upload: compact layout ── */
+.cm-drop.cm-drop-compact { flex-direction: row; align-items: center; justify-content: flex-start; gap: 14px; padding: 16px 18px; text-align: left; min-height: 0; }
+.cm-drop-compact .cm-drop-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cm-drop-compact .cm-drop-text strong { overflow-wrap: anywhere; }
+.cm-drop-compact .cm-drop-text span { font-size: 14px; color: #526176; }
+.cm-upload-guide { border: 1px solid #e3e8ef; border-radius: 10px; padding: 12px 14px; background: #fafbfd; display: grid; gap: 8px; }
+.cm-upload-guide-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.cm-upload-guide-head strong { font-size: 15px; color: #1f2937; }
+.cm-upload-guide-links { display: flex; gap: 14px; flex-wrap: wrap; }
+.cm-upload-guide-links .cm-text-button { display: inline-flex; align-items: center; gap: 5px; padding: 0; min-height: 0; font-size: 14px; }
+.cm-column-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.cm-column-chips li { padding: 3px 10px; border: 1px solid #dbe3ee; border-radius: 14px; background: #fff; color: #334155; font-size: 14px; line-height: 20px; }
+.cm-column-chips li.required { border-color: #b9cdf6; background: #eef3fd; color: #1d4ed8; font-weight: 600; }
+.cm-column-chips li span, .cm-req-mark { color: #c2410c; font-weight: 700; }
+.cm-column-chips li em { font-style: normal; color: #64748b; font-size: 13px; }
+/* The whole box opens the file picker; keep the native input for keyboard and screen readers */
+.cm-drop.cm-drop-compact { position: relative; cursor: pointer; }
+.cm-drop.cm-drop-compact input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.cm-drop.cm-drop-compact:has(input:focus-visible) { outline: 2px solid #2463d6; outline-offset: 2px; }
+.cm-drop.cm-drop-compact:hover { border-color: #2463d6; }
