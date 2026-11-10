@@ -2040,3 +2040,12 @@
 .cm-drop.cm-drop-compact input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 .cm-drop.cm-drop-compact:has(input:focus-visible) { outline: 2px solid #2463d6; outline-offset: 2px; }
 .cm-drop.cm-drop-compact:hover { border-color: #2463d6; }
+
+/* ── Learner skill cards: expand / collapse ── */
+.cm-skill-expand-bar { display: flex; justify-content: flex-end; margin: 4px 0 -4px; }
+.cm-skill-expand-bar .cm-button { display: inline-flex; align-items: center; gap: 6px; }
+.cm-skill-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.cm-skill-toggle:hover { color: #2463d6; }
+.cm-skill-toggle:focus-visible { outline: 2px solid #2463d6; outline-offset: 3px; border-radius: 4px; }
+.cm-skill-toggle svg { flex-shrink: 0; color: #526176; transition: transform .15s; }
+.cm .cm-learning-card.is-collapsed > .cm-section-head, .cm-learner .cm-learning-card.is-collapsed > .cm-section-head { margin-bottom: 0; border-bottom: 0; padding-bottom: 0; }

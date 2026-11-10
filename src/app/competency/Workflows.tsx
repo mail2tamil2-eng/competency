@@ -18,6 +18,8 @@ import {
   Layers,
   AlertTriangle,
   Target,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Data, uid, progress, contentMissing, download, compIdsOf, inComp, compNames } from "./model";
@@ -741,6 +743,8 @@ export function Learning({
   ];
   const [localKey, setLocalKey] = useState(""),
     [skillView, setSkillView] = useState<"skill" | "competency">("skill"),
+    /* Skill cards the learner has collapsed (all start expanded). */
+    [collapsedSkills, setCollapsedSkills] = useState<Set<string>>(new Set()),
     [submission, setSubmission] = useState<{ assignmentId: string } | null>(null),
     [file, setFile] = useState<File | null>(null),
     [remark, setRemark] = useState<Record<string, string>>({}),
@@ -991,6 +995,19 @@ export function Learning({
           </button>
         </div>
       )}
+      {(manager || skillView === "skill") && assignments.length > 1 && (
+        <div className="cm-skill-expand-bar">
+          <button
+            type="button"
+            className="cm-button cm-button-sm"
+            onClick={() =>
+              setCollapsedSkills(collapsedSkills.size ? new Set() : new Set(assignments.map((a) => a.id)))
+            }
+          >
+            {collapsedSkills.size ? <><ChevronDown size={15} /> Expand All</> : <><ChevronUp size={15} /> Collapse All</>}
+          </button>
+        </div>
+      )}
 
 
       {/* Competency view — grouped by competency */}
@@ -1059,10 +1076,27 @@ export function Learning({
         const currentIndex = data.levels.findIndex((l) => l.id === a.current);
         const expectedIndex = data.levels.findIndex((l) => l.id === a.expected);
         return (
-          <article className="cm-learning-card" key={a.id}>
+          <article className={"cm-learning-card" + (collapsedSkills.has(a.id) ? " is-collapsed" : "")} key={a.id}>
             <div className="cm-section-head">
               <div>
-                <h2>{data.skills.find((s) => s.id === a.skillId)?.name}</h2>
+                <h2>
+                  <button
+                    type="button"
+                    className="cm-skill-toggle"
+                    aria-expanded={!collapsedSkills.has(a.id)}
+                    aria-controls={`skill-body-${a.id}`}
+                    onClick={() =>
+                      setCollapsedSkills((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(a.id)) next.delete(a.id); else next.add(a.id);
+                        return next;
+                      })
+                    }
+                  >
+                    <ChevronDown size={18} className={collapsedSkills.has(a.id) ? "" : "cm-rotated"} />
+                    {data.skills.find((s) => s.id === a.skillId)?.name}
+                  </button>
+                </h2>
                 <p>
                   {a.current === a.expected
                     ? (data.levels.find((l) => l.id === a.current)?.name || "Not assessed")
@@ -1101,6 +1135,8 @@ export function Learning({
                 </span>
               </div>
             </div>
+            {!collapsedSkills.has(a.id) && (
+            <div id={`skill-body-${a.id}`}>
             <div className="cm-level-track">
               {data.levels.map((l, i) => (
                 <div
@@ -1225,6 +1261,8 @@ export function Learning({
                   </tbody>
                 </table>
               </div>
+            )}
+            </div>
             )}
           </article>
         );
