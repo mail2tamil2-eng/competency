@@ -200,19 +200,6 @@ export function LibraryCreate({
               rows={3}
             />
           </label>
-          {isEdit && (
-            <label>
-              <span>Status</span>
-              <select
-                value={competency.status}
-                onChange={(e) => setCompetency({ ...competency, status: e.target.value as RecordItem["status"] })}
-              >
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Draft</option>
-              </select>
-            </label>
-          )}
         </div>
       </div>
 
@@ -492,6 +479,11 @@ export function LibraryCreate({
                                       {courses.length} course{courses.length > 1 ? "s" : ""}
                                       <ChevronDown size={11} style={{ transform: expandedLevels.has(`${skill.id}:${l.id}`) ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
                                     </button>
+                                  )}
+                                  {courses.length === 0 && (
+                                    <span className="cm-no-courses-chip">
+                                      <BookOpen size={11} /> No courses mapped
+                                    </span>
                                   )}
                                 </div>
                                 {/* Expanded course panel */}

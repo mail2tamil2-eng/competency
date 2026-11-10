@@ -2020,3 +2020,4 @@
 .cm .cm-manager-table.cm-detail-table td.cm-cell-dates span { display: block; white-space: nowrap; }
 .cm .cm-manager-table.cm-detail-table td.cm-cell-dates small { display: block; margin: 0; color: #526176; font-size: 13px; }
 .cm .cm-manager-table.cm-detail-table td.cm-cell-dates span + span { margin-top: 4px; }
+.cm-no-courses-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; border: 1px dashed #d5dbe5; background: #fff; color: #526176; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
