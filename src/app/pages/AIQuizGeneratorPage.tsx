@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Upload, FileText, Trash2, Edit2, Check, X, Sparkles, Brain, CheckCircle, History, User, Calendar, Hash, Tag, Globe, Languages } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, Trash2, Edit2, Check, X, Sparkles, Brain, CheckCircle, History, User, Calendar, Hash, Globe, Languages } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { toast } from 'sonner';
@@ -27,7 +27,6 @@ type GenerationHistory = {
   generatedTime: string;
   questionType: string;
   numberOfQuestions: number;
-  category: string;
   addedToCourse: boolean;
 };
 
@@ -95,14 +94,6 @@ export function AIQuizGeneratorPage() {
 
   // Global Selection State
   const [addToCourse, setAddToCourse] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('General Knowledge');
-  const [newCategory, setNewCategory] = useState('');
-
-  const availableCategories = [
-    'General Knowledge', 'Science & Technology', 'Mathematics', 'History',
-    'Geography', 'Business', 'Computer Science', 'Language Arts'
-  ];
-
   const availableCourseFiles = [
     { id: 1, name: 'Information Security Management System.pdf' },
     { id: 2, name: 'Cyber Security Basics.pptx' },
@@ -111,11 +102,11 @@ export function AIQuizGeneratorPage() {
   ];
 
   const generationHistory: GenerationHistory[] = [
-    { id: 1, userName: 'John Smith', userEmail: 'john.smith@example.com', generatedDate: '2026-04-19', generatedTime: '10:30 AM', questionType: 'Both (3 MC, 2 TF)', numberOfQuestions: 5, category: 'Computer Science', addedToCourse: true },
-    { id: 2, userName: 'Sarah Johnson', userEmail: 'sarah.j@example.com', generatedDate: '2026-04-18', generatedTime: '02:15 PM', questionType: 'Multiple Choice', numberOfQuestions: 10, category: 'Science & Technology', addedToCourse: false },
-    { id: 3, userName: 'Michael Chen', userEmail: 'mchen@example.com', generatedDate: '2026-04-18', generatedTime: '09:45 AM', questionType: 'True/False', numberOfQuestions: 8, category: 'General Knowledge', addedToCourse: true },
-    { id: 4, userName: 'Emily Davis', userEmail: 'emily.davis@example.com', generatedDate: '2026-04-17', generatedTime: '04:20 PM', questionType: 'Both (6 MC, 4 TF)', numberOfQuestions: 10, category: 'Mathematics', addedToCourse: true },
-    { id: 5, userName: 'David Wilson', userEmail: 'dwilson@example.com', generatedDate: '2026-04-17', generatedTime: '11:00 AM', questionType: 'Multiple Choice', numberOfQuestions: 15, category: 'Business', addedToCourse: false }
+    { id: 1, userName: 'John Smith', userEmail: 'john.smith@example.com', generatedDate: '2026-04-19', generatedTime: '10:30 AM', questionType: 'Both (3 MC, 2 TF)', numberOfQuestions: 5, addedToCourse: true },
+    { id: 2, userName: 'Sarah Johnson', userEmail: 'sarah.j@example.com', generatedDate: '2026-04-18', generatedTime: '02:15 PM', questionType: 'Multiple Choice', numberOfQuestions: 10, addedToCourse: false },
+    { id: 3, userName: 'Michael Chen', userEmail: 'mchen@example.com', generatedDate: '2026-04-18', generatedTime: '09:45 AM', questionType: 'True/False', numberOfQuestions: 8, addedToCourse: true },
+    { id: 4, userName: 'Emily Davis', userEmail: 'emily.davis@example.com', generatedDate: '2026-04-17', generatedTime: '04:20 PM', questionType: 'Both (6 MC, 4 TF)', numberOfQuestions: 10, addedToCourse: true },
+    { id: 5, userName: 'David Wilson', userEmail: 'dwilson@example.com', generatedDate: '2026-04-17', generatedTime: '11:00 AM', questionType: 'Multiple Choice', numberOfQuestions: 15, addedToCourse: false }
   ];
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -312,16 +303,11 @@ export function AIQuizGeneratorPage() {
   };
 
   const handleSubmitQuestions = () => {
-    const category = selectedCategory === 'new' ? newCategory : selectedCategory;
-    if (selectedCategory === 'new' && !newCategory) {
-      toast.error('Category name required', { description: 'Please enter a name for the new category' });
-      return;
-    }
     const totalQ = Object.values(questionsByLanguage).reduce((sum, qs) => sum + qs.length, 0);
     if (addToCourse) {
       toast.success('Added to Course', { description: `${totalQ} question(s) added to course successfully` });
     }
-    toast.success('Added to Question Bank', { description: `${totalQ} question(s) added to "${category}" category` });
+    toast.success('Added to Question Bank', { description: `${totalQ} question(s) added to the question bank` });
     handleCancel();
   };
 
@@ -337,8 +323,6 @@ export function AIQuizGeneratorPage() {
     setLanguageOrder([]);
     setSelectedIdsByLang({});
     setCollapsedLangs(new Set());
-    setSelectedCategory('General Knowledge');
-    setNewCategory('');
     setAddToCourse(false);
     setSelectedLanguage('English');
   };
@@ -414,7 +398,6 @@ export function AIQuizGeneratorPage() {
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><div className="flex items-center gap-2"><Calendar className="w-4 h-4" />Date & Time</div></th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Question Type</th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><div className="flex items-center gap-2"><Hash className="w-4 h-4" />Questions</div></th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"><div className="flex items-center gap-2"><Tag className="w-4 h-4" />Category</div></th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Added to Course</th>
                   </tr>
                 </thead>
@@ -438,7 +421,6 @@ export function AIQuizGeneratorPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap"><span className="text-sm text-gray-900">{record.questionType}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap"><span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">{record.numberOfQuestions}</span></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">{record.category}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {record.addedToCourse
                           ? <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"><CheckCircle className="w-4 h-4 mr-1" />Yes</span>
@@ -884,20 +866,6 @@ export function AIQuizGeneratorPage() {
                     <span className="text-sm text-gray-600">Add all {totalQuestions} questions ({languageOrder.length} language set{languageOrder.length !== 1 ? 's' : ''}) to the current course</span>
                   </div>
                 </label>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                  <select value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); if (e.target.value !== 'new') setNewCategory(''); }} className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white">
-                    {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value="new">+ Create New Category</option>
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">All {totalQuestions} questions will be added to this category</p>
-                </div>
-                {selectedCategory === 'new' && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">New Category Name</label>
-                    <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Enter category name..." className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500" />
-                  </motion.div>
-                )}
               </div>
             </div>
 
