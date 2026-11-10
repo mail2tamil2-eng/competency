@@ -259,7 +259,7 @@ export function AssignmentConfiguration({
               </div>
             ) : (
               <>
-                <p>Users matching <strong>any</strong> value in each field will be enrolled. Leave empty to include all.</p>
+                <p>Users matching <strong>any</strong> value in each field will be enrolled.</p>
                 <div className="cm-audience-fields cm-audience-fields-grid">
                   <ChipSelectField label="Department" field="department" options={allDepts}
                     selected={draft.departments ?? []}
