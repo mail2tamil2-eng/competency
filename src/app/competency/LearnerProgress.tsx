@@ -1,7 +1,8 @@
 import { Fragment, useState, useEffect } from "react";
-import { Download, Upload, Search, CheckCircle2, ChevronDown, ChevronUp, FileCheck2 } from "lucide-react";
+import { Download, Upload, Search, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { Data, Assignment, download, parseCSV, compNames } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
+import { count, UploadSteps, UploadDropZone, FileColumnsGuide, UploadSummary } from "./BulkUploadParts";
 import {
   Dialog,
   DialogContent,
@@ -124,67 +125,35 @@ function BulkLevelUpload({
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="cm-dialog cm-wide">
         <DialogHeader>
-          <DialogTitle>Bulk Level Update</DialogTitle>
+          <DialogTitle>Bulk Upload Levels</DialogTitle>
           <DialogDescription>
-            Upload a CSV to update current proficiency levels for multiple learners at once.
+            Update current proficiency levels for many learners at once. Use one row for each learner and skill.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="cm-template">
-          <div>
-            <strong>Download the template first</strong>
-            <p>Fill in Name, Department, Skill and the new Current Level. Up to 1,000 rows · CSV · 2 MB.</p>
-          </div>
-          <button
-            className="cm-button"
-            onClick={() => download("level-update-template.csv", [BULK_HEADERS])}
-          >
-            <Download size={16} /> Download Template
-          </button>
-        </div>
+        <UploadSteps reviewed={rows.length > 0} />
+        <UploadDropZone fileName={fileName} limits="CSV · Up to 1,000 Rows · 2 MB" disabled={busy} onFile={(f) => void load(f)} />
+        <FileColumnsGuide
+          columns={BULK_HEADERS.map((name) => ({ name, required: true }))}
+          links={[{ label: "Download Template", onClick: () => download("level-update-template.csv", [BULK_HEADERS]) }]}
+          hint="Current Level must be an active level higher than the learner's present level."
+        />
 
-        <label
-          className="cm-drop"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { e.preventDefault(); void load(e.dataTransfer.files[0]); }}
-        >
-          <Upload size={28} />
-          <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
-          <span>Nothing is saved until you confirm below.</span>
-          <input
-            aria-label="CSV File"
-            type="file"
-            accept=".csv,text/csv"
-            disabled={busy}
-            onChange={(e) => void load(e.target.files?.[0])}
-          />
-        </label>
-
-        {busy && <p role="status">Checking your file…</p>}
         {error && <p className="cm-error" role="alert">{error}</p>}
+        {busy && <p role="status">Checking your file…</p>}
 
         {rows.length > 0 && (
           <>
-            <div className="cm-toolbar">
-              <strong><FileCheck2 size={18} /> {rows.length} Rows Reviewed</strong>
-              <span>{valid.length} Ready · {invalid.length} Need Attention</span>
-              {invalid.length > 0 && (
-                <button
-                  className="cm-button"
-                  onClick={() =>
-                    download("level-update-errors.csv", [
-                      ["Row", "Name", "Skill", "Errors"],
-                      ...invalid.map((r) => [String(r.line), r.name, r.skill, r.errors.join(" ")]),
-                    ])
-                  }
-                >
-                  Download Errors
-                </button>
-              )}
-            </div>
-            {invalid.length > 0 && (
-              <p className="cm-error">Fix highlighted rows and re-upload. No changes have been saved.</p>
-            )}
+            <UploadSummary
+              items={[`${count(valid.length, "Learner Update")} Ready`]}
+              attention={invalid.length}
+              onDownloadErrors={() =>
+                download("level-update-errors.csv", [
+                  ["Row", "Name", "Skill", "Errors"],
+                  ...invalid.map((r) => [String(r.line), r.name, r.skill, r.errors.join(" ")]),
+                ])
+              }
+            />
             <div className="cm-table-wrap cm-preview">
               <table>
                 <thead>
@@ -193,18 +162,18 @@ function BulkLevelUpload({
                     <th>Learner</th>
                     <th>Skill</th>
                     <th>New Level</th>
-                    <th>Validation</th>
+                    <th>Result</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((r) => (
-                    <tr key={r.line} className={r.errors.length ? "cm-invalid" : ""}>
+                    <tr key={r.line}>
                       <td>{r.line}</td>
                       <td>{r.name || <em>Missing</em>}<br /><small>{r.department}</small></td>
                       <td>{r.skill || <em>Missing</em>}</td>
                       <td>{r.levelName || <em>Missing</em>}</td>
                       <td className={r.errors.length ? "cm-invalid" : ""}>
-                        {r.errors.join(" ") || "Ready to update"}
+                        {r.errors.join(" ") || "Ready"}
                       </td>
                     </tr>
                   ))}

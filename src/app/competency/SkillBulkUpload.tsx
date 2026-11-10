@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import { Upload, Download } from "lucide-react";
 import { Data, download } from "./model";
 import { Course } from "./workflowModel";
+import { count, UploadSteps, UploadDropZone, FileColumnsGuide, UploadSummary } from "./BulkUploadParts";
 import { SkillImport, prepareSkillImport, skillTemplate, courseList } from "./skillImport";
 import {
   Dialog,
@@ -76,74 +76,30 @@ export function SkillBulkUpload({
             Add many skills at once. Use one row for each skill and proficiency level.
           </DialogDescription>
         </DialogHeader>
-        <div className="cm-steps">
-          <span className="active">1 · Prepare File</span>
-          <span className={preview ? "active" : ""}>2 · Review</span>
-          <span>3 · Import</span>
-        </div>
-        {/* Upload first so it stays visible on small screens */}
-        <label
-          className="cm-drop cm-drop-compact"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { e.preventDefault(); void load(e.dataTransfer.files[0]); }}
-        >
-          <Upload size={22} />
-          <span className="cm-drop-text">
-            <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
-            <span>CSV · Up to 5,000 Rows · 2 MB</span>
-          </span>
-          <input aria-label="Skill CSV File" type="file" accept=".csv,text/csv" onChange={(e) => void load(e.target.files?.[0])} />
-        </label>
-        <div className="cm-upload-guide">
-          <div className="cm-upload-guide-head">
-            <strong>File Columns</strong>
-            <div className="cm-upload-guide-links">
-              <button type="button" className="cm-text-button" onClick={() => download("skill-master-template.csv", skillTemplate(data))}>
-                <Download size={15} /> Download Template
-              </button>
-              <button type="button" className="cm-text-button" onClick={() => download("course-ids.csv", courseList(courses))}>
-                <Download size={15} /> Course IDs
-              </button>
-            </div>
-          </div>
-          <ul className="cm-column-chips" aria-label="File columns">
-            {FIELDS.map(([f, note]) => (
-              <li key={f} className={note === "Required" ? "required" : ""}>
-                {f}
-                {note === "Required" && <span aria-label="required"> *</span>}
-                {note === "Auto" && <em> · auto</em>}
-              </li>
-            ))}
-          </ul>
-          <p className="cm-upload-hint">
-            <span className="cm-req-mark">*</span> Required. Level names are pre-filled in the template. Use Course ID only to map courses; separate several with a semicolon (c1;c2).
-          </p>
-        </div>
+        <UploadSteps reviewed={!!preview} />
+        <UploadDropZone fileName={fileName} limits="CSV · Up to 5,000 Rows · 2 MB" label="Skill CSV File" onFile={(f) => void load(f)} />
+        <FileColumnsGuide
+          columns={FIELDS.map(([name, note]) => ({ name, required: note === "Required", auto: note === "Auto" }))}
+          links={[
+            { label: "Download Template", onClick: () => download("skill-master-template.csv", skillTemplate(data)) },
+            { label: "Course IDs", onClick: () => download("course-ids.csv", courseList(courses)) },
+          ]}
+          hint="Level names are pre-filled in the template. Use Course ID only to map courses; separate several with a semicolon (c1;c2)."
+        />
         {error && <p role="alert" className="cm-error">{error}</p>}
         {busy && <p role="status">Checking your file…</p>}
         {preview && (
           <>
-            <div className="cm-import-summary">
-              <strong>{readySkills} New Skills</strong>
-              <strong>{preview.mappings.length} Course Mappings</strong>
-              <span>{errors.length} Rows Need Attention</span>
-            </div>
-            {errors.length > 0 && (
-              <div className="cm-error" role="alert">
-                Fix the listed errors and upload again. Nothing has been saved.{" "}
-                <button
-                  className="cm-text-button"
-                  onClick={() =>
-                    download("skill-import-errors.csv", [
-                      ["Row", "Skill Name", "Level Name", "Errors"],
-                      ...errors.map((r) => [String(r.line), r.skill, r.level, r.errors.join(" ")]),
-                    ])
-                  }
-                >
-                  Download Errors
-                </button>
-              </div>
-            )}
+            <UploadSummary
+              items={[count(readySkills, "New Skill"), count(preview.mappings.length, "Course Mapping")]}
+              attention={errors.length}
+              onDownloadErrors={() =>
+                download("skill-import-errors.csv", [
+                  ["Row", "Skill Name", "Level Name", "Errors"],
+                  ...errors.map((r) => [String(r.line), r.skill, r.level, r.errors.join(" ")]),
+                ])
+              }
+            />
             <div className="cm-table-wrap cm-preview">
               <table>
                 <thead>

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, Download } from "lucide-react";
+import { count, UploadSteps, UploadDropZone, FileColumnsGuide, UploadSummary } from "./BulkUploadParts";
 import { Data, download } from "./model";
 import {
   LibraryImport,
@@ -66,59 +66,22 @@ export function LibraryBulkUpload({
         <DialogHeader>
           <DialogTitle>Bulk Upload Competencies & Skills</DialogTitle>
           <DialogDescription>
-            One file for your library. Each row adds a skill; repeated
-            competency names group the skills automatically.
+            Add many competencies and skills at once. Use one row for each skill.
           </DialogDescription>
         </DialogHeader>
-        <div className="cm-steps">
-          <span className="active">1 · Prepare File</span>
-          <span className={preview ? "active" : ""}>2 · Review</span>
-          <span>3 · Import Together</span>
-        </div>
-        <div className="cm-template">
-          <div>
-            <strong>Use One Row per Skill</strong>
-            <p>
-              You can add skills to existing active competencies. Leave Skill
-              blank to create an empty competency.
-            </p>
-          </div>
-          <button
-            className="cm-button"
-            onClick={() =>
-              download("competencies-and-skills-template.csv", [
-                libraryHeaders(data),
-              ])
-            }
-          >
-            <Download size={16} />
-            Download Template
-          </button>
-        </div>
-        <div className="cm-import-example">
-          <strong>Example</strong>
-          <span>Communication → Active Listening</span>
-          <span>Communication → Public Speaking</span>
-          <small>Creates one competency containing two skills.</small>
-        </div>
-        <label
-          className="cm-drop"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            void load(e.dataTransfer.files[0]);
-          }}
-        >
-          <Upload size={25} />
-          <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
-          <span>CSV · Up to 1,000 Rows · 2 MB</span>
-          <input
-            aria-label="CSV File"
-            type="file"
-            accept=".csv,text/csv"
-            onChange={(e) => void load(e.target.files?.[0])}
-          />
-        </label>
+        <UploadSteps reviewed={!!preview} />
+        <UploadDropZone fileName={fileName} limits="CSV · Up to 1,000 Rows · 2 MB" onFile={(f) => void load(f)} />
+        <FileColumnsGuide
+          columns={[
+            { name: "Competency", required: true },
+            { name: "Competency Description" },
+            { name: "Skill" },
+            { name: "Skill Description" },
+            ...data.levels.filter((l) => l.status === "Active").map((l) => ({ name: `${l.name} Description` })),
+          ]}
+          links={[{ label: "Download Template", onClick: () => download("competencies-and-skills-template.csv", [libraryHeaders(data)]) }]}
+          hint="One row per skill. Repeat a competency name to add several skills to it; leave Skill blank to create an empty competency."
+        />
         {error && (
           <p role="alert" className="cm-error">
             {error}
@@ -127,32 +90,16 @@ export function LibraryBulkUpload({
         {busy && <p role="status">Checking your file…</p>}
         {preview && (
           <>
-            <div className="cm-import-summary">
-              <strong>{preview.competencies.length} New Competencies</strong>
-              <strong>{preview.skills.length} New Skills</strong>
-              <span>{errors.length} Rows Need Attention</span>
-            </div>
-            {errors.length > 0 && (
-              <div className="cm-error" role="alert">
-                Fix the listed errors and upload again. Nothing has been saved.
-                <button
-                  className="cm-text-button"
-                  onClick={() =>
-                    download("library-import-errors.csv", [
-                      ["Row", "Competency", "Skill", "Errors"],
-                      ...errors.map((r) => [
-                        String(r.line),
-                        r.competency,
-                        r.skill,
-                        r.errors.join(" "),
-                      ]),
-                    ])
-                  }
-                >
-                  Download Errors
-                </button>
-              </div>
-            )}
+            <UploadSummary
+              items={[count(preview.competencies.length, "New Competency", "New Competencies"), count(preview.skills.length, "New Skill")]}
+              attention={errors.length}
+              onDownloadErrors={() =>
+                download("library-import-errors.csv", [
+                  ["Row", "Competency", "Skill", "Errors"],
+                  ...errors.map((r) => [String(r.line), r.competency, r.skill, r.errors.join(" ")]),
+                ])
+              }
+            />
             <div className="cm-table-wrap cm-preview">
               <table>
                 <thead>
@@ -188,7 +135,7 @@ export function LibraryBulkUpload({
             disabled={busy || !preview || errors.length > 0}
             onClick={() => preview && onImport(preview)}
           >
-            Import to library
+            Import Competencies
           </button>
         </div>
       </DialogContent>
