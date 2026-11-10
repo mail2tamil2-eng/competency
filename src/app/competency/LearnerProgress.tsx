@@ -260,6 +260,8 @@ export function LearnerProgress({
   const n = levels.length;
 
   const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [deptFilter, setDeptFilter] = useState("");
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [belowOnly, setBelowOnly] = useState<Record<string, boolean>>({});
@@ -348,11 +350,19 @@ export function LearnerProgress({
   }
 
   // Filter and paginate
+  const deptOf = (a: Assignment) => empFor(a)?.department || a.department || "";
+  const roleOf = (a: Assignment) => empFor(a)?.role || "";
+  const groupList = [...allGroups.values()];
+  const deptOptions = [...new Set(groupList.map((items) => deptOf(items[0])).filter(Boolean))].sort();
+  const roleOptions = [...new Set(groupList.map((items) => roleOf(items[0])).filter(Boolean))].sort();
+  // Search covers name and email; role and department use their own filters.
   const filteredGroups = [...allGroups.entries()].filter(([, items]) => {
     const emp = empFor(items[0]);
-    return `${items[0].name} ${items[0].department} ${emp?.role ?? ""} ${emp?.email ?? ""}`
-      .toLowerCase()
-      .includes(query.trim().toLowerCase());
+    return (
+      (!deptFilter || deptOf(items[0]) === deptFilter) &&
+      (!roleFilter || roleOf(items[0]) === roleFilter) &&
+      `${items[0].name} ${emp?.email ?? ""}`.toLowerCase().includes(query.trim().toLowerCase())
+    );
   });
   const PAGE_SIZE = 10;
   const total = filteredGroups.length;
@@ -463,11 +473,29 @@ export function LearnerProgress({
           <Search size={16} />
           <input
             aria-label="Search Learners"
-            placeholder="Search name, role, email, department…"
+            placeholder="Search name or email…"
             value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(0); }}
           />
         </label>
+        <select
+          aria-label="Filter by Department"
+          className="cm-lp-filter-select"
+          value={deptFilter}
+          onChange={(e) => { setDeptFilter(e.target.value); setPage(0); }}
+        >
+          <option value="">All Departments</option>
+          {deptOptions.map((d) => <option key={d}>{d}</option>)}
+        </select>
+        <select
+          aria-label="Filter by Role"
+          className="cm-lp-filter-select"
+          value={roleFilter}
+          onChange={(e) => { setRoleFilter(e.target.value); setPage(0); }}
+        >
+          <option value="">All Roles</option>
+          {roleOptions.map((r) => <option key={r}>{r}</option>)}
+        </select>
         <div className="cm-cmp-legend cm-cmp-legend-inline">
           <span className="cm-cmp-legend-item">
             <span className="cm-cmp-legend-dot current" />
