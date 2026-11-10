@@ -167,7 +167,7 @@ function DetailView({
         <table className="cm-manager-table">
           <thead>
             <tr>
-              {["Name", "Email", "Role", "Dept", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Assigned", "Completed", "Proof"].map((h) => (
+              {["Name", "Email", "Role", "Dept", "Reporting Manager", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Assigned", "Completed", "Proof"].map((h) => (
                 <th key={h}>{titleCaseLabel(h)}</th>
               ))}
             </tr>
@@ -175,6 +175,7 @@ function DetailView({
           <tbody>
             {rows.slice(cp * size, (cp + 1) * size).map((a) => {
               const emp = employeeFor(work, a);
+              const mgr = work.employees.find((m) => m.id === emp?.managerId);
               const skill = data.skills.find((s) => s.id === a.skillId);
               const gap = skillGap(data, a);
               const courseCount = getCourseRows(a).length;
@@ -184,6 +185,7 @@ function DetailView({
                   <td>{emp?.email || "—"}</td>
                   <td>{emp?.role || "—"}</td>
                   <td>{a.department || "—"}</td>
+                  <td>{mgr?.name || "—"}</td>
                   <td><strong>{skill?.name || "Unavailable"}</strong></td>
                   <td>{levelName(data, a.current)}</td>
                   <td>{levelName(data, a.expected)}</td>
@@ -203,7 +205,7 @@ function DetailView({
               );
             })}
             {!total && (
-              <tr><td colSpan={13}>No matching records. Try another search.</td></tr>
+              <tr><td colSpan={14}>No matching records. Try another search.</td></tr>
             )}
           </tbody>
         </table>
