@@ -12,32 +12,137 @@ import {
   DialogTitle,
   DialogDescription,
 } from "../components/ui/dialog";
+import { Popover, PopoverTrigger, PopoverContent } from "../components/ui/popover";
 
 type Section = "categories" | "levels" | "skills";
 
-/** Where a skill is used, so confirmations can explain the impact. */
-function skillUsage(data: Data, id: string) {
-  const competencies = data.competencies.filter((c) => data.skills.some((s) => s.id === id && s.competencyId === c.id));
-  const courses = (data.workflow?.courses ?? []).filter((c) => c.mappings.some((m) => m.skillId === id));
-  const plans = (data.workflow?.plans ?? []).filter((p) => p.skills.some((s) => s.skillId === id));
-  const learners = data.assignments.filter((a) => a.skillId === id).length;
-  return { competencies, courses, plans, learners };
+/** Competencies a skill belongs to. */
+export function skillCompetencies(data: Data, skill: RecordItem): RecordItem[] {
+  return data.competencies.filter((c) => c.id === skill.competencyId);
 }
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+/** "A, B, C and 4 more" */
+function names(list: string[], max = 3) {
+  if (list.length <= max) return list.join(", ");
+  return `${list.slice(0, max).join(", ")} and ${list.length - max} more`;
+}
 
-function UsageList({ data, id }: { data: Data; id: string }) {
-  const u = skillUsage(data, id);
-  const items = [
-    u.competencies.length > 0 && `${u.competencies.length === 1 ? "Competency" : "Competencies"}: ${u.competencies.map((c) => c.name).join(", ")}`,
-    u.courses.length > 0 && `${u.courses.length === 1 ? "Mapped course" : "Mapped courses"}: ${u.courses.map((c) => c.name).join(", ")}`,
-    u.plans.length > 0 && `${u.plans.length === 1 ? "Assignment plan" : "Assignment plans"}: ${u.plans.map((p) => p.name).join(", ")}`,
-    u.learners > 0 && `Assigned to ${plural(u.learners, "learner")}`,
-  ].filter(Boolean) as string[];
-  if (!items.length) return null;
+/** One wording pattern for every Library Settings section. */
+function blockedTitle(section: Section, name: string, verb: "inactivated" | "deleted") {
+  const where =
+    section === "categories"
+      ? "a competency"
+      : section === "levels"
+        ? "a skill, role, course, or learner usage"
+        : "a course, assignment, or learner usage";
+  return `${name} is mapped to ${where} and cannot be ${verb}.`;
+}
+
+/** Where an item is used, listed in the confirmation so admins know what to change. */
+function usageItems(data: Data, section: Section, id: string): string[] {
+  const courses = data.workflow?.courses ?? [],
+    plans = data.workflow?.plans ?? [];
+  const row = (label: string, list: string[]) => list.length ? `${label} (${list.length}): ${names(list)}` : "";
+  if (section === "categories")
+    return [
+      row("Competencies", data.competencies.filter((c) => c.categoryId === id).map((c) => c.name)),
+      row("Skills", data.skills.filter((s) => s.categoryId === id).map((s) => s.name)),
+    ].filter(Boolean);
+  if (section === "levels") {
+    const learners = data.assignments.filter((a) => a.current === id || a.expected === id).length;
+    return [
+      row("Skills", data.skills.filter((s) => Object.hasOwn(s.levels || {}, id)).map((s) => s.name)),
+      row("Courses", courses.filter((c) => c.mappings.some((m) => m.levelId === id)).map((c) => c.name)),
+      row("Assignment plans", plans.filter((p) => p.skills.some((s) => s.expected === id)).map((p) => p.name)),
+      learners ? `Learners: ${plural(learners, "learner")}` : "",
+    ].filter(Boolean);
+  }
+  const skill = data.skills.find((s) => s.id === id);
+  const learners = data.assignments.filter((a) => a.skillId === id).length;
+  return [
+    row("Competencies", skill ? skillCompetencies(data, skill).map((c) => c.name) : []),
+    row("Courses", courses.filter((c) => c.mappings.some((m) => m.skillId === id)).map((c) => c.name)),
+    row("Assignment plans", plans.filter((p) => p.skills.some((s) => s.skillId === id)).map((p) => p.name)),
+    learners ? `Learners: ${plural(learners, "learner")}` : "",
+  ].filter(Boolean);
+}
+
+/** Shared inactivate/delete confirmation used by Categories, Proficiency Levels and Skill Master. */
+function ConfirmDialog({
+  action, name, blocked, blockedTitle, note, usage, onClose, onConfirm,
+}: {
+  action: "inactivate" | "delete";
+  name: string;
+  blocked: boolean;
+  blockedTitle: string;
+  note?: string;
+  usage: string[];
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const title = blocked ? blockedTitle : `Are you sure you want to ${action} ${name}?`;
+  const description = blocked
+    ? action === "inactivate"
+      ? "Remove these mappings first, then try again."
+      : "Remove these mappings first, or inactivate it instead."
+    : action === "inactivate"
+      ? `${note ? note + " " : ""}You can activate it again at any time.`
+      : `${note ? note + " " : ""}This action cannot be undone.`;
   return (
-    <ul className="cm-usage-list">
-      {items.map((t) => <li key={t}>{t}</li>)}
-    </ul>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="cm-dialog">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        {usage.length > 0 && (
+          <ul className="cm-usage-list" aria-label="Where it is used">
+            {usage.map((t) => <li key={t}>{t}</li>)}
+          </ul>
+        )}
+        <div className="cm-dialog-actions">
+          <button className="cm-button" onClick={onClose}>{blocked ? "Close" : "Cancel"}</button>
+          {!blocked && (
+            <button className="cm-button destructive" onClick={onConfirm}>
+              {action === "inactivate" ? "Inactivate" : "Delete"}
+            </button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Competency count with names; long lists collapse into "+N more". */
+function CompetencyCell({ comps }: { comps: RecordItem[] }) {
+  const shown = comps.slice(0, 2), extra = comps.length - shown.length;
+  if (!comps.length)
+    return (
+      <div className="cm-comp-cell">
+        <span className="cm-comp-count zero">0</span>
+        <small>Not linked</small>
+      </div>
+    );
+  return (
+    <div className="cm-comp-cell">
+      <span className="cm-comp-count">{comps.length}</span>
+      <div className="cm-comp-chips">
+        {shown.map((c) => <span key={c.id} className="cm-comp-chip" title={c.name}>{c.name}</span>)}
+        {extra > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button type="button" className="cm-comp-more" aria-label={`Show all ${comps.length} competencies`}>+{extra} more</button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="cm-comp-popover">
+              <strong>{comps.length} Competencies</strong>
+              <ul>
+                {comps.map((c) => <li key={c.id}>{c.name}</li>)}
+              </ul>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -225,17 +330,13 @@ export function LibrarySettings({
               </thead>
               <tbody>
                 {skillRecords.map((s) => {
-                  const comps = data.competencies.filter((c) => c.id === s.competencyId);
                   return (
                     <tr key={s.id}>
                       <td>
                         <strong>{s.name}</strong>
                         <small>{s.description || "No description added"}</small>
                       </td>
-                      <td className="cm-competency-count">
-                        <strong>{comps.length}</strong>
-                        <small>{comps.length ? comps.map((c) => c.name).join(", ") : "Not linked"}</small>
-                      </td>
+                      <td><CompetencyCell comps={skillCompetencies(data, s)} /></td>
                       <td><span className={"cm-badge " + s.status.toLowerCase()}>{s.status}</span></td>
                       <td>
                         <div className="cm-row-actions">
@@ -290,62 +391,34 @@ export function LibrarySettings({
             />
           )}
           {skillInactivating && (
-            <Dialog open onOpenChange={(open) => { if (!open) setSkillInactivating(null); }}>
-              <DialogContent className="cm-dialog">
-                <DialogHeader>
-                  <DialogTitle>
-                    {used(data, "skills", skillInactivating.id)
-                      ? `Can't inactivate ${skillInactivating.name}`
-                      : `Inactivate ${skillInactivating.name}?`}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {used(data, "skills", skillInactivating.id)
-                      ? "This skill is in use. Remove it from the items below first, then try again."
-                      : "The skill will be hidden when creating competencies and assignments. Existing records are kept, and you can activate it again at any time."}
-                  </DialogDescription>
-                </DialogHeader>
-                <UsageList data={data} id={skillInactivating.id} />
-                <div className="cm-dialog-actions">
-                  <button className="cm-button" onClick={() => setSkillInactivating(null)}>{used(data, "skills", skillInactivating.id) ? "Close" : "Cancel"}</button>
-                  {!used(data, "skills", skillInactivating.id) && (
-                    <button className="cm-button destructive" onClick={() => {
-                      if (commit({ ...data, skills: data.skills.map((x) => x.id === skillInactivating.id ? { ...x, status: "Inactive" as const } : x) }, `${skillInactivating.name} inactivated`))
-                        setSkillInactivating(null);
-                    }}>Yes, Inactivate</button>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+            <ConfirmDialog
+              action="inactivate"
+              name={skillInactivating.name}
+              blockedTitle={blockedTitle("skills", skillInactivating.name, "inactivated")}
+              blocked={used(data, "skills", skillInactivating.id)}
+              note="It will no longer be available when creating competencies and assignments."
+              usage={usageItems(data, "skills", skillInactivating.id)}
+              onClose={() => setSkillInactivating(null)}
+              onConfirm={() => {
+                if (commit({ ...data, skills: data.skills.map((x) => x.id === skillInactivating.id ? { ...x, status: "Inactive" as const } : x) }, `${skillInactivating.name} inactivated`))
+                  setSkillInactivating(null);
+              }}
+            />
           )}
           {skillDeleting && (
-            <Dialog open onOpenChange={(open) => { if (!open) setSkillDeleting(null); }}>
-              <DialogContent className="cm-dialog">
-                <DialogHeader>
-                  <DialogTitle>
-                    {used(data, "skills", skillDeleting.id)
-                      ? `Can't delete ${skillDeleting.name}`
-                      : `Delete ${skillDeleting.name}?`}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {used(data, "skills", skillDeleting.id)
-                      ? "This skill is in use. Remove it from the items below first, or inactivate it instead."
-                      : skillDeleting.competencyId
-                        ? "This permanently deletes the skill and its level descriptions, and removes it from the competency below. This can't be undone."
-                        : "This permanently deletes the skill and its level descriptions. This can't be undone."}
-                  </DialogDescription>
-                </DialogHeader>
-                <UsageList data={data} id={skillDeleting.id} />
-                <div className="cm-dialog-actions">
-                  <button className="cm-button" onClick={() => setSkillDeleting(null)}>{used(data, "skills", skillDeleting.id) ? "Close" : "Cancel"}</button>
-                  {!used(data, "skills", skillDeleting.id) && (
-                    <button className="cm-button destructive" onClick={() => {
-                      if (commit({ ...data, skills: data.skills.filter((x) => x.id !== skillDeleting.id) }, `${skillDeleting.name} deleted`))
-                        setSkillDeleting(null);
-                    }}>Yes, Delete</button>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+            <ConfirmDialog
+              action="delete"
+              name={skillDeleting.name}
+              blockedTitle={blockedTitle("skills", skillDeleting.name, "deleted")}
+              blocked={used(data, "skills", skillDeleting.id)}
+              note={skillCompetencies(data, skillDeleting).length ? `It will also be removed from ${names(skillCompetencies(data, skillDeleting).map((c) => c.name))}.` : undefined}
+              usage={usageItems(data, "skills", skillDeleting.id)}
+              onClose={() => setSkillDeleting(null)}
+              onConfirm={() => {
+                if (commit({ ...data, skills: data.skills.filter((x) => x.id !== skillDeleting.id) }, `${skillDeleting.name} deleted`))
+                  setSkillDeleting(null);
+              }}
+            />
           )}
         </>
       ) : (
@@ -427,91 +500,36 @@ export function LibrarySettings({
           }}
         />
       )}
-      {inactivating && (
-        <Dialog open onOpenChange={(open) => { if (!open) setInactivating(null); }}>
-          <DialogContent className="cm-dialog">
-            <DialogHeader>
-              <DialogTitle>
-                {used(data, section, inactivating.id)
-                  ? section === "levels"
-                    ? `${inactivating.name} is mapped to a competency, skill, role, course, or learner usage and cannot be inactivated.`
-                    : `${inactivating.name} is mapped to a competency and cannot be inactivated.`
-                  : `Are you sure you want to inactivate ${inactivating.name}?`}
-              </DialogTitle>
-              <DialogDescription />
-            </DialogHeader>
-            <div className="cm-dialog-actions">
-              <button className="cm-button" onClick={() => setInactivating(null)}>Cancel</button>
-              {!used(data, section, inactivating.id) && (
-                <button
-                  className="cm-button destructive"
-                  onClick={() => {
-                    const s = section as "categories" | "levels";
-                    if (
-                      commit(
-                        { ...data, [s]: data[s].map((x) => x.id === inactivating.id ? { ...x, status: "Inactive" } : x) },
-                        `${inactivating.name} inactivated`,
-                      )
-                    )
-                      setInactivating(null);
-                  }}
-                >
-                  Inactivate
-                </button>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-      {deleting && (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setDeleting(null);
+      {inactivating && section !== "skills" && (
+        <ConfirmDialog
+          action="inactivate"
+          name={inactivating.name}
+          blockedTitle={blockedTitle(section, inactivating.name, "inactivated")}
+          blocked={used(data, section, inactivating.id)}
+          note={section === "categories" ? "It will no longer be available when creating competencies." : "It will no longer be available for skills and assignments."}
+          usage={usageItems(data, section, inactivating.id)}
+          onClose={() => setInactivating(null)}
+          onConfirm={() => {
+            const s = section as "categories" | "levels";
+            if (commit({ ...data, [s]: data[s].map((x) => x.id === inactivating.id ? { ...x, status: "Inactive" } : x) }, `${inactivating.name} inactivated`))
+              setInactivating(null);
           }}
-        >
-          <DialogContent className="cm-dialog">
-            <DialogHeader>
-              <DialogTitle>
-                {section === "levels"
-                  ? used(data, "levels", deleting.id)
-                    ? `${deleting.name} is mapped to a skill, role, course, or learner usage and cannot be deleted.`
-                    : `Are you sure you want to delete ${deleting.name}?`
-                  : used(data, section, deleting.id)
-                    ? `${deleting.name} is mapped to a competency and cannot be deleted.`
-                    : `Are you sure you want to delete ${deleting.name}?`}
-              </DialogTitle>
-              <DialogDescription />
-            </DialogHeader>
-            <div className="cm-dialog-actions">
-              <button className="cm-button" onClick={() => setDeleting(null)}>
-                Cancel
-              </button>
-              {!used(data, section as "categories" | "levels", deleting.id) && (
-                <button
-                  className="cm-button destructive"
-                  onClick={() => {
-                    const s = section as "categories" | "levels";
-                    if (
-                      commit(
-                        {
-                          ...data,
-                          [s]: data[s].filter(
-                            (x) => x.id !== deleting.id,
-                          ),
-                        },
-                        "Item deleted",
-                      )
-                    )
-                      setDeleting(null);
-                  }}
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+        />
+      )}
+      {deleting && section !== "skills" && (
+        <ConfirmDialog
+          action="delete"
+          name={deleting.name}
+          blockedTitle={blockedTitle(section, deleting.name, "deleted")}
+          blocked={used(data, section, deleting.id)}
+          usage={usageItems(data, section, deleting.id)}
+          onClose={() => setDeleting(null)}
+          onConfirm={() => {
+            const s = section as "categories" | "levels";
+            if (commit({ ...data, [s]: data[s].filter((x) => x.id !== deleting.id) }, `${deleting.name} deleted`))
+              setDeleting(null);
+          }}
+        />
       )}
     </section>
   );
