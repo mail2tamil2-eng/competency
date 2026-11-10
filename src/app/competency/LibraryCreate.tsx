@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, X, BookOpen, Search } from "lucide-react";
-import { Data, RecordItem, uid, validate } from "./model";
+import { Data, RecordItem, uid, validate, compIdsOf, withComps } from "./model";
 import { WorkflowData } from "./workflowModel";
 
 export function LibraryCreate({
@@ -82,7 +82,8 @@ export function LibraryCreate({
     return selectedSkillIds
       .map((id) => data.skills.find((s) => s.id === id))
       .filter((s): s is RecordItem => s != null)
-      .map((s) => ({ ...s, competencyId: clean.id, categoryId: clean.categoryId }));
+      // Add this competency to the skill's list; a skill can belong to many competencies.
+      .map((s) => withComps({ ...s, categoryId: s.categoryId || clean.categoryId }, [...compIdsOf(s), clean.id]));
   }
 
   function saveDraft() {
@@ -93,7 +94,8 @@ export function LibraryCreate({
     setErrors(issues);
     if (!issues.length) {
       const linked = getLinkedSkills();
-      onSave({ ...clean, status: "Draft" }, linked.map((s) => ({ ...s, status: "Draft" as const })));
+      // Only skills used solely by this competency become drafts; shared skills keep their status.
+      onSave({ ...clean, status: "Draft" }, linked.map((s) => compIdsOf(s).length > 1 ? s : { ...s, status: "Draft" as const }));
     }
   }
 
@@ -349,8 +351,15 @@ export function LibraryCreate({
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: "#263047", display: "block" }}>{s.name}</span>
                             {s.description && (
-                              <span style={{ fontSize: 13, color: "#6b7280", display: "block", marginTop: 2 }}>{s.description}</span>
+                              <span style={{ fontSize: 14, color: "#526176", display: "block", marginTop: 2 }}>{s.description}</span>
                             )}
+                            {(() => {
+                              const others = compIdsOf(s).filter((id) => id !== competency.id)
+                                .map((id) => data.competencies.find((c) => c.id === id)?.name).filter(Boolean);
+                              return others.length ? (
+                                <span className="cm-also-in">Also in: {others.join(", ")}</span>
+                              ) : null;
+                            })()}
                           </div>
                         </label>
                       );

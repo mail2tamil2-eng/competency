@@ -1,4 +1,4 @@
-import { Data, RecordItem, parseCSV, uid, validate } from "./model";
+import { Data, RecordItem, parseCSV, uid, validate, inComp } from "./model";
 export type LibraryImportRow = {
   line: number;
   competency: string;
@@ -25,7 +25,7 @@ export function libraryHeaders(data: Data) {
 }
 export function libraryRows(data: Data, competencies: RecordItem[]) {
   return competencies.flatMap((c) => {
-    const skills = data.skills.filter((s) => s.competencyId === c.id);
+    const skills = data.skills.filter((s) => inComp(s, c.id));
     return (skills.length ? skills : [undefined]).map((s) => [
       c.name,
       c.description,

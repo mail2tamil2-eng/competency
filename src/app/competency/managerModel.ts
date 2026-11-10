@@ -1,4 +1,4 @@
-import { Assignment, Data, progress } from "./model";
+import { Assignment, Data, progress, compNames } from "./model";
 import { Proof, WorkflowData } from "./workflowModel";
 
 export const personKey = (a: Assignment) =>
@@ -157,8 +157,7 @@ export function detailedRows(
       a.name,
       employeeFor(work, a)?.email || "Not recorded",
       a.department,
-      data.competencies.find((c) => c.id === skill?.competencyId)?.name ||
-        "Unavailable",
+      compNames(data, skill) || "Unavailable",
       skill?.name || "Unavailable",
       levelName(data, a.current),
       levelName(data, a.expected),

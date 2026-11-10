@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Search, Pencil, Trash2, Ban, CheckCircle2, ArrowLeft, Upload } from "lucide-react";
-import { Data, RecordItem, uid, used } from "./model";
+import { Data, RecordItem, uid, used, compIdsOf } from "./model";
 import { WorkflowData } from "./workflowModel";
 import { Editor } from "./Editor";
 import { SkillInlineEdit } from "./CompetencyLibrary";
@@ -18,7 +18,8 @@ type Section = "categories" | "levels" | "skills";
 
 /** Competencies a skill belongs to. */
 export function skillCompetencies(data: Data, skill: RecordItem): RecordItem[] {
-  return data.competencies.filter((c) => c.id === skill.competencyId);
+  const ids = compIdsOf(skill);
+  return data.competencies.filter((c) => ids.includes(c.id));
 }
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 /** "A, B, C and 4 more" */

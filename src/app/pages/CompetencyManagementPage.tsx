@@ -17,7 +17,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Data, Assignment, key, readData, seed, uid } from "../competency/model";
+import { Data, Assignment, key, readData, seed, uid, inComp } from "../competency/model";
 import {
   CompetencyLibrary,
   LibraryIntent,
@@ -235,7 +235,7 @@ export function CompetencyManagementPage() {
             onSaveWork={(next, msg) => saveWorkflow(data, next, msg)}
             onAssign={(compId, prebuilt) => {
               const skills = prebuilt ?? data.skills
-                .filter((s) => s.competencyId === compId && s.status === "Active")
+                .filter((s) => inComp(s, compId) && s.status === "Active")
                 .map((s) => ({ skillId: s.id, expected: "" }));
               setAssignSkills(skills);
               setAssignNonce((n) => n + 1);

@@ -7,7 +7,10 @@ export type RecordItem = {
   status: "Active" | "Inactive" | "Draft";
   order?: number;
   categoryId?: string;
+  /** Primary competency (first of competencyIds); kept for older saved data. */
   competencyId?: string;
+  /** A skill can belong to many competencies. */
+  competencyIds?: string[];
   levels?: Record<string, string>;
   courses?: Record<string, string>;
 };
@@ -164,10 +167,32 @@ export const seed: Data = {
     },
   ],
 };
+/** All competencies a skill belongs to (supports older single-competency data). */
+export function compIdsOf(s?: RecordItem | null): string[] {
+  if (!s) return [];
+  return s.competencyIds ?? (s.competencyId ? [s.competencyId] : []);
+}
+export const inComp = (s: RecordItem | undefined | null, cId: string) => compIdsOf(s).includes(cId);
+/** Set a skill's competencies, keeping competencyId as the first one. */
+export function withComps(s: RecordItem, ids: string[]): RecordItem {
+  const unique = [...new Set(ids.filter(Boolean))];
+  return { ...s, competencyIds: unique, competencyId: unique[0] ?? "" };
+}
+/** "Communication, Customer Focus" for display. */
+export function compNames(data: Data, s?: RecordItem | null): string {
+  return compIdsOf(s)
+    .map((id) => data.competencies.find((c) => c.id === id)?.name)
+    .filter(Boolean)
+    .join(", ");
+}
+function normalize(data: Data): Data {
+  data.skills = data.skills.map((s) => withComps(s, compIdsOf(s)));
+  return data;
+}
 export function readData(): Data {
   try {
     const saved = localStorage.getItem(key);
-    if (!saved) return structuredClone(seed);
+    if (!saved) return normalize(structuredClone(seed));
     const data = JSON.parse(saved);
     if (
       !["categories", "levels", "competencies", "skills", "assignments"].every(
@@ -178,9 +203,9 @@ export function readData(): Data {
     data.levels = (data.levels as RecordItem[])
       .map((l, i) => (l.order == null ? { ...l, order: i + 1 } : l))
       .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-    return data;
+    return normalize(data);
   } catch {
-    return structuredClone(seed);
+    return normalize(structuredClone(seed));
   }
 }
 export function used(data: Data, kind: Kind, id: string) {
@@ -208,7 +233,7 @@ export function used(data: Data, kind: Kind, id: string) {
     ? data.competencies.some((x) => x.categoryId === id) ||
         data.skills.some((x) => x.categoryId === id)
     : kind === "competencies"
-      ? data.skills.some((x) => x.competencyId === id)
+      ? data.skills.some((x) => inComp(x, id))
       : kind === "skills"
         ? data.assignments.some((x) => x.skillId === id)
         : data.skills.some((x) => Object.hasOwn(x.levels || {}, id)) ||
@@ -293,15 +318,6 @@ export function parseCSV(text: string): string[][] {
 }
 export function validate(item: RecordItem, kind: Kind, data: Data): string[] {
   const errors: string[] = [];
-  if (
-    kind === "competencies" &&
-    data.skills.some(
-      (s) => s.competencyId === item.id && s.categoryId !== item.categoryId,
-    )
-  )
-    errors.push(
-      "This competency has skills. Keep its category consistent with those skills.",
-    );
   if (!item.name.trim()) errors.push("Name is required.");
   if (item.name.length > 120)
     errors.push("Name must be 120 characters or fewer.");

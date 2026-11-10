@@ -20,7 +20,7 @@ import {
   Target,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Data, uid, progress, contentMissing, download } from "./model";
+import { Data, uid, progress, contentMissing, download, compIdsOf, inComp, compNames } from "./model";
 import {
   WorkflowData,
   Course,
@@ -54,7 +54,7 @@ export function CourseMapping({ data, work, save }: Props) {
       setDraft(structuredClone(c));
       setMappingComps(
         c.mappings.map(
-          (m) => data.skills.find((s) => s.id === m.skillId)?.competencyId || "",
+          (m) => compIdsOf(data.skills.find((s) => s.id === m.skillId))[0] || "",
         ),
       );
     } else {
@@ -66,7 +66,7 @@ export function CourseMapping({ data, work, save }: Props) {
   function updateComp(i: number, compId: string, currentSkillId: string) {
     const newComps = mappingComps.map((c, n) => (n === i ? compId : c));
     setMappingComps(newComps);
-    const skillStillValid = compId === "" || data.skills.find((s) => s.id === currentSkillId)?.competencyId === compId;
+    const skillStillValid = compId === "" || inComp(data.skills.find((s) => s.id === currentSkillId), compId);
     if (!skillStillValid && draft) {
       setDraft({
         ...draft,
@@ -77,7 +77,9 @@ export function CourseMapping({ data, work, save }: Props) {
 
   function updateSkill(i: number, skillId: string) {
     if (!draft) return;
-    const comp = data.skills.find((s) => s.id === skillId)?.competencyId || "";
+    const ids = compIdsOf(data.skills.find((s) => s.id === skillId));
+    // Keep the chosen competency when the skill belongs to it; otherwise use the skill's first one.
+    const comp = mappingComps[i] && ids.includes(mappingComps[i]) ? mappingComps[i] : ids[0] || "";
     setMappingComps(mappingComps.map((c, n) => (n === i ? comp : c)));
     setDraft({
       ...draft,
@@ -258,7 +260,7 @@ export function CourseMapping({ data, work, save }: Props) {
                         .filter(
                           (s) =>
                             s.status === "Active" &&
-                            (!mappingComps[i] || s.competencyId === mappingComps[i]),
+                            (!mappingComps[i] || inComp(s, mappingComps[i])),
                         )
                         .map((s) => (
                           <option key={s.id} value={s.id}>
@@ -985,7 +987,7 @@ export function Learning({
         const grouped = new Map<string, typeof assignments>();
         for (const a of assignments) {
           const skill = data.skills.find((s) => s.id === a.skillId);
-          const cId = skill?.competencyId || "__none__";
+          const cId = compIdsOf(skill)[0] || "__none__";
           if (!grouped.has(cId)) grouped.set(cId, []);
           grouped.get(cId)!.push(a);
         }
@@ -1163,7 +1165,7 @@ export function Learning({
                   .filter((l) => !work.courses.some((c) => c.mappings.some((m) => m.skillId === a.skillId && m.levelId === l.id)));
                 if (!missingLevels.length) return null;
                 const skillName = data.skills.find((s) => s.id === a.skillId)?.name || "this skill";
-                const compName = data.competencies.find((c) => c.id === data.skills.find((s) => s.id === a.skillId)?.competencyId)?.name || "";
+                const compName = compNames(data, data.skills.find((s) => s.id === a.skillId));
                 return (
                   <p className="cm-hint cm-content-missing-hint">
                     <AlertTriangle size={14} />

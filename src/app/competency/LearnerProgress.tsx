@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect } from "react";
 import { Download, Upload, Search, CheckCircle2, ChevronDown, ChevronUp, FileCheck2 } from "lucide-react";
-import { Data, Assignment, download, parseCSV } from "./model";
+import { Data, Assignment, download, parseCSV, compNames } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
 import {
   Dialog,
@@ -296,7 +296,7 @@ export function LearnerProgress({
 
   const skillOf = (a: Assignment) => data.skills.find((s) => s.id === a.skillId);
   const compOf = (a: Assignment) =>
-    data.competencies.find((c) => c.id === skillOf(a)?.competencyId)?.name || "Uncategorized";
+    compNames(data, skillOf(a)) || "Uncategorized";
   const lvlName = (id: string) =>
     id ? data.levels.find((l) => l.id === id)?.name || "—" : "—";
   const empFor = (a: Assignment) =>

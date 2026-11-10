@@ -1996,3 +1996,4 @@
 .cm-skill-upload-fields table td, .cm-skill-upload-fields table th { padding: 8px 14px; font-size: 14px; }
 .cm-upload-hint { margin: 0; font-size: 14px; color: #526176; }
 .cm-upload-hint .cm-text-button { display: inline; padding: 0; font-size: 14px; }
+.cm-also-in { display: inline-block; margin-top: 4px; padding: 1px 8px; border-radius: 10px; background: #f1f5fb; color: #526176; font-size: 14px; }

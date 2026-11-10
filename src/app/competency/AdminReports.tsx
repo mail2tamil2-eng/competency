@@ -1,7 +1,7 @@
 import { titleCaseLabel } from "./displayText";
 import { useState } from "react";
 import { ArrowLeft, Download, Search } from "lucide-react";
-import { Data, Assignment, download, progress } from "./model";
+import { Data, Assignment, download, progress, compIdsOf, compNames } from "./model";
 import { WorkflowData } from "./workflowModel";
 import {
   Dialog,
@@ -285,7 +285,6 @@ function SkillReport({
   const allRoles = [...new Set(work.employees.map((e) => e.role).filter(Boolean))].sort();
 
   const rows = data.skills.map((s) => {
-    const comp = data.competencies.find((c) => c.id === s.competencyId);
     const all = data.assignments.filter((a) => {
       if (a.skillId !== s.id) return false;
       if (filterDept || filterRole) {
@@ -304,9 +303,9 @@ function SkillReport({
       : completed === enrolled
         ? "Completed"
         : "In Progress";
-    return { skillId: s.id, skillName: s.name, compName: comp?.name || "—", compId: s.competencyId || "", enrolled, withGap, completed, pct, status };
+    return { skillId: s.id, skillName: s.name, compName: compNames(data, s) || "—", compIds: compIdsOf(s), enrolled, withGap, completed, pct, status };
   }).filter((r) => {
-    if (filterComp && r.compId !== filterComp) return false;
+    if (filterComp && !r.compIds.includes(filterComp)) return false;
     if (filterStatus && r.status !== filterStatus) return false;
     const term = query.trim().toLowerCase();
     if (term && !r.skillName.toLowerCase().includes(term) && !r.compName.toLowerCase().includes(term)) return false;

@@ -16,7 +16,7 @@ import {
   X,
   Send,
 } from "lucide-react";
-import { Data, RecordItem, Kind, used, download, uid, validate } from "./model";
+import { Data, RecordItem, Kind, used, download, uid, validate, inComp, compIdsOf, withComps } from "./model";
 import { WorkflowData, Course } from "./workflowModel";
 import { LibraryCreate } from "./LibraryCreate";
 import { LibraryBulkUpload } from "./LibraryBulkUpload";
@@ -453,7 +453,7 @@ export function CompetencyLibrary({
     (c) =>
       (!category || c.categoryId === category) &&
       (!status || c.status === status) &&
-      (!term || matches(c) || data.skills.some((s) => s.competencyId === c.id && matches(s))),
+      (!term || matches(c) || data.skills.some((s) => inComp(s, c.id) && matches(s))),
   );
   const pages = Math.max(1, Math.ceil(visible.length / 10));
   const current = Math.min(page, pages);
@@ -467,7 +467,7 @@ export function CompetencyLibrary({
     used(data, "skills", sId) || (work?.courses ?? []).some((c) => c.mappings.some((m) => m.skillId === sId));
 
   const compIsProtected = (cId: string) =>
-    data.skills.some((s) => s.competencyId === cId);
+    data.skills.some((s) => inComp(s, cId));
 
   function openLevelPicker(skillId: string, levelId: string) {
     if (!work) return;
@@ -519,7 +519,7 @@ export function CompetencyLibrary({
 
   /* Early return: inline edit form */
   if (editingCompInline) {
-    const existingSkills = data.skills.filter((s) => s.competencyId === editingCompInline.id);
+    const existingSkills = data.skills.filter((s) => inComp(s, editingCompInline.id));
     return (
       <LibraryCreate
         data={data}
@@ -528,16 +528,18 @@ export function CompetencyLibrary({
         initial={{ competency: editingCompInline, skills: existingSkills }}
         onClose={() => setEditingCompInline(null)}
         onSave={(updatedComp, updatedSkills) => {
-          const updatedIds = new Set(updatedSkills.map((s) => s.id));
-          const prevSkills = data.skills.filter((s) => s.competencyId === updatedComp.id);
-          const toUnlink = prevSkills.filter((s) => !updatedIds.has(s.id)).map((s) => ({ ...s, competencyId: "" }));
-          const unrelated = data.skills.filter((s) => s.competencyId !== updatedComp.id && !updatedIds.has(s.id));
+          // Unlink skills removed from this competency; they stay in any other competencies.
+          const skills = data.skills.map((s) => {
+            const updated = updatedSkills.find((u) => u.id === s.id);
+            if (updated) return updated;
+            return inComp(s, updatedComp.id) ? withComps(s, compIdsOf(s).filter((id) => id !== updatedComp.id)) : s;
+          });
           if (
             commit(
               {
                 ...data,
                 competencies: data.competencies.map((c) => (c.id === updatedComp.id ? updatedComp : c)),
-                skills: [...unrelated, ...toUnlink, ...updatedSkills],
+                skills,
               },
               `Saved "${updatedComp.name}"`,
             )
@@ -557,14 +559,13 @@ export function CompetencyLibrary({
         onSaveWork={onSaveWork}
         onClose={() => setCreating(false)}
         onSave={(competency, skills) => {
-          const updatedIds = new Set(skills.map((s) => s.id));
-          const others = data.skills.filter((s) => s.competencyId !== competency.id && !updatedIds.has(s.id));
+          const linked = data.skills.map((s) => skills.find((u) => u.id === s.id) ?? s);
           if (
             commit(
               {
                 ...data,
                 competencies: [...data.competencies, competency],
-                skills: [...others, ...skills],
+                skills: linked,
               },
               `Created "${competency.name}" with ${skills.length} ${skills.length === 1 ? "skill" : "skills"}`,
             )
@@ -623,7 +624,38 @@ export function CompetencyLibrary({
           }}
         />
       )}
-      {deleting && (
+      {deleting && deleting.kind === "skills" && view.kind === "skills" && compIdsOf(deleting.item).length > 1 && (() => {
+        /* Shared skill: remove it from this competency only. */
+        const cId = view.cId;
+        const compName = data.competencies.find((c) => c.id === cId)?.name ?? "this competency";
+        const others = compIdsOf(deleting.item).filter((id) => id !== cId)
+          .map((id) => data.competencies.find((c) => c.id === id)?.name).filter(Boolean) as string[];
+        return (
+          <Dialog open onOpenChange={(open) => { if (!open) setDeleting(null); }}>
+            <DialogContent className="cm-dialog">
+              <DialogHeader>
+                <DialogTitle>Are you sure you want to remove {deleting.item.name} from {compName}?</DialogTitle>
+                <DialogDescription>
+                  The skill stays in {others.join(", ")} and in Skill Master. Learner progress is not affected.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="cm-dialog-actions">
+                <button className="cm-button" onClick={() => setDeleting(null)}>Cancel</button>
+                <button
+                  className="cm-button destructive"
+                  onClick={() => {
+                    const skills = data.skills.map((x) => x.id === deleting.item.id ? withComps(x, compIdsOf(x).filter((id) => id !== cId)) : x);
+                    if (commit({ ...data, skills }, `${deleting.item.name} removed from ${compName}`)) setDeleting(null);
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
+      {deleting && !(deleting.kind === "skills" && view.kind === "skills" && compIdsOf(deleting.item).length > 1) && (
         <Dialog open onOpenChange={(open) => { if (!open) setDeleting(null); }}>
           <DialogContent className="cm-dialog">
             <DialogHeader>
@@ -878,7 +910,7 @@ export function CompetencyLibrary({
   if (view.kind === "skills") {
     const comp = data.competencies.find((c) => c.id === view.cId);
     if (!comp) { setView({ kind: "list" }); return null; }
-    const skills = data.skills.filter((s) => s.competencyId === comp.id);
+    const skills = data.skills.filter((s) => inComp(s, comp.id));
     const catName = data.categories.find((x) => x.id === comp.categoryId)?.name || "Uncategorised";
 
     return (
@@ -918,7 +950,7 @@ export function CompetencyLibrary({
         {/* Add-skill inline form */}
         {editingSkill === "__new__" && (
           <SkillInlineEdit
-            skill={{ id: uid(), name: "", description: "", status: "Active", levels: {}, competencyId: comp.id }}
+            skill={withComps({ id: uid(), name: "", description: "", status: "Active", levels: {}, categoryId: comp.categoryId }, [comp.id])}
             data={data}
             work={work}
             onSaveWork={onSaveWork}
@@ -1006,8 +1038,8 @@ export function CompetencyLibrary({
                       )}
                       <button
                         className="cm-icon-button danger"
-                        aria-label={"Delete " + s.name}
-                        title="Delete Skill"
+                        aria-label={(compIdsOf(s).length > 1 ? "Remove " : "Delete ") + s.name}
+                        title={compIdsOf(s).length > 1 ? "Remove from This Competency" : "Delete Skill"}
                         onClick={() => setDeleting({ kind: "skills", item: s })}
                       >
                         <Trash2 size={15} />
@@ -1164,7 +1196,7 @@ export function CompetencyLibrary({
               </thead>
               <tbody>
                 {visible.slice((current - 1) * 10, current * 10).map((c) => {
-                  const children = data.skills.filter((s) => s.competencyId === c.id);
+                  const children = data.skills.filter((s) => inComp(s, c.id));
                   return (
                     <tr key={c.id}>
                       <td>
@@ -1195,7 +1227,7 @@ export function CompetencyLibrary({
                               style={{ padding: "5px 12px", fontSize: 13, minHeight: 30, gap: 5 }}
                               aria-label={"Assign " + c.name}
                               title="Create Assignment from this Competency"
-                              disabled={c.status !== "Active" || !data.skills.some((s) => s.competencyId === c.id && s.status === "Active")}
+                              disabled={c.status !== "Active" || !data.skills.some((s) => inComp(s, c.id) && s.status === "Active")}
                               onClick={() => onAssign(c.id)}
                             >
                               <Send size={14} /> Assign

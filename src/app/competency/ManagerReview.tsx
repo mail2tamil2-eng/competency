@@ -1,3 +1,4 @@
+import { compNames } from "./model";
 import { statusText } from "./displayText";
 import { useState } from "react";
 import { FileText, Download, ArrowLeft, CheckCircle2, BookOpen } from "lucide-react";
@@ -70,10 +71,7 @@ export function ManagerSkillDialog({
             <div>
               <dt>Competency</dt>
               <dd>
-                {
-                  data.competencies.find((c) => c.id === skill?.competencyId)
-                    ?.name
-                }
+                {compNames(data, skill)}
               </dd>
             </div>
             <div>

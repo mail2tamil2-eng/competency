@@ -7,7 +7,7 @@ import { ManagerNavigation } from "./ManagerNavigation";
 import { ManagerPagination, ManagerPageSize } from "./ManagerPagination";
 import { ArrowLeft, ArrowRight, ChevronDown, Download, Search, Users } from "lucide-react";
 import { toast } from "sonner";
-import { Assignment, Data, download, progress } from "./model";
+import { Assignment, Data, download, progress, inComp, compNames } from "./model";
 import { WorkflowData } from "./workflowModel";
 import {
   detailedHeaders,
@@ -50,8 +50,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
   }, []);
   const skill = (a: Assignment) => data.skills.find((s) => s.id === a.skillId);
   const competencyName = (a: Assignment) =>
-    data.competencies.find((c) => c.id === skill(a)?.competencyId)?.name ||
-    "Unavailable";
+    compNames(data, skill(a)) || "Unavailable";
   const groups = new Map<string, Assignment[]>();
   data.assignments.forEach((a) =>
     groups.set(personKey(a), [...(groups.get(personKey(a)) || []), a]),
@@ -62,7 +61,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
   const scoped = view === "detail" ? personRows : data.assignments;
   const rows = scoped.filter(
     (a) =>
-      (!competency || skill(a)?.competencyId === competency) &&
+      (!competency || inComp(skill(a), competency)) &&
       (!status || progress(data, a) === status) &&
       `${a.name} ${employeeFor(work, a)?.email || ""} ${a.department} ${skill(a)?.name} ${competencyName(a)}`
         .toLowerCase()

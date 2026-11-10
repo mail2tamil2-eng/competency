@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Layers, ChevronDown, Search } from "lucide-react";
-import { Data, RecordItem } from "./model";
+import { Data, RecordItem, compIdsOf, inComp } from "./model";
 import { Plan } from "./workflowModel";
 
 type Props = {
@@ -22,13 +22,13 @@ export function AssignmentSkills({
   const [onlySelected, setOnlySelected] = useState(false);
   const term = query.trim().toLowerCase();
   const selectedCompIds = new Set(
-    selected.map((x) => data.skills.find((s) => s.id === x.skillId)?.competencyId).filter(Boolean),
+    selected.flatMap((x) => compIdsOf(data.skills.find((s) => s.id === x.skillId))),
   );
   const groups = data.competencies
     .filter(
       (c) =>
         (!categoryId || c.categoryId === categoryId) &&
-        (c.status === "Active" || selected.some((x) => data.skills.find((s) => s.id === x.skillId)?.competencyId === c.id)),
+        (c.status === "Active" || selected.some((x) => inComp(data.skills.find((s) => s.id === x.skillId), c.id))),
     )
     .sort((a, b) => {
       const aSelected = selectedCompIds.has(a.id);
@@ -94,7 +94,7 @@ export function AssignmentSkills({
         {groups.map((c) => {
           const all = data.skills.filter(
             (s) =>
-              s.competencyId === c.id &&
+              inComp(s, c.id) &&
               (s.status === "Active" ||
                 selected.some((x) => x.skillId === s.id)),
           );
