@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Pencil, Trash2, Ban, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Ban, CheckCircle2, ArrowLeft, Upload } from "lucide-react";
 import { Data, RecordItem, uid, used } from "./model";
 import { WorkflowData } from "./workflowModel";
 import { Editor } from "./Editor";
 import { SkillInlineEdit } from "./CompetencyLibrary";
+import { SkillBulkUpload } from "./SkillBulkUpload";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,32 @@ import {
 } from "../components/ui/dialog";
 
 type Section = "categories" | "levels" | "skills";
+
+/** Where a skill is used, so confirmations can explain the impact. */
+function skillUsage(data: Data, id: string) {
+  const competencies = data.competencies.filter((c) => data.skills.some((s) => s.id === id && s.competencyId === c.id));
+  const courses = (data.workflow?.courses ?? []).filter((c) => c.mappings.some((m) => m.skillId === id));
+  const plans = (data.workflow?.plans ?? []).filter((p) => p.skills.some((s) => s.skillId === id));
+  const learners = data.assignments.filter((a) => a.skillId === id).length;
+  return { competencies, courses, plans, learners };
+}
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+function UsageList({ data, id }: { data: Data; id: string }) {
+  const u = skillUsage(data, id);
+  const items = [
+    u.competencies.length > 0 && `${u.competencies.length === 1 ? "Competency" : "Competencies"}: ${u.competencies.map((c) => c.name).join(", ")}`,
+    u.courses.length > 0 && `${u.courses.length === 1 ? "Mapped course" : "Mapped courses"}: ${u.courses.map((c) => c.name).join(", ")}`,
+    u.plans.length > 0 && `${u.plans.length === 1 ? "Assignment plan" : "Assignment plans"}: ${u.plans.map((p) => p.name).join(", ")}`,
+    u.learners > 0 && `Assigned to ${plural(u.learners, "learner")}`,
+  ].filter(Boolean) as string[];
+  if (!items.length) return null;
+  return (
+    <ul className="cm-usage-list">
+      {items.map((t) => <li key={t}>{t}</li>)}
+    </ul>
+  );
+}
 
 export function LibrarySettings({
   data,
@@ -38,6 +65,7 @@ export function LibrarySettings({
   const [skillView, setSkillView] = useState<"list" | "create" | string>("list");
   const [skillDeleting, setSkillDeleting] = useState<RecordItem | null>(null);
   const [skillInactivating, setSkillInactivating] = useState<RecordItem | null>(null);
+  const [skillUploading, setSkillUploading] = useState(false);
 
   function applyLevelOrder(allLevels: RecordItem[], newItem: RecordItem, isNew: boolean): RecordItem[] {
     const maxPos = isNew ? allLevels.length + 1 : allLevels.length;
@@ -94,6 +122,7 @@ export function LibrarySettings({
           </button>
           <h3 style={{ marginTop: 16 }}>{isCreating ? "New Skill" : `Edit: ${existing?.name}`}</h3>
           <SkillInlineEdit
+            showMandatory={false}
             skill={draft}
             data={data}
             work={work}
@@ -151,9 +180,14 @@ export function LibrarySettings({
               Add {section === "categories" ? "Category" : "Level"}
             </button>
           ) : (
-            <button className="cm-button primary" onClick={() => setSkillView("create")}>
-              <Plus size={16} /> Add Skill
-            </button>
+            <div className="cm-head-actions">
+              <button className="cm-button" onClick={() => setSkillUploading(true)}>
+                <Upload size={16} /> Bulk Upload
+              </button>
+              <button className="cm-button primary" onClick={() => setSkillView("create")}>
+                <Plus size={16} /> Add Skill
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -184,17 +218,23 @@ export function LibrarySettings({
               <thead>
                 <tr>
                   <th>Skill</th>
+                  <th>Competency Count</th>
                   <th>Status</th>
                   <th className="cm-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {skillRecords.map((s) => {
+                  const comps = data.competencies.filter((c) => c.id === s.competencyId);
                   return (
                     <tr key={s.id}>
                       <td>
                         <strong>{s.name}</strong>
                         <small>{s.description || "No description added"}</small>
+                      </td>
+                      <td className="cm-competency-count">
+                        <strong>{comps.length}</strong>
+                        <small>{comps.length ? comps.map((c) => c.name).join(", ") : "Not linked"}</small>
                       </td>
                       <td><span className={"cm-badge " + s.status.toLowerCase()}>{s.status}</span></td>
                       <td>
@@ -232,24 +272,46 @@ export function LibrarySettings({
                 : "No matching skills. Try another search."}
             </p>
           )}
+          {skillUploading && (
+            <SkillBulkUpload
+              data={data}
+              courses={work?.courses ?? data.workflow?.courses ?? []}
+              onClose={() => setSkillUploading(false)}
+              onImport={(result) => {
+                const baseWork = data.workflow ?? work;
+                const courses = (baseWork?.courses ?? []).map((c) => {
+                  const add = result.mappings.filter((m) => m.courseId === c.id).map(({ skillId, levelId }) => ({ skillId, levelId }));
+                  return add.length ? { ...c, mappings: [...c.mappings, ...add] } : c;
+                });
+                const next = { ...data, skills: [...data.skills, ...result.skills], ...(baseWork ? { workflow: { ...baseWork, courses } } : {}) };
+                const msg = `${plural(result.skills.length, "skill")} imported` + (result.mappings.length ? ` with ${plural(result.mappings.length, "course mapping")}` : "");
+                if (commit(next, msg)) setSkillUploading(false);
+              }}
+            />
+          )}
           {skillInactivating && (
             <Dialog open onOpenChange={(open) => { if (!open) setSkillInactivating(null); }}>
               <DialogContent className="cm-dialog">
                 <DialogHeader>
                   <DialogTitle>
                     {used(data, "skills", skillInactivating.id)
-                      ? `${skillInactivating.name} is in use and cannot be inactivated.`
+                      ? `Can't inactivate ${skillInactivating.name}`
                       : `Inactivate ${skillInactivating.name}?`}
                   </DialogTitle>
-                  <DialogDescription />
+                  <DialogDescription>
+                    {used(data, "skills", skillInactivating.id)
+                      ? "This skill is in use. Remove it from the items below first, then try again."
+                      : "The skill will be hidden when creating competencies and assignments. Existing records are kept, and you can activate it again at any time."}
+                  </DialogDescription>
                 </DialogHeader>
+                <UsageList data={data} id={skillInactivating.id} />
                 <div className="cm-dialog-actions">
-                  <button className="cm-button" onClick={() => setSkillInactivating(null)}>Cancel</button>
+                  <button className="cm-button" onClick={() => setSkillInactivating(null)}>{used(data, "skills", skillInactivating.id) ? "Close" : "Cancel"}</button>
                   {!used(data, "skills", skillInactivating.id) && (
                     <button className="cm-button destructive" onClick={() => {
                       if (commit({ ...data, skills: data.skills.map((x) => x.id === skillInactivating.id ? { ...x, status: "Inactive" as const } : x) }, `${skillInactivating.name} inactivated`))
                         setSkillInactivating(null);
-                    }}>Inactivate</button>
+                    }}>Yes, Inactivate</button>
                   )}
                 </div>
               </DialogContent>
@@ -261,18 +323,25 @@ export function LibrarySettings({
                 <DialogHeader>
                   <DialogTitle>
                     {used(data, "skills", skillDeleting.id)
-                      ? `${skillDeleting.name} is in use and cannot be deleted.`
+                      ? `Can't delete ${skillDeleting.name}`
                       : `Delete ${skillDeleting.name}?`}
                   </DialogTitle>
-                  <DialogDescription />
+                  <DialogDescription>
+                    {used(data, "skills", skillDeleting.id)
+                      ? "This skill is in use. Remove it from the items below first, or inactivate it instead."
+                      : skillDeleting.competencyId
+                        ? "This permanently deletes the skill and its level descriptions, and removes it from the competency below. This can't be undone."
+                        : "This permanently deletes the skill and its level descriptions. This can't be undone."}
+                  </DialogDescription>
                 </DialogHeader>
+                <UsageList data={data} id={skillDeleting.id} />
                 <div className="cm-dialog-actions">
-                  <button className="cm-button" onClick={() => setSkillDeleting(null)}>Cancel</button>
+                  <button className="cm-button" onClick={() => setSkillDeleting(null)}>{used(data, "skills", skillDeleting.id) ? "Close" : "Cancel"}</button>
                   {!used(data, "skills", skillDeleting.id) && (
                     <button className="cm-button destructive" onClick={() => {
-                      if (commit({ ...data, skills: data.skills.filter((x) => x.id !== skillDeleting.id) }, "Skill deleted"))
+                      if (commit({ ...data, skills: data.skills.filter((x) => x.id !== skillDeleting.id) }, `${skillDeleting.name} deleted`))
                         setSkillDeleting(null);
-                    }}>Delete</button>
+                    }}>Yes, Delete</button>
                   )}
                 </div>
               </DialogContent>

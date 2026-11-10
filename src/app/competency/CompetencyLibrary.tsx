@@ -46,6 +46,7 @@ export function SkillInlineEdit({
   onCancel,
   work,
   onSaveWork,
+  showMandatory = true,
 }: {
   skill: RecordItem;
   data: Data;
@@ -53,6 +54,8 @@ export function SkillInlineEdit({
   onCancel: () => void;
   work?: WorkflowData;
   onSaveWork?: (work: WorkflowData, msg: string) => boolean;
+  /** Skill Master hides the per-course Mandatory option; competency screens keep it. */
+  showMandatory?: boolean;
 }) {
   const [draft, setDraft] = useState<RecordItem>(structuredClone(skill));
   const [errors, setErrors] = useState<string[]>([]);
@@ -155,7 +158,7 @@ export function SkillInlineEdit({
           <DialogHeader className="cm-picker-header">
             <DialogTitle>Map Courses</DialogTitle>
             <DialogDescription>{draft.name.trim() || "New skill"} · {levelName}</DialogDescription>
-            <p className="cm-picker-hint">Select courses for this proficiency level. Mark courses as mandatory when completion is required.</p>
+            <p className="cm-picker-hint">{showMandatory ? "Select courses for this proficiency level. Mark courses as mandatory when completion is required." : "Select courses for this proficiency level."}</p>
           </DialogHeader>
           <div className="cm-picker-controls">
             <div className="cm-picker-search">
@@ -181,7 +184,7 @@ export function SkillInlineEdit({
                     else setPickerDraft((d) => d.filter((id) => id !== course.id));
                   }} />
                   <span className="cm-picker-name">{course.name}</span>
-                  <label className="cm-course-mandatory"><input type="checkbox" disabled={!checked} checked={checked && (pickerRequirements[course.id] ?? false)} aria-label={`Mandatory for ${course.name}`} onChange={(e) => setPickerRequirements((prev) => ({ ...prev, [course.id]: e.target.checked }))} /><span>Mandatory</span></label>
+                  {showMandatory && <label className="cm-course-mandatory"><input type="checkbox" disabled={!checked} checked={checked && (pickerRequirements[course.id] ?? false)} aria-label={`Mandatory for ${course.name}`} onChange={(e) => setPickerRequirements((prev) => ({ ...prev, [course.id]: e.target.checked }))} /><span>Mandatory</span></label>}
                 </div>
               );
             })}
@@ -260,7 +263,7 @@ export function SkillInlineEdit({
                                     return (
                                       <div key={c.id} className="cm-course-row">
                                         <span className="cm-course-row-name">{c.name}</span>
-                                        <label className="cm-course-mandatory"><input type="checkbox" checked={w ?? false} aria-label={`Mandatory for ${c.name}`} onChange={(e) => setLevelRequirements((prev) => ({ ...prev, [l.id]: { ...prev[l.id], [c.id]: e.target.checked } }))} /><span>Mandatory</span></label>
+                                        {showMandatory && <label className="cm-course-mandatory"><input type="checkbox" checked={w ?? false} aria-label={`Mandatory for ${c.name}`} onChange={(e) => setLevelRequirements((prev) => ({ ...prev, [l.id]: { ...prev[l.id], [c.id]: e.target.checked } }))} /><span>Mandatory</span></label>}
                                         <button type="button" aria-label={`Remove ${c.name}`} className="cm-course-row-remove"
                                           onClick={() => setLevelMappings((prev) => ({ ...prev, [l.id]: (prev[l.id] ?? []).filter((id) => id !== c.id) }))}>
                                           <X size={12} />
