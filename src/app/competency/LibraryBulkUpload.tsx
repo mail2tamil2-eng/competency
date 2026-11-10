@@ -79,8 +79,8 @@ export function LibraryBulkUpload({
           <div>
             <strong>Use One Row per Skill</strong>
             <p>
-              Use an existing category. You can add skills to existing active
-              competencies. Leave Skill blank to create an empty competency.
+              You can add skills to existing active competencies. Leave Skill
+              blank to create an empty competency.
             </p>
           </div>
           <button

@@ -14,7 +14,7 @@ import {
 } from "../components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "../components/ui/popover";
 
-type Section = "categories" | "levels" | "skills";
+type Section = "levels" | "skills";
 
 /** Competencies a skill belongs to. */
 export function skillCompetencies(data: Data, skill: RecordItem): RecordItem[] {
@@ -31,11 +31,9 @@ function names(list: string[], max = 3) {
 /** One wording pattern for every Library Settings section. */
 function blockedTitle(section: Section, name: string, verb: "inactivated" | "deleted") {
   const where =
-    section === "categories"
-      ? "a competency"
-      : section === "levels"
-        ? "a skill, role, course, or learner usage"
-        : "a course, assignment, or learner usage";
+    section === "levels"
+      ? "a skill, role, course, or learner usage"
+      : "a course, assignment, or learner usage";
   return `${name} is mapped to ${where} and cannot be ${verb}.`;
 }
 
@@ -44,11 +42,6 @@ function usageItems(data: Data, section: Section, id: string): string[] {
   const courses = data.workflow?.courses ?? [],
     plans = data.workflow?.plans ?? [];
   const row = (label: string, list: string[]) => list.length ? `${label} (${list.length}): ${names(list)}` : "";
-  if (section === "categories")
-    return [
-      row("Competencies", data.competencies.filter((c) => c.categoryId === id).map((c) => c.name)),
-      row("Skills", data.skills.filter((s) => s.categoryId === id).map((s) => s.name)),
-    ].filter(Boolean);
   if (section === "levels") {
     const learners = data.assignments.filter((a) => a.current === id || a.expected === id).length;
     return [
@@ -68,7 +61,7 @@ function usageItems(data: Data, section: Section, id: string): string[] {
   ].filter(Boolean);
 }
 
-/** Shared inactivate/delete confirmation used by Categories, Proficiency Levels and Skill Master. */
+/** Shared inactivate/delete confirmation used by Proficiency Levels and Skill Master. */
 function ConfirmDialog({
   action, name, blocked, blockedTitle, note, usage, onClose, onConfirm,
 }: {
@@ -187,7 +180,7 @@ export function LibrarySettings({
     setSkillView("list");
   }, [initialSection]);
 
-  const records = (section === "skills" ? [] : data[section as "categories" | "levels"])
+  const records = (section === "skills" ? [] : data.levels)
     .filter(
       (x) =>
         (x.name + " " + x.description)
@@ -213,13 +206,13 @@ export function LibrarySettings({
     const existing = isCreating ? null : data.skills.find((s) => s.id === skillView) ?? null;
     const draft: RecordItem = existing
       ? structuredClone(existing)
-      : { id: uid(), name: "", description: "", status: "Active", levels: {}, categoryId: "" };
+      : { id: uid(), name: "", description: "", status: "Active", levels: {} };
     return (
       <section className="cm-card">
         <div className="cm-section-head">
           <div>
             <h2>Library Settings</h2>
-            <p>Manage categories, proficiency levels and skills used across your competency framework.</p>
+            <p>Manage proficiency levels and skills used across your competency framework.</p>
           </div>
         </div>
         <div className="cm-skill-master-view">
@@ -255,7 +248,7 @@ export function LibrarySettings({
       <div className="cm-section-head">
         <div>
           <h2>Library Settings</h2>
-          <p>Manage categories, proficiency levels and skills used across your competency framework.</p>
+          <p>Manage proficiency levels and skills used across your competency framework.</p>
         </div>
         <div className="cm-settings-tabs-bar">
           <div
@@ -263,7 +256,7 @@ export function LibrarySettings({
             role="group"
             aria-label="Library Settings Sections"
           >
-            {(["categories", "levels", "skills"] as const).map((s) => (
+            {(["levels", "skills"] as const).map((s) => (
               <button
                 className={section === s ? "active" : ""}
                 aria-pressed={section === s}
@@ -275,15 +268,15 @@ export function LibrarySettings({
                   setSkillView("list");
                 }}
               >
-                {s === "categories" ? "Categories" : s === "levels" ? "Proficiency Levels" : "Skill Master"}
-                <span className="cm-tab-count">{s === "skills" ? data.skills.length : data[s as "categories" | "levels"].length}</span>
+                {s === "levels" ? "Proficiency Levels" : "Skill Master"}
+                <span className="cm-tab-count">{s === "skills" ? data.skills.length : data.levels.length}</span>
               </button>
             ))}
           </div>
           {section !== "skills" ? (
             <button className="cm-button primary" onClick={() => setEditing({})}>
               <Plus size={16} />
-              Add {section === "categories" ? "Category" : "Level"}
+              Add Level
             </button>
           ) : (
             <div className="cm-head-actions">
@@ -482,21 +475,13 @@ export function LibrarySettings({
       )}
       {editing && section !== "skills" && (
         <Editor
-          kind={section as "categories" | "levels"}
+          kind="levels"
           data={data}
           item={editing.item}
           onClose={() => setEditing(null)}
           onSave={(item) => {
             const isNew = !editing.item;
-            const nextData =
-              section === "levels"
-                ? { ...data, levels: applyLevelOrder(data.levels, item, isNew) }
-                : {
-                    ...data,
-                    [section]: isNew
-                      ? [...data[section], item]
-                      : data[section].map((x) => (x.id === item.id ? item : x)),
-                  };
+            const nextData = { ...data, levels: applyLevelOrder(data.levels, item, isNew) };
             if (commit(nextData, "Saved successfully")) setEditing(null);
           }}
         />
@@ -507,11 +492,11 @@ export function LibrarySettings({
           name={inactivating.name}
           blockedTitle={blockedTitle(section, inactivating.name, "inactivated")}
           blocked={used(data, section, inactivating.id)}
-          note={section === "categories" ? "It will no longer be available when creating competencies." : "It will no longer be available for skills and assignments."}
+          note="It will no longer be available for skills and assignments."
           usage={usageItems(data, section, inactivating.id)}
           onClose={() => setInactivating(null)}
           onConfirm={() => {
-            const s = section as "categories" | "levels";
+            const s = "levels" as const;
             if (commit({ ...data, [s]: data[s].map((x) => x.id === inactivating.id ? { ...x, status: "Inactive" } : x) }, `${inactivating.name} inactivated`))
               setInactivating(null);
           }}
@@ -526,7 +511,7 @@ export function LibrarySettings({
           usage={usageItems(data, section, deleting.id)}
           onClose={() => setDeleting(null)}
           onConfirm={() => {
-            const s = section as "categories" | "levels";
+            const s = "levels" as const;
             if (commit({ ...data, [s]: data[s].filter((x) => x.id !== deleting.id) }, `${deleting.name} deleted`))
               setDeleting(null);
           }}

@@ -89,7 +89,7 @@ export function prepareSkillImport(text: string, data: Data, courses: Course[]):
     let group = bySkill.get(k);
     if (!group) {
       group = {
-        skill: { id: uid(), name, description: desc, status: "Active", levels: {}, categoryId: "" },
+        skill: { id: uid(), name, description: desc, status: "Active", levels: {} },
         rows: [],
         levelIds: new Set(),
       };

@@ -337,24 +337,13 @@ export function validate(item: RecordItem, kind: Kind, data: Data): string[] {
     ).includes(item.status)
   )
     errors.push("Choose a valid status.");
-  if (kind === "competencies" || kind === "skills") {
-    if (
-      !data.categories.some(
-        (x) => x.id === item.categoryId && x.status === "Active",
-      )
-    )
-      errors.push("Choose an active category.");
-  }
   if (kind === "skills") {
     if (
       !data.competencies.some(
-        (x) =>
-          x.id === item.competencyId &&
-          x.categoryId === item.categoryId &&
-          x.status === "Active",
+        (x) => x.id === item.competencyId && x.status === "Active",
       )
     )
-      errors.push("Choose an active competency in this category.");
+      errors.push("Choose an active competency.");
   }
   if (item.status === "Inactive" && used(data, kind, item.id))
     errors.push("This item is in use and cannot be deactivated.");

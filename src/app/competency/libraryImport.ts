@@ -15,7 +15,6 @@ export function libraryHeaders(data: Data) {
   return [
     "Competency",
     "Competency Description",
-    "Category",
     "Skill",
     "Skill Description",
     ...data.levels
@@ -29,7 +28,6 @@ export function libraryRows(data: Data, competencies: RecordItem[]) {
     return (skills.length ? skills : [undefined]).map((s) => [
       c.name,
       c.description,
-      data.categories.find((x) => x.id === c.categoryId)?.name || "",
       s?.name || "",
       s?.description || "",
       ...data.levels
@@ -58,12 +56,6 @@ export function prepareLibraryImport(text: string, data: Data): LibraryImport {
     const errors: string[] = [];
     if (cells.length !== columns.length)
       errors.push("Column count does not match the header.");
-    const category = data.categories.find(
-      (c) =>
-        c.name.toLowerCase() === get("Category").toLowerCase() &&
-        c.status === "Active",
-    );
-    if (!category) errors.push("Use an existing active category.");
     const name = get("Competency"),
       skillName = get("Skill");
     if (!name) errors.push("Competency name is required.");
@@ -74,10 +66,6 @@ export function prepareLibraryImport(text: string, data: Data): LibraryImport {
     );
     const isNew = !competency;
     if (competency) {
-      if (competency.categoryId !== category?.id)
-        errors.push(
-          "This competency belongs to a different category. Use the same category on all its rows.",
-        );
       if (competency.status !== "Active")
         errors.push("Activate this competency before adding skills.");
       if (
@@ -99,7 +87,6 @@ export function prepareLibraryImport(text: string, data: Data): LibraryImport {
         id: uid(),
         name,
         description: get("Competency Description"),
-        categoryId: category?.id,
         status: "Active",
       };
       competencies.push(competency);
@@ -109,7 +96,6 @@ export function prepareLibraryImport(text: string, data: Data): LibraryImport {
         id: uid(),
         name: skillName,
         description: get("Skill Description"),
-        categoryId: category?.id,
         competencyId: competency.id,
         status: "Active",
         levels: Object.fromEntries(

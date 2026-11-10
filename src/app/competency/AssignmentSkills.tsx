@@ -24,14 +24,12 @@ export function AssignmentSkills({
   readOnly = false,
 }: Props) {
   const [query, setQuery] = useState("");
-  const [categoryId, setCategoryId] = useState("");
   const [onlySelected, setOnlySelected] = useState(false);
   const term = query.trim().toLowerCase();
   const selectedCompIds = new Set(selected.map((x) => ownerOf(data, x)));
   const groups = data.competencies
     .filter(
       (c) =>
-        (!categoryId || c.categoryId === categoryId) &&
         (c.status === "Active" || selectedCompIds.has(c.id)),
     )
     .sort((a, b) => {
@@ -53,19 +51,6 @@ export function AssignmentSkills({
           : "Open a competency, select its skills, then choose the expected level for each skill."}
       </p>
       <div className="cm-assignment-search">
-        <label className="cm-assignment-category-filter">
-          <span>Category</span>
-          <select
-            aria-label="Filter Assignment Competencies by Category"
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-          >
-            <option value="">All Categories</option>
-            {data.categories.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-          </select>
-        </label>
         <div className="cm-search">
           <Search size={16} />
           <input
@@ -123,14 +108,14 @@ export function AssignmentSkills({
               levels={data.levels.filter((l) => l.status === "Active")}
               selected={selected}
               onChange={onChange}
-              filterKey={`${categoryId}:${term}:${onlySelected}`}
+              filterKey={`${term}:${onlySelected}`}
               searching={!!term || onlySelected || readOnly}
               readOnly={readOnly}
             />
           );
         })}
         <p className="cm-assignment-no-results">
-          No matching competencies or skills. Try another category or search, or turn off
+          No matching competencies or skills. Try another search, or turn off
           Selected Only.
         </p>
       </div>

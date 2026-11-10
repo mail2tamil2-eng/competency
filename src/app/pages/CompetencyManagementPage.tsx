@@ -76,9 +76,7 @@ export function CompetencyManagementPage() {
   const [assigning, setAssigning] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [libraryIntent, setLibraryIntent] = useState<LibraryIntent>(null);
-  const [settingsSection, setSettingsSection] = useState<
-    "categories" | "levels" | "skills"
-  >("categories");
+  const [settingsSection, setSettingsSection] = useState<"levels" | "skills">("levels");
   const commit = (next: Data, message: string) => {
     try {
       localStorage.setItem(key, JSON.stringify(next));
@@ -163,7 +161,7 @@ export function CompetencyManagementPage() {
     next: Tab | "categories" | "levels" | "skill-master" | "competencies",
   ) => {
     if (next === "categories" || next === "levels") {
-      setSettingsSection(next);
+      setSettingsSection("levels");
       next = "settings";
     }
     if (next === "skill-master") {

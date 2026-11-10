@@ -32,7 +32,6 @@ export function Editor({
           status: "Active",
           order: kind === "levels" ? data.levels.length + 1 : undefined,
           levels: {},
-          categoryId: parent?.categoryId,
           competencyId: parent?.id,
         },
   );
@@ -44,11 +43,7 @@ export function Editor({
     skills: "skill",
   }[kind];
   const set = (field: string, value: string) =>
-    setDraft((d) => ({
-      ...d,
-      [field]: value,
-      ...(field === "categoryId" ? { competencyId: "" } : {}),
-    }));
+    setDraft((d) => ({ ...d, [field]: value }));
   return (
     <Dialog
       open
@@ -76,10 +71,7 @@ export function Editor({
               description: draft.description.trim(),
             };
             const issues = validate(next, kind, data).filter(
-              (e) =>
-                !parent ||
-                (e !== "Choose an active category." &&
-                  e !== "Choose an active competency in this category."),
+              (e) => !parent || e !== "Choose an active competency.",
             );
             setErrors(issues);
             if (!issues.length) onSave(next);
@@ -116,28 +108,8 @@ export function Editor({
             <div className="cm-hint">
               <strong>Skill In {parent.name}</strong>
               <br />
-              Category and competency are already linked. Define the skill
-              below.
+              The competency is already linked. Define the skill below.
             </div>
-          )}
-          {!parent && (kind === "competencies" || kind === "skills") && (
-            <label>
-              Category <span>*</span>
-              <select
-                required
-                value={draft.categoryId || ""}
-                onChange={(e) => set("categoryId", e.target.value)}
-              >
-                <option value="">Select a Category</option>
-                {data.categories
-                  .filter((x) => x.status === "Active")
-                  .map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
           )}
           {kind === "skills" && (
             <>

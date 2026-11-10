@@ -21,7 +21,7 @@ export function LibraryCreate({
   const isEdit = !!initial;
 
   const [competency, setCompetency] = useState<RecordItem>(() =>
-    initial ? structuredClone(initial.competency) : { id: uid(), name: "", description: "", categoryId: "", status: "Active" },
+    initial ? structuredClone(initial.competency) : { id: uid(), name: "", description: "", status: "Active" },
   );
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>(
     initial ? initial.skills.map((s) => s.id) : [],
@@ -83,7 +83,7 @@ export function LibraryCreate({
       .map((id) => data.skills.find((s) => s.id === id))
       .filter((s): s is RecordItem => s != null)
       // Add this competency to the skill's list; a skill can belong to many competencies.
-      .map((s) => withComps({ ...s, categoryId: s.categoryId || clean.categoryId }, [...compIdsOf(s), clean.id]));
+      .map((s) => withComps(s, [...compIdsOf(s), clean.id]));
   }
 
   function saveDraft() {
@@ -117,7 +117,6 @@ export function LibraryCreate({
     const dirty =
       competency.name.trim() ||
       competency.description.trim() ||
-      competency.categoryId ||
       selectedSkillIds.length > 0;
     if (dirty && !window.confirm("Discard unsaved changes and close?")) return;
     onClose();
@@ -191,19 +190,6 @@ export function LibraryCreate({
               onChange={(e) => setCompetency({ ...competency, name: e.target.value })}
               placeholder="e.g. Communication"
             />
-          </label>
-          <label>
-            <span className="cm-req-label">Category <span className="req">*</span></span>
-            <select
-              aria-label="Category"
-              value={competency.categoryId}
-              onChange={(e) => setCompetency({ ...competency, categoryId: e.target.value })}
-            >
-              <option value="">Select a Category</option>
-              {data.categories.filter((c) => c.status === "Active").map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
           </label>
           <label>
             <span>Description <span className="cm-field-optional">Optional</span></span>

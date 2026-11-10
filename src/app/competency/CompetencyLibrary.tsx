@@ -118,7 +118,7 @@ export function SkillInlineEdit({
 
   function save() {
     const errs = validate(draft, "skills", data).filter(
-      (e) => e !== "Choose an active category." && e !== "Choose an active competency in this category.",
+      (e) => e !== "Choose an active competency.",
     );
     if (errs.length) { setErrors(errs); return; }
     const saved = { ...draft, name: draft.name.trim(), description: draft.description.trim() };
@@ -407,7 +407,6 @@ export function CompetencyLibrary({
   onSaveWork?: (work: WorkflowData, message: string) => boolean;
 }) {
   const [view, setView] = useState<ViewState>({ kind: "list" });
-  const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [creating, setCreating] = useState(false);
@@ -433,14 +432,14 @@ export function CompetencyLibrary({
   useEffect(() => {
     if (intent?.action === "create") setCreating(true);
     if (intent?.action === "search") {
-      setCategory(""); setStatus(""); setPage(1);
+      setStatus(""); setPage(1);
       setView({ kind: "list" });
     }
     if (intent?.action === "open" && intent.id)
       setView({ kind: "skills", cId: intent.id });
   }, [intent]);
 
-  useEffect(() => setPage(1), [query, category, status]);
+  useEffect(() => setPage(1), [query, status]);
 
   const term = query.trim().toLowerCase();
   const matches = (r: RecordItem) =>
@@ -448,7 +447,6 @@ export function CompetencyLibrary({
 
   const visible = data.competencies.filter(
     (c) =>
-      (!category || c.categoryId === category) &&
       (!status || c.status === status) &&
       (!term || matches(c) || data.skills.some((s) => inComp(s, c.id) && matches(s))),
   );
@@ -592,7 +590,7 @@ export function CompetencyLibrary({
               )
             ) {
               setUploading(false);
-              onQuery(""); setCategory(""); setStatus(""); setPage(1);
+              onQuery(""); setStatus(""); setPage(1);
             }
           }}
         />
@@ -901,7 +899,6 @@ export function CompetencyLibrary({
     const comp = data.competencies.find((c) => c.id === view.cId);
     if (!comp) { setView({ kind: "list" }); return null; }
     const skills = data.skills.filter((s) => inComp(s, comp.id));
-    const catName = data.categories.find((x) => x.id === comp.categoryId)?.name || "Uncategorised";
 
     return (
       <section className="cm-card cm-unified-library">
@@ -913,7 +910,6 @@ export function CompetencyLibrary({
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <h2 style={{ margin: 0 }}>{comp.name}</h2>
-              <span className="cm-category">{catName}</span>
               <span className={"cm-badge " + comp.status.toLowerCase()}>{comp.status}</span>
             </div>
             {comp.description && <p style={{ marginTop: 6 }}>{comp.description}</p>}
@@ -940,7 +936,7 @@ export function CompetencyLibrary({
         {/* Add-skill inline form */}
         {editingSkill === "__new__" && (
           <SkillInlineEdit
-            skill={withComps({ id: uid(), name: "", description: "", status: "Active", levels: {}, categoryId: comp.categoryId }, [comp.id])}
+            skill={withComps({ id: uid(), name: "", description: "", status: "Active", levels: {} }, [comp.id])}
             data={data}
             work={work}
             onSaveWork={onSaveWork}
@@ -1145,12 +1141,6 @@ export function CompetencyLibrary({
         {term && (
           <button className="cm-text-button" onClick={() => onQuery("")}>Clear Search</button>
         )}
-        <select aria-label="Filter Library by Category" value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">All Categories</option>
-          {data.categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
         <select aria-label="Filter Competency Status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All Statuses</option>
           <option>Active</option>
@@ -1178,7 +1168,6 @@ export function CompetencyLibrary({
               <thead>
                 <tr>
                   <th>Competency</th>
-                  <th>Category</th>
                   <th>Skills</th>
                   <th>Status</th>
                   <th className="cm-right">Actions</th>
@@ -1192,11 +1181,6 @@ export function CompetencyLibrary({
                       <td>
                         <strong>{c.name}</strong>
                         <small>{c.description || "No description added"}</small>
-                      </td>
-                      <td>
-                        <span className="cm-category">
-                          {data.categories.find((x) => x.id === c.categoryId)?.name || "Uncategorised"}
-                        </span>
                       </td>
                       <td>
                         <button
@@ -1272,7 +1256,7 @@ export function CompetencyLibrary({
           <Search size={26} />
           <h3>No Matching Competencies or Skills</h3>
           <p>Try another name or clear the filters.</p>
-          <button className="cm-button" onClick={() => { onQuery(""); setCategory(""); setStatus(""); }}>
+          <button className="cm-button" onClick={() => { onQuery(""); setStatus(""); }}>
             Clear Filters
           </button>
         </div>

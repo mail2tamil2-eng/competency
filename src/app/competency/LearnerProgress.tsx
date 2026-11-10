@@ -298,7 +298,7 @@ export function LearnerProgress({
 
   const skillOf = (a: Assignment) => data.skills.find((s) => s.id === a.skillId);
   const compOf = (a: Assignment) =>
-    compNames(data, skillOf(a)) || "Uncategorized";
+    compNames(data, skillOf(a)) || "No competency";
   const lvlName = (id: string) =>
     id ? data.levels.find((l) => l.id === id)?.name || "—" : "—";
   const empFor = (a: Assignment) =>

@@ -1003,7 +1003,7 @@ export function Learning({
                 <div key={cId} className="cm-competency-group">
                   <div className="cm-competency-group-header">
                     <div>
-                      <strong>{comp?.name || "Uncategorised"}</strong>
+                      <strong>{comp?.name || "No competency"}</strong>
                       <span className="cm-category">{items.length} Skill{items.length !== 1 ? "s" : ""}</span>
                       <span className={`cm-badge ${compStatus === "Completed" ? "active" : compStatus === "In Progress" ? "draft" : ""}`}>
                         {statusText(compStatus)}
