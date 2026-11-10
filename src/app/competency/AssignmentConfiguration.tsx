@@ -171,6 +171,7 @@ export function AssignmentConfiguration({
         <h4>Competencies &amp; Skills</h4>
         <AssignmentSkills
           data={data}
+          courses={work.courses}
           selected={draft.skills}
           onChange={(skills) => onChange({ ...draft, skills })}
         />

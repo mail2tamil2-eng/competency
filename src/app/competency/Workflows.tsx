@@ -434,11 +434,21 @@ export function RoleMapping({
     );
   }
 
+  /** Selected skills with no course mapped at any level. */
+  function unmappedSkills(): string[] {
+    return (draft?.skills ?? [])
+      .filter((s) => !work.courses.some((c) => c.mappings.some((m) => m.skillId === s.skillId)))
+      .map((s) => data.skills.find((x) => x.id === s.skillId)?.name || "Unknown skill");
+  }
   function validateStep1(): boolean {
     if (!draft) return false;
     if (!draft.name.trim()) { setError("Enter an assignment name."); return false; }
     if (!draft.skills.length || draft.skills.some((s) => !s.expected)) {
       setError("Select at least one skill and set an expected level for each.");
+      return false;
+    }
+    if (unmappedSkills().length) {
+      setError(`No courses are mapped to the selected skill: ${unmappedSkills().join(", ")}.`);
       return false;
     }
     setError("");
@@ -452,6 +462,7 @@ export function RoleMapping({
       setError("Enter a name, select skills and their expected levels, and choose dates.");
       return false;
     }
+    if (unmappedSkills().length) { setError(`No courses are mapped to the selected skill: ${unmappedSkills().join(", ")}.`); return false; }
     if (draft.end && draft.end < draft.start) { setError("End date must be on or after start date."); return false; }
     if (draft.method === "Manual" && !draft.employeeIds.length) { setError("Select at least one learner."); return false; }
     if (draft.method === "Auto" && !draft.allUsers && !draft.department && !draft.role && !draft.cohort && !draft.departments?.length && !draft.roles?.length && !draft.cohorts?.length) {

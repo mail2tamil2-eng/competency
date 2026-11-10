@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Layers, ChevronDown, Search } from "lucide-react";
 import { Data, RecordItem, compIdsOf, inComp } from "./model";
-import { Plan } from "./workflowModel";
+import { Plan, Course } from "./workflowModel";
 
 type Props = {
   data: Data;
+  /** Used to warn when a selected skill has no mapped courses. */
+  courses?: Course[];
   selected: Plan["skills"];
   onChange: (skills: Plan["skills"]) => void;
   readOnly?: boolean;
@@ -19,6 +21,7 @@ function ownerOf(data: Data, x: Selection): string {
 
 export function AssignmentSkills({
   data,
+  courses = [],
   selected,
   onChange,
   readOnly = false,
@@ -102,6 +105,7 @@ export function AssignmentSkills({
               key={c.id}
               competency={c}
               data={data}
+              courses={courses}
               skills={visible}
               all={all}
               total={all.length}
@@ -126,6 +130,7 @@ export function AssignmentSkills({
 function SkillGroup({
   competency,
   data,
+  courses,
   skills,
   all,
   total,
@@ -138,6 +143,7 @@ function SkillGroup({
 }: {
   competency: RecordItem;
   data: Data;
+  courses: Course[];
   skills: RecordItem[];
   all: RecordItem[];
   total: number;
@@ -324,6 +330,11 @@ function SkillGroup({
                     {selection && !selection.expected && (
                       <small className="cm-assignment-required">
                         Expected level required
+                      </small>
+                    )}
+                    {selection && !courses.some((co) => co.mappings.some((m) => m.skillId === s.id)) && (
+                      <small className="cm-assignment-required" role="alert">
+                        No courses are mapped to the selected skill.
                       </small>
                     )}
                   </div>
