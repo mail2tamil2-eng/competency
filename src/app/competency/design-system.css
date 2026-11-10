@@ -2000,3 +2000,7 @@
 .cm-selected-elsewhere { margin-left: 8px; padding: 1px 8px; border-radius: 10px; background: #f1f5fb; color: #526176; font-size: 14px; font-weight: 400; white-space: nowrap; }
 .cm-lp-toolbar .cm-lp-filter-select { flex: 0 0 180px; width: 180px; min-width: 0; }
 @media (max-width: 1100px) { .cm-lp-toolbar { flex-wrap: wrap; } }
+.cm-report-profile { display: flex; flex-wrap: wrap; gap: 8px 28px; margin: 10px 0 6px; }
+.cm-report-profile div { display: flex; flex-direction: column; gap: 2px; }
+.cm-report-profile dt { font-size: 14px; color: #526176; }
+.cm-report-profile dd { margin: 0; font-size: 15px; font-weight: 600; color: #1f2937; }

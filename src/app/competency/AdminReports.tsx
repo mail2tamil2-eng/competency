@@ -77,7 +77,8 @@ function DetailView({
     const emp = employeeFor(work, a);
     if (filterStatus && progress(data, a) !== filterStatus) return false;
     const term = query.trim().toLowerCase();
-    if (term && ![a.name, emp?.email || "", a.department, emp?.role || "", data.skills.find((s) => s.id === a.skillId)?.name || ""].join(" ").toLowerCase().includes(term)) return false;
+    const skill = data.skills.find((s) => s.id === a.skillId);
+    if (term && ![a.name, emp?.email || "", a.department, emp?.role || "", skill?.name || "", compNames(data, skill)].join(" ").toLowerCase().includes(term)) return false;
     return true;
   });
 
@@ -87,6 +88,14 @@ function DetailView({
   const ctxLabel = ctx.kind === "skill"
     ? data.skills.find((s) => s.id === ctx.skillId)?.name || "Skill"
     : data.assignments.find((a) => personKey(a) === ctx.pKey)?.name || "Learner";
+  /* Learner view: identity is shown once in the header instead of on every row. */
+  const isLearner = ctx.kind === "learner";
+  const learnerRow = isLearner ? data.assignments.find((a) => personKey(a) === ctx.pKey) : undefined;
+  const learnerEmp = learnerRow ? employeeFor(work, learnerRow) : undefined;
+  const learnerMgr = work.employees.find((e) => e.id === learnerEmp?.managerId);
+  const headers = isLearner
+    ? ["Competency", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Assigned", "Completed", "Proof"]
+    : ["Name", "Email", "Role", "Dept", "Reporting Manager", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Assigned", "Completed", "Proof"];
   const filterLabel = ctx.filter === "gap" ? "with skill gap" : ctx.filter === "completed" ? "completed" : "all";
 
   function getCourseRows(a: Assignment) {
@@ -113,7 +122,7 @@ function DetailView({
 
   function exportRows() {
     download("detail-report.csv", [
-      ["Name", "Email", "Dept", "Role", "Reporting Manager", "Skill", "Current Level", "Expected Level", "Skill Gap", "Courses", "Status", "Assigned Date", "Completed Date", "Proof Status"],
+      ["Name", "Email", "Dept", "Role", "Reporting Manager", "Competency", "Skill", "Current Level", "Expected Level", "Skill Gap", "Courses", "Status", "Assigned Date", "Completed Date", "Proof Status"],
       ...rows.map((a) => {
         const emp = employeeFor(work, a);
         const mgr = work.employees.find((e) => e.id === emp?.managerId);
@@ -121,7 +130,7 @@ function DetailView({
         const gap = skillGap(data, a);
         return [
           a.name, emp?.email || "Not recorded", a.department, emp?.role || "Not recorded",
-          mgr?.name || "Not recorded", skill?.name || "Unavailable",
+          mgr?.name || "Not recorded", compNames(data, skill) || "—", skill?.name || "Unavailable",
           levelName(data, a.current), levelName(data, a.expected),
           gap ?? "Not assessed", getCourseRows(a).length, progress(data, a),
           a.assignedDate?.slice(0, 10) || "—", a.completedDate?.slice(0, 10) || "—",
@@ -139,6 +148,14 @@ function DetailView({
       <div className="cm-section-head">
         <div>
           <h2>{ctxLabel} — Detail View</h2>
+          {isLearner && (
+            <dl className="cm-report-profile">
+              <div><dt>Email</dt><dd>{learnerEmp?.email || "Not recorded"}</dd></div>
+              <div><dt>Role</dt><dd>{learnerEmp?.role || "Not recorded"}</dd></div>
+              <div><dt>Department</dt><dd>{learnerRow?.department || "Not recorded"}</dd></div>
+              <div><dt>Reporting Manager</dt><dd>{learnerMgr?.name || "Not recorded"}</dd></div>
+            </dl>
+          )}
           <p>Showing {filterLabel} records{ctx.filter !== "all" ? " only" : ""}.</p>
         </div>
         <button className="cm-button" onClick={exportRows}><Download size={16} /> Export CSV</button>
@@ -146,7 +163,7 @@ function DetailView({
       <div className="cm-toolbar cm-report-toolbar">
         <label className="cm-search">
           <Search size={16} />
-          <input placeholder="Search name, email or skill…" value={query}
+          <input placeholder={isLearner ? "Search competency or skill…" : "Search name, email or skill…"} value={query}
             onChange={(e) => { setQuery(e.target.value); setPage(0); }} />
         </label>
         <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
@@ -167,7 +184,7 @@ function DetailView({
         <table className="cm-manager-table">
           <thead>
             <tr>
-              {["Name", "Email", "Role", "Dept", "Reporting Manager", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Assigned", "Completed", "Proof"].map((h) => (
+              {headers.map((h) => (
                 <th key={h}>{titleCaseLabel(h)}</th>
               ))}
             </tr>
@@ -181,11 +198,16 @@ function DetailView({
               const courseCount = getCourseRows(a).length;
               return (
                 <tr key={a.id}>
-                  <td><strong>{a.name}</strong></td>
-                  <td>{emp?.email || "—"}</td>
-                  <td>{emp?.role || "—"}</td>
-                  <td>{a.department || "—"}</td>
-                  <td>{mgr?.name || "—"}</td>
+                  {!isLearner && (
+                    <>
+                      <td><strong>{a.name}</strong></td>
+                      <td>{emp?.email || "—"}</td>
+                      <td>{emp?.role || "—"}</td>
+                      <td>{a.department || "—"}</td>
+                      <td>{mgr?.name || "—"}</td>
+                    </>
+                  )}
+                  {isLearner && <td>{compNames(data, skill) || "—"}</td>}
                   <td><strong>{skill?.name || "Unavailable"}</strong></td>
                   <td>{levelName(data, a.current)}</td>
                   <td>{levelName(data, a.expected)}</td>
@@ -205,7 +227,7 @@ function DetailView({
               );
             })}
             {!total && (
-              <tr><td colSpan={14}>No matching records. Try another search.</td></tr>
+              <tr><td colSpan={headers.length}>No matching records. Try another search.</td></tr>
             )}
           </tbody>
         </table>
