@@ -873,7 +873,7 @@ export function Learning({
             {/* Title + selector row */}
             <div className="cm-learner-header-top">
               <div className="cm-learner-title-block">
-                <h2>My Skills &amp; Learning Plan</h2>
+                <h2>My Skills</h2>
                 <p>Track your skills, close learning gaps, and achieve your learning goals.</p>
               </div>
               <select
