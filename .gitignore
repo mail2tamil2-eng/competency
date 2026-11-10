@@ -11,3 +11,6 @@ ss_*.mjs
 ss_*.png
 
 .vercel
+
+# Screenshots written by the browser tests
+artifacts/

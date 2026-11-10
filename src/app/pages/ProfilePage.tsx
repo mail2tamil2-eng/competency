@@ -3,15 +3,18 @@ import { Breadcrumb } from '../components/Breadcrumb';
 import { Edit2, Upload, X, Mail, Globe, Calendar, Clock } from 'lucide-react';
 import { useState, useRef } from 'react';
 import svgPaths from '../../imports/svg-g6q6hkk7l8';
+import { useAuth } from '../context/AuthContext';
 
 export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const { user } = useAuth();
+  // Same signed-in user and role label as the header.
   const [formData, setFormData] = useState({
-    name: 'Admin Product Live',
-    email: 'aravindan.v@nch.in',
+    name: user?.name || 'User',
+    email: user?.email || '',
     country: 'India',
-    role: 'Instructor'
+    role: 'Workspace Administrator'
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 

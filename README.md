@@ -64,4 +64,4 @@ Remaining production work includes authenticated role access, employee/cohort in
 
 For continuing development in Claude Code or another coding agent, start with [CLAUDE.md](CLAUDE.md). Administrator now lands on Competency framework; the Overview page has been removed.
 
-Screenshots are in `artifacts/`.
+Browser tests save screenshots to `artifacts/` (not committed).
