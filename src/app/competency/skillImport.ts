@@ -74,9 +74,11 @@ export function prepareSkillImport(text: string, data: Data, courses: Course[]):
     if (name && existing.has(name.toLowerCase()))
       errors.push("This skill already exists in Skill Master. Bulk upload only adds new skills.");
     const level = levels.find((l) => l.name.toLowerCase() === levelName.toLowerCase());
-    if (!levelName) errors.push("Level Name is missing. Keep the level names from the template.");
-    else if (!level) errors.push(`"${levelName}" is not an active proficiency level.`);
-    if (!levelDesc) errors.push("Level Description is required.");
+    // Level Description is optional; a Level Name is only needed when the row has a description or course.
+    if (!levelName) {
+      if (levelDesc || courseIds.length)
+        errors.push("Level Name is missing. Keep the level names from the template.");
+    } else if (!level) errors.push(`"${levelName}" is not an active proficiency level.`);
     for (const id of courseIds)
       if (!courses.some((c) => c.id.toLowerCase() === id.toLowerCase()))
         errors.push(`Course ID "${id}" was not found.`);
@@ -111,12 +113,6 @@ export function prepareSkillImport(text: string, data: Data, courses: Course[]):
     }
   }
 
-  // Every skill needs a row for each active level (Level Name is system generated).
-  for (const group of bySkill.values()) {
-    const missingLevels = levels.filter((l) => !group.levelIds.has(l.id)).map((l) => l.name);
-    if (missingLevels.length)
-      group.rows[group.rows.length - 1].errors.push("Missing level rows: " + missingLevels.join(", ") + ".");
-  }
   for (const r of rows) r.errors = [...new Set(r.errors)];
 
   return { rows, skills: [...bySkill.values()].map((g) => g.skill), mappings };

@@ -15,7 +15,7 @@ const FIELDS: [string, string][] = [
   ["Skill Name", "Required"],
   ["Skill Description", "Optional"],
   ["Level Name", "System generated"],
-  ["Level Description", "Required"],
+  ["Level Description", "Optional"],
   ["Course ID", "Optional · only when mapping courses"],
 ];
 
@@ -36,6 +36,9 @@ export function SkillBulkUpload({
     [busy, setBusy] = useState(false);
   const request = useRef(0);
   const errors = preview?.rows.filter((r) => r.errors.length) || [];
+  // Count only skills whose rows are all error-free.
+  const badNames = new Set(errors.map((r) => r.skill.toLowerCase()));
+  const readySkills = preview?.skills.filter((sk) => !badNames.has(sk.name.toLowerCase())).length ?? 0;
 
   async function load(file?: File) {
     const current = ++request.current;
@@ -120,7 +123,7 @@ export function SkillBulkUpload({
         {preview && (
           <>
             <div className="cm-import-summary">
-              <strong>{preview.skills.length} New Skills</strong>
+              <strong>{readySkills} New Skills</strong>
               <strong>{preview.mappings.length} Course Mappings</strong>
               <span>{errors.length} Rows Need Attention</span>
             </div>
