@@ -14,7 +14,6 @@ import {
   ChevronRight,
   BookOpen,
   X,
-  Send,
 } from "lucide-react";
 import { Data, RecordItem, Kind, used, download, uid, validate, inComp, compIdsOf, withComps } from "./model";
 import { WorkflowData, Course } from "./workflowModel";
@@ -397,7 +396,6 @@ export function CompetencyLibrary({
   commit,
   work,
   onSaveWork,
-  onAssign,
 }: {
   data: Data;
   query: string;
@@ -407,7 +405,6 @@ export function CompetencyLibrary({
   commit: (data: Data, message: string) => boolean;
   work?: WorkflowData;
   onSaveWork?: (work: WorkflowData, message: string) => boolean;
-  onAssign?: (competencyId: string, skills?: { skillId: string; expected: string }[]) => void;
 }) {
   const [view, setView] = useState<ViewState>({ kind: "list" });
   const [category, setCategory] = useState("");
@@ -569,15 +566,8 @@ export function CompetencyLibrary({
               },
               `Created "${competency.name}" with ${skills.length} ${skills.length === 1 ? "skill" : "skills"}`,
             )
-          ) {
+          )
             setCreating(false);
-            onAssign?.(
-              competency.id,
-              skills
-                .filter((s) => s.status === "Active")
-                .map((s) => ({ skillId: s.id, expected: "" })),
-            );
-          }
         }}
       />
     );
@@ -1221,18 +1211,6 @@ export function CompetencyLibrary({
                       </td>
                       <td>
                         <div className="cm-row-actions">
-                          {onAssign && (
-                            <button
-                              className="cm-button"
-                              style={{ padding: "5px 12px", fontSize: 13, minHeight: 30, gap: 5 }}
-                              aria-label={"Assign " + c.name}
-                              title="Create Assignment from this Competency"
-                              disabled={c.status !== "Active" || !data.skills.some((s) => inComp(s, c.id) && s.status === "Active")}
-                              onClick={() => onAssign(c.id)}
-                            >
-                              <Send size={14} /> Assign
-                            </button>
-                          )}
                           <button
                             className="cm-icon-button"
                             aria-label={"Edit " + c.name}

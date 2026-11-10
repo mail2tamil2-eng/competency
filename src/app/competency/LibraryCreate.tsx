@@ -575,7 +575,7 @@ export function LibraryCreate({
           </button>
         )}
         <button type="button" className="cm-button primary" onClick={handleFinalSave}>
-          {isEdit ? "Save Changes" : "Assign"}
+          {isEdit ? "Save Changes" : "Save"}
         </button>
       </div>
     </section>

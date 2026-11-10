@@ -17,7 +17,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Data, Assignment, key, readData, seed, uid, inComp } from "../competency/model";
+import { Data, Assignment, key, readData, seed, uid } from "../competency/model";
 import {
   CompetencyLibrary,
   LibraryIntent,
@@ -79,8 +79,6 @@ export function CompetencyManagementPage() {
   const [settingsSection, setSettingsSection] = useState<
     "categories" | "levels" | "skills"
   >("categories");
-  const [assignNonce, setAssignNonce] = useState(0);
-  const [assignSkills, setAssignSkills] = useState<{ skillId: string; expected: string }[]>([]);
   const commit = (next: Data, message: string) => {
     try {
       localStorage.setItem(key, JSON.stringify(next));
@@ -233,14 +231,6 @@ export function CompetencyManagementPage() {
             commit={commit}
             work={work}
             onSaveWork={(next, msg) => saveWorkflow(data, next, msg)}
-            onAssign={(compId, prebuilt) => {
-              const skills = prebuilt ?? data.skills
-                .filter((s) => inComp(s, compId) && s.status === "Active")
-                .map((s) => ({ skillId: s.id, expected: "" }));
-              setAssignSkills(skills);
-              setAssignNonce((n) => n + 1);
-              setTab("roles");
-            }}
           />
         )}
         {tab === "settings" && (
@@ -255,11 +245,9 @@ export function CompetencyManagementPage() {
 
         {tab === "roles" && (
           <RoleMapping
-            key={`roles-${assignNonce}`}
             data={data}
             work={work}
             save={saveWorkflow}
-            initialSkills={assignNonce > 0 ? assignSkills : undefined}
           />
         )}
         {tab === "learner" && (
