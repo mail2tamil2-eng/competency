@@ -12,7 +12,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "../components/ui/dialog";
-import { Popover, PopoverTrigger, PopoverContent } from "../components/ui/popover";
 
 type Section = "levels" | "skills";
 
@@ -107,37 +106,9 @@ function ConfirmDialog({
   );
 }
 
-/** Competency count with names; long lists collapse into "+N more". */
+/** Competency count shown as a number only. */
 function CompetencyCell({ comps }: { comps: RecordItem[] }) {
-  const shown = comps.slice(0, 2), extra = comps.length - shown.length;
-  if (!comps.length)
-    return (
-      <div className="cm-comp-cell">
-        <span className="cm-comp-count zero">0</span>
-        <small>Not linked</small>
-      </div>
-    );
-  return (
-    <div className="cm-comp-cell">
-      <span className="cm-comp-count">{comps.length}</span>
-      <div className="cm-comp-chips">
-        {shown.map((c) => <span key={c.id} className="cm-comp-chip" title={c.name}>{c.name}</span>)}
-        {extra > 0 && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <button type="button" className="cm-comp-more" aria-label={`Show all ${comps.length} competencies`}>+{extra} more</button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="cm-comp-popover">
-              <strong>{comps.length} Competencies</strong>
-              <ul>
-                {comps.map((c) => <li key={c.id}>{c.name}</li>)}
-              </ul>
-            </PopoverContent>
-          </Popover>
-        )}
-      </div>
-    </div>
-  );
+  return <span className={"cm-comp-count" + (comps.length ? "" : " zero")}>{comps.length}</span>;
 }
 
 export function LibrarySettings({
