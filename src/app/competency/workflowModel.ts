@@ -31,7 +31,8 @@ export type Plan = {
   role: string;
   location: string;
   employeeIds: string[];
-  skills: { skillId: string; expected: string }[];
+  /** competencyId: the competency the skill was picked under (a skill can be in several). */
+  skills: { skillId: string; expected: string; competencyId?: string }[];
   status: "Active" | "Inactive";
   assignedNames: string[];
   departments?: string[];

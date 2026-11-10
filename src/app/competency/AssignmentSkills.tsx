@@ -10,6 +10,12 @@ type Props = {
   readOnly?: boolean;
 };
 const PAGE_SIZE = 8;
+type Selection = Plan["skills"][number];
+
+/** The competency a selection belongs to; older plans fall back to the skill's first competency. */
+function ownerOf(data: Data, x: Selection): string {
+  return x.competencyId || compIdsOf(data.skills.find((s) => s.id === x.skillId))[0] || "";
+}
 
 export function AssignmentSkills({
   data,
@@ -21,14 +27,12 @@ export function AssignmentSkills({
   const [categoryId, setCategoryId] = useState("");
   const [onlySelected, setOnlySelected] = useState(false);
   const term = query.trim().toLowerCase();
-  const selectedCompIds = new Set(
-    selected.flatMap((x) => compIdsOf(data.skills.find((s) => s.id === x.skillId))),
-  );
+  const selectedCompIds = new Set(selected.map((x) => ownerOf(data, x)));
   const groups = data.competencies
     .filter(
       (c) =>
         (!categoryId || c.categoryId === categoryId) &&
-        (c.status === "Active" || selected.some((x) => inComp(data.skills.find((s) => s.id === x.skillId), c.id))),
+        (c.status === "Active" || selectedCompIds.has(c.id)),
     )
     .sort((a, b) => {
       const aSelected = selectedCompIds.has(a.id);
@@ -101,7 +105,7 @@ export function AssignmentSkills({
           const visible = all.filter(
             (s) =>
               (!(onlySelected || readOnly) ||
-                selected.some((x) => x.skillId === s.id)) &&
+                selected.some((x) => x.skillId === s.id && ownerOf(data, x) === c.id)) &&
               (!term ||
                 c.name.toLowerCase().includes(term) ||
                 s.name.toLowerCase().includes(term)),
@@ -112,6 +116,7 @@ export function AssignmentSkills({
             <SkillGroup
               key={c.id}
               competency={c}
+              data={data}
               skills={visible}
               all={all}
               total={all.length}
@@ -135,6 +140,7 @@ export function AssignmentSkills({
 
 function SkillGroup({
   competency,
+  data,
   skills,
   all,
   total,
@@ -146,6 +152,7 @@ function SkillGroup({
   readOnly,
 }: {
   competency: RecordItem;
+  data: Data;
   skills: RecordItem[];
   all: RecordItem[];
   total: number;
@@ -156,7 +163,11 @@ function SkillGroup({
   searching: boolean;
   readOnly: boolean;
 }) {
-  const [open, setOpen] = useState(() => all.some((s) => selected.some((x) => x.skillId === s.id)));
+  const cId = competency.id;
+  /* A skill counts as selected here only when it was picked under this competency. */
+  const mine = (x: Selection) => ownerOf(data, x) === cId;
+  const elsewhere = (skillId: string) => selected.find((x) => x.skillId === skillId && !mine(x));
+  const [open, setOpen] = useState(() => selected.some((x) => mine(x)));
   const [paging, setPaging] = useState({ key: filterKey, page: 0 });
   const page = Math.min(
     paging.key === filterKey ? paging.page : 0,
@@ -165,17 +176,18 @@ function SkillGroup({
   const rows = skills.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const ids = new Set(skills.map((s) => s.id));
   const allIds = new Set(all.map((s) => s.id));
-  const chosen = selected.filter((s) => ids.has(s.skillId));
-  const allChosen = selected.filter((s) => allIds.has(s.skillId));
-  const allChecked = allChosen.length > 0 && allChosen.length === all.length;
-  const allIndeterminate = allChosen.length > 0 && allChosen.length < all.length;
+  const chosen = selected.filter((s) => ids.has(s.skillId) && mine(s));
+  const allChosen = selected.filter((s) => allIds.has(s.skillId) && mine(s));
+  const available = all.filter((s) => !elsewhere(s.id));
+  const allChecked = allChosen.length > 0 && allChosen.length === available.length;
+  const allIndeterminate = allChosen.length > 0 && allChosen.length < available.length;
   const commonLevel =
     allChosen.length > 0 && allChosen.every((s) => s.expected && s.expected === allChosen[0].expected)
       ? allChosen[0].expected
       : "";
   const expanded = searching || open;
   const setLevel = (id: string, expected: string) =>
-    onChange(selected.map((s) => (s.skillId === id ? { ...s, expected } : s)));
+    onChange(selected.map((s) => (s.skillId === id && mine(s) ? { ...s, expected } : s)));
   return (
     <section
       className="cm-assignment-group"
@@ -188,17 +200,19 @@ function SkillGroup({
             className="cm-competency-checkbox"
             ref={(el) => { if (el) el.indeterminate = allIndeterminate; }}
             checked={allChecked}
+            disabled={!available.length}
             aria-label={`Select all skills in ${competency.name}`}
             onChange={(e) => {
               if (e.target.checked) {
+                // Add only this competency's skills that aren't already picked anywhere.
                 onChange([
-                  ...selected.filter((s) => !allIds.has(s.skillId)),
-                  ...all
+                  ...selected,
+                  ...available
                     .filter((s) => !selected.some((x) => x.skillId === s.id))
-                    .map((s) => ({ skillId: s.id, expected: "" })),
+                    .map((s) => ({ skillId: s.id, expected: "", competencyId: cId })),
                 ]);
               } else {
-                onChange(selected.filter((s) => !allIds.has(s.skillId)));
+                onChange(selected.filter((s) => !(allIds.has(s.skillId) && mine(s))));
               }
             }}
           />
@@ -240,7 +254,7 @@ function SkillGroup({
                 if (!e.target.value) return;
                 onChange(
                   selected.map((s) =>
-                    allIds.has(s.skillId) ? { ...s, expected: e.target.value } : s,
+                    allIds.has(s.skillId) && mine(s) ? { ...s, expected: e.target.value } : s,
                   ),
                 );
               }}
@@ -270,7 +284,9 @@ function SkillGroup({
             </p>
           )}
           {rows.map((s) => {
-            const selection = selected.find((x) => x.skillId === s.id);
+            const selection = selected.find((x) => x.skillId === s.id && mine(x));
+            const other = elsewhere(s.id);
+            const otherName = other ? data.competencies.find((c) => c.id === ownerOf(data, other))?.name : "";
             return (
               <div
                 className={`cm-assignment-skill ${selection ? "is-selected" : ""}`}
@@ -284,15 +300,17 @@ function SkillGroup({
                       type="checkbox"
                       aria-label={s.name}
                       checked={!!selection}
+                      disabled={!!other}
                       onChange={(e) =>
                         onChange(
                           e.target.checked
-                            ? [...selected, { skillId: s.id, expected: "" }]
-                            : selected.filter((x) => x.skillId !== s.id),
+                            ? [...selected, { skillId: s.id, expected: "", competencyId: cId }]
+                            : selected.filter((x) => !(x.skillId === s.id && mine(x))),
                         )
                       }
                     />
                     <strong>{s.name}</strong>
+                    {other && <small className="cm-selected-elsewhere">Selected under {otherName}</small>}
                   </label>
                 )}
                 {readOnly ? (
@@ -306,10 +324,11 @@ function SkillGroup({
                       aria-label={`Expected level for ${s.name}`}
                       disabled={!selection}
                       value={selection?.expected || ""}
+                      title={other ? `Set the level under ${otherName}` : undefined}
                       onChange={(e) => setLevel(s.id, e.target.value)}
                     >
                       <option value="">
-                        {selection ? "Choose Level" : "Select Skill First"}
+                        {selection ? "Choose Level" : other ? "Selected Elsewhere" : "Select Skill First"}
                       </option>
                       {levels.map((l) => (
                         <option key={l.id} value={l.id}>
