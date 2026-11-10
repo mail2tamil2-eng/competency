@@ -94,8 +94,8 @@ function DetailView({
   const learnerEmp = learnerRow ? employeeFor(work, learnerRow) : undefined;
   const learnerMgr = work.employees.find((e) => e.id === learnerEmp?.managerId);
   const headers = isLearner
-    ? ["Competency", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Assigned", "Completed", "Proof"]
-    : ["Name", "Email", "Role", "Dept", "Reporting Manager", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Assigned", "Completed", "Proof"];
+    ? ["Competency", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Dates", "Proof"]
+    : ["Name", "Email", "Role", "Dept", "Reporting Manager", "Skill", "Current Level", "Expected Level", "Gap", "Courses", "Status", "Dates", "Proof"];
   const filterLabel = ctx.filter === "gap" ? "with skill gap" : ctx.filter === "completed" ? "completed" : "all";
 
   function getCourseRows(a: Assignment) {
@@ -180,8 +180,8 @@ function DetailView({
         <ManagerPageSize value={size} onChange={(v) => { setSize(v); setPage(0); }} />
         <p className="cm-manager-caption">{total} records</p>
       </div>
-      <div className="cm-table-wrap" tabIndex={0} role="region" aria-label="Detail View Table">
-        <table className="cm-manager-table">
+      <div className="cm-table-wrap cm-detail-wrap" tabIndex={0} role="region" aria-label="Detail View Table">
+        <table className={"cm-manager-table cm-detail-table" + (isLearner ? " is-learner" : "")}>
           <thead>
             <tr>
               {headers.map((h) => (
@@ -201,7 +201,7 @@ function DetailView({
                   {!isLearner && (
                     <>
                       <td><strong>{a.name}</strong></td>
-                      <td>{emp?.email || "—"}</td>
+                      <td className="cm-cell-email">{emp?.email || "—"}</td>
                       <td>{emp?.role || "—"}</td>
                       <td>{a.department || "—"}</td>
                       <td>{mgr?.name || "—"}</td>
@@ -220,8 +220,10 @@ function DetailView({
                     ) : <span>—</span>}
                   </td>
                   <td><StatusBadge status={progress(data, a)} /></td>
-                  <td>{a.assignedDate?.slice(0, 10) || "—"}</td>
-                  <td>{a.completedDate?.slice(0, 10) || "—"}</td>
+                  <td className="cm-cell-dates">
+                    <span><small>Assigned</small>{a.assignedDate?.slice(0, 10) || "—"}</span>
+                    <span><small>Completed</small>{a.completedDate?.slice(0, 10) || "—"}</span>
+                  </td>
                   <td><StatusBadge status={proofStatus(work, a.id)} /></td>
                 </tr>
               );

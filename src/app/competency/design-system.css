@@ -2004,3 +2004,19 @@
 .cm-report-profile div { display: flex; flex-direction: column; gap: 2px; }
 .cm-report-profile dt { font-size: 14px; color: #526176; }
 .cm-report-profile dd { margin: 0; font-size: 15px; font-weight: 600; color: #1f2937; }
+
+/* ── Report Detail View: fit the card width, no sideways scrolling ──
+   Selectors include both table classes to beat the nowrap rules in platform-theme.css. */
+.cm .cm-table-wrap.cm-detail-wrap { overflow-x: visible; }
+.cm .cm-manager-table.cm-detail-table { min-width: 0; width: 100%; table-layout: auto; }
+.cm .cm-manager-table.cm-detail-table th,
+.cm .cm-manager-table.cm-detail-table td,
+.cm .cm-manager-table.cm-detail-table td * { white-space: normal; }
+.cm .cm-manager-table.cm-detail-table th,
+.cm .cm-manager-table.cm-detail-table td { padding: 10px 6px; vertical-align: middle; }
+.cm .cm-manager-table.cm-detail-table td { overflow-wrap: normal; word-break: normal; }
+.cm .cm-manager-table.cm-detail-table td.cm-cell-email { overflow-wrap: anywhere; min-width: 110px; }
+.cm .cm-manager-table.cm-detail-table td .cm-manager-status { line-height: 1.3; }
+.cm .cm-manager-table.cm-detail-table td.cm-cell-dates span { display: block; white-space: nowrap; }
+.cm .cm-manager-table.cm-detail-table td.cm-cell-dates small { display: block; margin: 0; color: #526176; font-size: 13px; }
+.cm .cm-manager-table.cm-detail-table td.cm-cell-dates span + span { margin-top: 4px; }
