@@ -2139,3 +2139,30 @@
 .cm .cm-assignment-group-toggle > span:not(.cm-mini-icon) { flex: 1; min-width: 0; }
 /* No line between the User Level Update filters and its table */
 .cm .cm-toolbar.cm-lp-toolbar { border-bottom: 0; }
+
+/* ── Shared multi-select with checkboxes (skills, competencies) ── */
+.cm-mcd { position: relative; }
+.cm .cm-mcd-trigger { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #dfe2ed; border-radius: 7px; background: #fff; color: #424b61; font: inherit; font-size: 15px; text-align: left; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.cm .cm-mcd-trigger.open, .cm .cm-mcd-trigger:focus-visible { border-color: #2d74fa; box-shadow: 0 0 0 3px #2d74fa20; outline: none; }
+.cm-mcd-placeholder { color: #8a94a6; }
+.cm-mcd-caret { color: #8a94a6; flex-shrink: 0; transition: transform .2s; }
+.cm-mcd-caret.open { transform: rotate(180deg); }
+.cm-mcd-panel { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200; background: #f8fafc; border: 1px solid #e8edf4; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.10); overflow: hidden; }
+.cm-mcd-search { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #e8edf4; background: #fff; color: #526176; }
+.cm .cm-mcd-search input { border: 0; outline: none; box-shadow: none; padding: 0; min-height: 0; width: 100%; background: transparent; font: inherit; font-size: 14px; color: #424b61; }
+.cm-mcd-options { max-height: 240px; overflow-y: auto; background: #fff; }
+.cm-mcd-empty { padding: 12px 14px; font-size: 14px; color: #8a94a6; }
+.cm .cm-mcd-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #f0f2f7; cursor: pointer; font-weight: 400; }
+.cm .cm-mcd-option.checked { background: #eef3fb; }
+.cm .cm-mcd-option input { width: 15px; height: 15px; margin-top: 3px; flex-shrink: 0; accent-color: #2463d6; cursor: pointer; }
+.cm-mcd-option > span { display: grid; gap: 2px; min-width: 0; }
+.cm-mcd-option strong { font-size: 14px; font-weight: 600; color: #263047; }
+.cm-mcd-option small { font-size: 14px; color: #526176; }
+.cm-mcd-option .cm-also-in { font-style: normal; justify-self: start; }
+.cm-mcd-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 1px solid #e8edf4; background: #f8fafc; font-size: 14px; color: #526176; }
+.cm-mcd-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.cm-mcd-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid #c7d8f7; border-radius: 6px; background: #eef3fb; color: #1a56db; font-size: 14px; font-weight: 600; }
+.cm .cm-mcd-chip button { display: flex; padding: 0; border: 0; background: none; color: #4b7bec; cursor: pointer; line-height: 1; min-height: 0; }
+.cm .cm-assignment-comp-select { align-items: flex-start; }
+.cm .cm-assignment-comp-select > span { padding-top: 11px; }
+.cm .cm-assignment-comp-select .cm-mcd { flex: 1; min-width: 0; max-width: 560px; }

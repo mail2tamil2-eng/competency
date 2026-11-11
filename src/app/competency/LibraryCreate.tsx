@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronDown, X, BookOpen, Search, ArrowLeft } from "lucide-react";
 import { Data, RecordItem, uid, validate, compIdsOf, withComps, skillLevels } from "./model";
 import { WorkflowData } from "./workflowModel";
+import { MultiCheckDropdown } from "./MultiCheckDropdown";
 
 export function LibraryCreate({
   data,
@@ -27,8 +28,6 @@ export function LibraryCreate({
     initial ? initial.skills.map((s) => s.id) : [],
   );
   const [errors, setErrors] = useState<string[]>([]);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [skillSearch, setSkillSearch] = useState("");
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
   const [mandatoryMap, setMandatoryMap] = useState<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {};
@@ -43,19 +42,6 @@ export function LibraryCreate({
   const errorRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLElement>(null);
   const competencyNameRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    searchRef.current?.focus();
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
-        setDropdownOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [dropdownOpen]);
 
   useEffect(() => {
     competencyNameRef.current?.focus({ preventScroll: true });
@@ -68,9 +54,6 @@ export function LibraryCreate({
 
   const availableSkills = data.skills.filter((s) => s.status === "Active");
 
-  const filteredSkills = availableSkills.filter(
-    (s) => !skillSearch || s.name.toLowerCase().includes(skillSearch.toLowerCase()),
-  );
 
   const clean = {
     ...competency,
@@ -214,184 +197,18 @@ export function LibraryCreate({
           </div>
         ) : (
           <>
-            {/* ── Skill picker trigger ── */}
-            <div ref={dropdownRef} style={{ position: "relative" }}>
-              <div
-                role="combobox"
-                aria-expanded={dropdownOpen}
-                aria-haspopup="listbox"
-                onClick={() => setDropdownOpen((o) => !o)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  minHeight: 38,
-                  padding: "10px 12px",
-                  border: dropdownOpen ? "1px solid #2d74fa" : "1px solid #dfe2ed",
-                  borderRadius: 7,
-                  background: "#fff",
-                  cursor: "pointer",
-                  boxShadow: dropdownOpen ? "0 0 0 3px #2d74fa20" : "none",
-                  transition: "border-color 0.15s, box-shadow 0.15s",
-                  color: "#424b61",
-                  fontSize: 14,
-                  fontFamily: "inherit",
-                  userSelect: "none",
-                }}
-              >
-                <span style={{ color: selectedSkillIds.length === 0 ? "#9ca3af" : "#424b61" }}>
-                  {selectedSkillIds.length === 0
-                    ? "Select skills…"
-                    : selectedSkillIds.length === 1
-                      ? (data.skills.find((s) => s.id === selectedSkillIds[0])?.name ?? "1 skill selected")
-                      : `${selectedSkillIds.length} skills selected`}
-                </span>
-                <ChevronDown
-                  size={16}
-                  style={{
-                    color: "#9ca3af",
-                    flexShrink: 0,
-                    transform: dropdownOpen ? "rotate(180deg)" : "none",
-                    transition: "transform 0.2s",
-                  }}
-                />
-              </div>
-
-              {/* ── Dropdown panel ── */}
-              {dropdownOpen && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 4px)",
-                    left: 0,
-                    right: 0,
-                    background: "#f8fafc",
-                    border: "1px solid #e8edf4",
-                    borderRadius: 10,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
-                    zIndex: 200,
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* Search */}
-                  <div style={{ padding: "10px 12px", borderBottom: "1px solid #e8edf4", display: "flex", alignItems: "center", gap: 8, background: "#fff" }}>
-                    <Search size={14} style={{ color: "#526176", flexShrink: 0 }} />
-                    <input
-                      ref={searchRef}
-                      type="text"
-                      placeholder="Search skills…"
-                      value={skillSearch}
-                      onChange={(e) => setSkillSearch(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        border: "none",
-                        outline: "none",
-                        fontSize: 14,
-                        width: "100%",
-                        background: "transparent",
-                        color: "#424b61",
-                        fontFamily: "inherit",
-                      }}
-                    />
-                  </div>
-
-                  {/* Options */}
-                  <div style={{ maxHeight: 220, overflowY: "auto", background: "#fff" }}>
-                    {filteredSkills.length === 0 ? (
-                      <div style={{ padding: "12px 14px", fontSize: 14, color: "#9ca3af" }}>No skills match your search.</div>
-                    ) : filteredSkills.map((s) => {
-                      const isSelected = selectedSkillIds.includes(s.id);
-                      return (
-                        <label
-                          key={s.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 10,
-                            padding: "10px 14px",
-                            cursor: "pointer",
-                            background: isSelected ? "#eef3fb" : "transparent",
-                            borderBottom: "1px solid #f0f2f7",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleSkill(s.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{ marginTop: 3, accentColor: "#2463d6", width: 15, height: 15, flexShrink: 0, cursor: "pointer" }}
-                          />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: "#263047", display: "block" }}>{s.name}</span>
-                            {s.description && (
-                              <span style={{ fontSize: 14, color: "#526176", display: "block", marginTop: 2 }}>{s.description}</span>
-                            )}
-                            {(() => {
-                              const others = compIdsOf(s).filter((id) => id !== competency.id)
-                                .map((id) => data.competencies.find((c) => c.id === id)?.name).filter(Boolean);
-                              return others.length ? (
-                                <span className="cm-also-in">Also in: {others.join(", ")}</span>
-                              ) : null;
-                            })()}
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-
-                  {/* Footer */}
-                  <div style={{ padding: "10px 14px", borderTop: "1px solid #e8edf4", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc" }}>
-                    <span style={{ fontSize: 13, color: "#526176" }}>
-                      {selectedSkillIds.length} selected
-                    </span>
-                    <button
-                      type="button"
-                      className="cm-button primary"
-                      onClick={() => { setDropdownOpen(false); setSkillSearch(""); }}
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* ── Selected chips ── */}
-            {selectedSkillIds.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-                {selectedSkillIds.map((id) => {
-                  const s = data.skills.find((sk) => sk.id === id);
-                  return s ? (
-                    <span
-                      key={id}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 5,
-                        background: "#eef3fb",
-                        color: "#1a56db",
-                        border: "1px solid #c7d8f7",
-                        borderRadius: 6,
-                        padding: "3px 10px",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      {s.name}
-                      <button
-                        type="button"
-                        onClick={() => toggleSkill(id)}
-                        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#4b7bec", lineHeight: 1, display: "flex" }}
-                        aria-label={`Remove ${s.name}`}
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ) : null;
-                })}
-              </div>
-            )}
+            <MultiCheckDropdown
+              ariaLabel="Select skills"
+              placeholder="Select skills…"
+              noun="skill"
+              items={availableSkills.map((sk) => {
+                const others = compIdsOf(sk).filter((id) => id !== competency.id)
+                  .map((id) => data.competencies.find((c) => c.id === id)?.name).filter(Boolean);
+                return { id: sk.id, label: sk.name, description: sk.description || undefined, note: others.length ? `Also in: ${others.join(", ")}` : undefined };
+              })}
+              selectedIds={selectedSkillIds}
+              onToggle={toggleSkill}
+            />
 
             {/* ── Selected skill detail cards ── */}
             {selectedSkillIds.length > 0 && (

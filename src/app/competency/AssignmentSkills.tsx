@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Layers, X } from "lucide-react";
 import { DisclosureIcon } from "./Disclosure";
+import { MultiCheckDropdown } from "./MultiCheckDropdown";
 import { Data, RecordItem, compIdsOf, inComp, skillLevels } from "./model";
 import { Plan, Course } from "./workflowModel";
 
@@ -35,7 +36,6 @@ export function AssignmentSkills({
     .map((id) => data.competencies.find((c) => c.id === id))
     .filter((c): c is RecordItem => !!c);
   const skillsOf = (cId: string) => data.skills.filter((s) => inComp(s, cId) && s.status === "Active");
-  const options = data.competencies.filter((c) => c.status === "Active" && !shownIds.includes(c.id));
   function removeCompetency(id: string) {
     setAdded((a) => a.filter((x) => x !== id));
     onChange(selected.filter((x) => ownerOf(data, x) !== id));
@@ -49,26 +49,27 @@ export function AssignmentSkills({
       <p className="cm-assignment-help">
         {readOnly
           ? "Check the expected level for each skill under its competency."
-          : "Choose a competency, select its skills, then set the expected level for each skill."}
+          : "Choose competencies, select their skills, then set the expected level for each skill."}
       </p>
       {!readOnly && (
         <div className="cm-assignment-search">
-          <label className="cm-assignment-comp-select">
-            <span>Competency</span>
-            <select
-              aria-label="Add a competency"
-              value=""
-              disabled={!options.length}
-              onChange={(e) => { const id = e.target.value; if (id) setAdded((a) => [...a, id]); }}
-            >
-              <option value="">{options.length ? "Select a competency…" : "All competencies added"}</option>
-              {options.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({skillsOf(c.id).length} skill{skillsOf(c.id).length === 1 ? "" : "s"})
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="cm-assignment-comp-select">
+            <span>Competencies</span>
+            <MultiCheckDropdown
+              ariaLabel="Select competencies"
+              placeholder="Select competencies…"
+              noun="competency"
+              nounPlural="competencies"
+              items={data.competencies
+                .filter((c) => c.status === "Active" || shownIds.includes(c.id))
+                .map((c) => {
+                  const n = skillsOf(c.id).length;
+                  return { id: c.id, label: c.name, description: `${n} skill${n === 1 ? "" : "s"}` };
+                })}
+              selectedIds={shownIds}
+              onToggle={(id) => (shownIds.includes(id) ? removeCompetency(id) : setAdded((a) => [...a, id]))}
+            />
+          </div>
         </div>
       )}
       <div className="cm-assignment-count" role="status">
@@ -115,7 +116,7 @@ export function AssignmentSkills({
             <Layers size={22} />
             <p>
               <strong>No competency chosen yet</strong>
-              <span>Choose a competency above to see its skills.</span>
+              <span>Choose one or more competencies above to see their skills.</span>
             </p>
           </div>
         )}
