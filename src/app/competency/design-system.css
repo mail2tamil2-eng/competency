@@ -2137,3 +2137,5 @@
 .cm .cm-assignment-group-toggle > span:nth-child(2) { flex: 0 0 auto; }
 .cm .cm-assignment-group-toggle > .cm-mini-icon { flex: 0 0 auto; }
 .cm .cm-assignment-group-toggle > span:not(.cm-mini-icon) { flex: 1; min-width: 0; }
+/* No line between the User Level Update filters and its table */
+.cm .cm-toolbar.cm-lp-toolbar { border-bottom: 0; }
