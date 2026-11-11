@@ -19,8 +19,6 @@ import {
   Layers,
   AlertTriangle,
   Target,
-  ChevronDown,
-  ChevronUp,
   ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -978,8 +976,10 @@ export function Learning({
         </p>
       )}
 
-      {/* View toggle — learner only */}
-      {!manager && assignments.length > 0 && (
+      {/* View toggle (learner) and Expand All share one row so no empty gap is left. */}
+      {assignments.length > 0 && (!manager || assignments.length > 1) && (
+      <div className="cm-skill-toolbar">
+      {!manager && (
         <div className="cm-view-toggle" role="group" aria-label="View Mode">
           <button
             className={skillView === "skill" ? "active" : ""}
@@ -1001,14 +1001,16 @@ export function Learning({
         <div className="cm-skill-expand-bar">
           <button
             type="button"
-            className="cm-button cm-button-sm"
+            className="cm-button"
             onClick={() =>
               setCollapsedSkills(collapsedSkills.size ? new Set() : new Set(assignments.map((a) => a.id)))
             }
           >
-            {collapsedSkills.size ? <><ChevronDown size={15} /> Expand All</> : <><ChevronUp size={15} /> Collapse All</>}
+            {collapsedSkills.size ? "Expand All" : "Collapse All"}
           </button>
         </div>
+      )}
+      </div>
       )}
 
 
