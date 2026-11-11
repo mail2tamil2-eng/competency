@@ -37,16 +37,16 @@ export function libraryRows(data: Data, competencies: RecordItem[]) {
   });
 }
 export function prepareLibraryImport(text: string, data: Data): LibraryImport {
-  const parsed = parseCSV(text),
-    headers = libraryHeaders(data);
+  const parsed = parseCSV(text);
   if (parsed.length < 2)
     throw Error("Add at least one row below the column headings.");
   if (parsed.length > 1001) throw Error("Upload up to 1,000 rows at a time.");
   const columns = parsed[0].map((h) => h.toLowerCase());
   if (new Set(columns).size !== columns.length)
     throw Error("Remove duplicate column headings.");
-  const missing = headers.filter((h) => !columns.includes(h.toLowerCase()));
-  if (missing.length) throw Error("Missing columns: " + missing.join(", "));
+  // Only Competency is required; missing optional columns are read as blank.
+  if (!columns.includes("competency"))
+    throw Error("Add a Competency column. Download the template to get the right format.");
   const competencies: RecordItem[] = [],
     skills: RecordItem[] = [],
     rows: LibraryImportRow[] = [];

@@ -51,8 +51,9 @@ export function prepareSkillImport(text: string, data: Data, courses: Course[]):
   if (parsed.length > 5001) throw Error("Upload up to 5,000 rows at a time.");
   const columns = parsed[0].map((h) => h.trim().toLowerCase());
   if (new Set(columns).size !== columns.length) throw Error("Remove duplicate column headings.");
-  const missing = skillHeaders.filter((h) => !columns.includes(h.toLowerCase()));
-  if (missing.length) throw Error("Missing columns: " + missing.join(", ") + ". Download the template to get the right format.");
+  // Only required columns must be present; missing optional columns are read as blank.
+  if (!columns.includes("skill name"))
+    throw Error("Add a Skill Name column. Download the template to get the right format.");
 
   const levels = activeLevels(data);
   const existing = new Set(data.skills.map((s) => s.name.trim().toLowerCase()));
