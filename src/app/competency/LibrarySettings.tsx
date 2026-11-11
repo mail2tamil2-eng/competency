@@ -198,11 +198,15 @@ export function LibrarySettings({
             work={work}
             onSaveWork={onSaveWork}
             onCancel={() => setSkillView("list")}
-            onSave={(saved) => {
+            onSave={(saved, nextWork) => {
               const isNew = !data.skills.some((s) => s.id === saved.id);
               if (
                 commit(
-                  { ...data, skills: isNew ? [...data.skills, saved] : data.skills.map((s) => (s.id === saved.id ? saved : s)) },
+                  {
+                    ...data,
+                    skills: isNew ? [...data.skills, saved] : data.skills.map((s) => (s.id === saved.id ? saved : s)),
+                    ...(nextWork ? { workflow: nextWork } : {}),
+                  },
                   isNew ? `Skill "${saved.name}" created` : `Skill "${saved.name}" saved`,
                 )
               )

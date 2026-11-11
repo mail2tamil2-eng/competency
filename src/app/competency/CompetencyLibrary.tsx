@@ -49,7 +49,8 @@ export function SkillInlineEdit({
 }: {
   skill: RecordItem;
   data: Data;
-  onSave: (item: RecordItem) => void;
+  /** nextWork carries updated course mappings so the caller saves skill and courses in one commit. */
+  onSave: (item: RecordItem, nextWork?: WorkflowData) => void;
   onCancel: () => void;
   work?: WorkflowData;
   onSaveWork?: (work: WorkflowData, msg: string) => boolean;
@@ -122,7 +123,8 @@ export function SkillInlineEdit({
     );
     if (errs.length) { setErrors(errs); return; }
     const saved = { ...draft, name: draft.name.trim(), description: draft.description.trim() };
-    if (onSaveWork && work) {
+    let nextWork: WorkflowData | undefined;
+    if (work) {
       const updatedCourses = work.courses.map((course) => {
         const others = course.mappings.filter((m) => m.skillId !== saved.id);
         const newMaps: { skillId: string; levelId: string; mandatory?: boolean }[] = [];
@@ -134,9 +136,10 @@ export function SkillInlineEdit({
         return JSON.stringify(combined) !== JSON.stringify(course.mappings) ? { ...course, mappings: combined } : course;
       });
       if (updatedCourses.some((c, i) => c !== work.courses[i]))
-        onSaveWork({ ...work, courses: updatedCourses }, `Updated course mappings for "${saved.name}"`);
+        nextWork = { ...work, courses: updatedCourses };
     }
-    onSave(saved);
+    // Saving the skill and its course mappings separately let the second save overwrite the first.
+    onSave(saved, nextWork);
   }
 
   // Picker dialog — early return
@@ -501,11 +504,11 @@ export function CompetencyLibrary({
       setLevelPicker(null);
   }
 
-  function saveSkill(item: RecordItem) {
+  function saveSkill(item: RecordItem, nextWork?: WorkflowData) {
     const list = data.skills;
     if (
       commit(
-        { ...data, skills: list.map((x) => (x.id === item.id ? item : x)) },
+        { ...data, skills: list.map((x) => (x.id === item.id ? item : x)), ...(nextWork ? { workflow: nextWork } : {}) },
         "Skill saved",
       )
     )
@@ -940,8 +943,8 @@ export function CompetencyLibrary({
             data={data}
             work={work}
             onSaveWork={onSaveWork}
-            onSave={(item) => {
-              if (commit({ ...data, skills: [...data.skills, item] }, `Added skill "${item.name}"`))
+            onSave={(item, nextWork) => {
+              if (commit({ ...data, skills: [...data.skills, item], ...(nextWork ? { workflow: nextWork } : {}) }, `Added skill "${item.name}"`))
                 setEditingSkill(null);
             }}
             onCancel={() => setEditingSkill(null)}
