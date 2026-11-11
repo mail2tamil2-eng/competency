@@ -2077,3 +2077,17 @@
 .cm-levels-cell small { display: block; font-size: 14px; color: #526176; margin-top: 2px; }
 .cm-level-chip.top { box-shadow: 0 0 0 2px #2463d6 inset; }
 .cm-level-picker-hint { margin: -6px 0 12px; font-size: 14px; color: #526176; }
+
+/* ── Skill form: course mapping per level ── */
+.cm-courses-empty { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px dashed #c6d2e3; border-radius: 10px; background: #fff; }
+.cm-courses-empty > svg { flex-shrink: 0; color: #2463d6; }
+.cm-courses-empty p { flex: 1; min-width: 0; margin: 0; display: grid; gap: 2px; }
+.cm-courses-empty p strong { font-size: 15px; color: #1f2937; }
+.cm-courses-empty p span { font-size: 14px; color: #526176; }
+.cm-courses-empty .cm-button { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; }
+.cm-courses-empty.is-required { border-color: #f1a7a7; background: #fff7f7; }
+.cm-courses-empty.is-required > svg { color: #b91c1c; }
+.cm .cm-add-courses-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; width: auto; align-self: flex-start; justify-self: start; }
+@media (max-width: 640px) { .cm .cm-add-courses-btn { width: 100%; justify-content: center; } }
+.cm-level-courses-hd .req { color: #c2410c; }
+@media (max-width: 640px) { .cm-courses-empty { flex-wrap: wrap; } .cm-courses-empty .cm-button { width: 100%; justify-content: center; } }

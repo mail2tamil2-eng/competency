@@ -308,34 +308,42 @@ export function SkillInlineEdit({
                         </label>
                         <div className="cm-level-courses">
                           <div className="cm-level-courses-hd">
-                            <span>Mapped Courses ({mapped.length})</span>
-                            <button type="button" className="cm-map-courses-btn" onClick={() => openPicker(l.id)}>
-                              <Plus size={11} /> Map Courses
-                            </button>
+                            <span>Mapped Courses ({mapped.length}){requireCourse && <span className="req"> *</span>}</span>
                           </div>
                           {mapped.length === 0 ? (
-                            <p className="cm-level-no-courses">No courses mapped.</p>
-                          ) : (() => {
-                            return (
-                              <>
-                                <div className="cm-course-list">
-                                  {mapped.map((c) => {
-                                    const w = levelRequirements[l.id]?.[c.id];
-                                    return (
-                                      <div key={c.id} className="cm-course-row">
-                                        <span className="cm-course-row-name">{c.name}</span>
-                                        {showMandatory && <label className="cm-course-mandatory"><input type="checkbox" checked={w ?? false} aria-label={`Mandatory for ${c.name}`} onChange={(e) => setLevelRequirements((prev) => ({ ...prev, [l.id]: { ...prev[l.id], [c.id]: e.target.checked } }))} /><span>Mandatory</span></label>}
-                                        <button type="button" aria-label={`Remove ${c.name}`} className="cm-course-row-remove"
-                                          onClick={() => setLevelMappings((prev) => ({ ...prev, [l.id]: (prev[l.id] ?? []).filter((id) => id !== c.id) }))}>
-                                          <X size={12} />
-                                        </button>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </>
-                            );
-                          })()}
+                            /* Empty state: the action sits where the eye lands, not in a corner */
+                            <div className={"cm-courses-empty" + (requireCourse && triedSave ? " is-required" : "")}>
+                              <BookOpen size={20} />
+                              <p>
+                                <strong>No courses mapped yet</strong>
+                                <span>{requireCourse ? `Add at least one course learners take to reach ${l.name}.` : `Add courses learners take to reach ${l.name}.`}</span>
+                              </p>
+                              <button type="button" className="cm-button primary cm-button-sm" onClick={() => openPicker(l.id)}>
+                                <Plus size={15} /> Map Courses
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="cm-course-list">
+                                {mapped.map((c) => {
+                                  const w = levelRequirements[l.id]?.[c.id];
+                                  return (
+                                    <div key={c.id} className="cm-course-row">
+                                      <span className="cm-course-row-name">{c.name}</span>
+                                      {showMandatory && <label className="cm-course-mandatory"><input type="checkbox" checked={w ?? false} aria-label={`Mandatory for ${c.name}`} onChange={(e) => setLevelRequirements((prev) => ({ ...prev, [l.id]: { ...prev[l.id], [c.id]: e.target.checked } }))} /><span>Mandatory</span></label>}
+                                      <button type="button" aria-label={`Remove ${c.name}`} className="cm-course-row-remove"
+                                        onClick={() => setLevelMappings((prev) => ({ ...prev, [l.id]: (prev[l.id] ?? []).filter((id) => id !== c.id) }))}>
+                                        <X size={12} />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <button type="button" className="cm-button cm-button-sm cm-add-courses-btn" onClick={() => openPicker(l.id)}>
+                                <Plus size={15} /> Add Courses
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     )}
