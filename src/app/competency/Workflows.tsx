@@ -20,6 +20,7 @@ import {
   Target,
   ChevronDown,
   ChevronUp,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Data, uid, progress, contentMissing, download, compIdsOf, inComp, compNames } from "./model";
@@ -538,7 +539,7 @@ export function RoleMapping({
     <section className="cm-inline-form cm-role-form" ref={formRef}>
       <div className="cm-inline-form-head">
         <button type="button" className="cm-text-button cm-inline-back" onClick={() => setDraft(null)}>
-          ← Assignments
+          <ArrowLeft size={15} /> Back to Assignments
         </button>
         <div className="cm-role-form-heading-row">
           <div>
@@ -569,11 +570,11 @@ export function RoleMapping({
         <button className="cm-button" onClick={() => setDraft(null)}>Cancel</button>
         {wizardStep === 1 ? (
           <button className="cm-button primary" onClick={() => { if (validateStep1()) setWizardStep(2); }}>
-            Next: Audience &amp; Schedule →
+            Next: Audience &amp; Schedule
           </button>
         ) : (
           <>
-            <button className="cm-button" onClick={() => { setError(""); setWizardStep(1); }}>← Back</button>
+            <button className="cm-button" onClick={() => { setError(""); setWizardStep(1); }}>Back</button>
             <button className="cm-button primary" onClick={assign}>Save &amp; Assign</button>
           </>
         )}

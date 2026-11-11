@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, X, BookOpen, Search } from "lucide-react";
+import { ChevronDown, X, BookOpen, Search, ArrowLeft } from "lucide-react";
 import { Data, RecordItem, uid, validate, compIdsOf, withComps, skillLevels } from "./model";
 import { WorkflowData } from "./workflowModel";
 
@@ -165,7 +165,7 @@ export function LibraryCreate({
     <section ref={formRef} className="cm-inline-form cm-create-inline">
       <div className="cm-inline-form-head">
         <button type="button" className="cm-text-button cm-inline-back" onClick={handleClose}>
-          ← Competency Framework
+          <ArrowLeft size={15} /> Back to Competency Framework
         </button>
         <h2>{isEdit ? "Edit Competency & Skills" : "Create Competency & Skills"}</h2>
       </div>

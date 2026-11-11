@@ -2126,3 +2126,4 @@
 .cm-assignment-empty span { font-size: 14px; color: #526176; }
 .cm-assignment-group-header { position: relative; }
 .cm-remove-competency { flex-shrink: 0; }
+.cm .cm-inline-back { display: inline-flex; align-items: center; gap: 6px; }
