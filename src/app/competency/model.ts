@@ -182,9 +182,13 @@ export function withComps(s: RecordItem, ids: string[]): RecordItem {
 }
 /** Active proficiency levels that apply to a skill, in level order. */
 export function skillLevels(data: Data, s?: RecordItem | null): RecordItem[] {
-  return data.levels
-    .filter((l) => l.status === "Active" && (!s?.levelIds || s.levelIds.includes(l.id)))
+  const active = data.levels
+    .filter((l) => l.status === "Active")
     .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  if (!s?.levelIds) return active;
+  // Levels run in order from the first level up to the highest one the skill uses.
+  const top = Math.max(0, ...active.map((l, i) => (s.levelIds!.includes(l.id) ? i : -1)));
+  return active.slice(0, top + 1);
 }
 /** "Communication, Customer Focus" for display. */
 export function compNames(data: Data, s?: RecordItem | null): string {

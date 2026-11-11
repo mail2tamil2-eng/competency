@@ -116,8 +116,11 @@ export function prepareSkillImport(text: string, data: Data, courses: Course[]):
 
   // A skill uploaded with rows for only some levels uses just those levels.
   for (const g of bySkill.values())
-    if (g.levelIds.size && g.levelIds.size < levels.length)
-      g.skill.levelIds = levels.filter((l) => g.levelIds.has(l.id)).map((l) => l.id);
+    if (g.levelIds.size) {
+      // Levels run in order up to the highest level provided.
+      const top = Math.max(...levels.map((l, i) => (g.levelIds.has(l.id) ? i : -1)));
+      if (top < levels.length - 1) g.skill.levelIds = levels.slice(0, top + 1).map((l) => l.id);
+    }
   for (const r of rows) r.errors = [...new Set(r.errors)];
 
   return { rows, skills: [...bySkill.values()].map((g) => g.skill), mappings };

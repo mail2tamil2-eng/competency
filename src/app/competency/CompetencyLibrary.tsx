@@ -65,12 +65,14 @@ export function SkillInlineEdit({
   const [errors, setErrors] = useState<string[]>([]);
   const [triedSave, setTriedSave] = useState(false);
   const allLevels = data.levels.filter((l) => l.status === "Active").sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
-  // Levels this skill uses (all by default); only these are shown and validated.
-  const selectedLevelIds = draft.levelIds ?? allLevels.map((l) => l.id);
-  const levels = allLevels.filter((l) => selectedLevelIds.includes(l.id));
-  function toggleLevel(id: string) {
-    const next = selectedLevelIds.includes(id) ? selectedLevelIds.filter((x) => x !== id) : [...selectedLevelIds, id];
-    if (!next.length) return; // keep at least one level
+  // Levels run in order from the first level up to the highest one chosen (all by default).
+  const topIndex = draft.levelIds
+    ? Math.max(0, ...allLevels.map((l, i) => (draft.levelIds!.includes(l.id) ? i : -1)))
+    : allLevels.length - 1;
+  const levels = allLevels.slice(0, topIndex + 1);
+  function chooseTopLevel(id: string) {
+    const idx = allLevels.findIndex((l) => l.id === id);
+    const next = allLevels.slice(0, idx + 1).map((l) => l.id);
     setDraft((d) => ({ ...d, levelIds: next.length === allLevels.length ? undefined : next }));
   }
   const allCourses = work?.courses ?? [];
@@ -255,19 +257,19 @@ export function SkillInlineEdit({
                 Proficiency levels
                 {requireCourse && <span className="cm-proficiency-req"> · Each chosen level needs at least one course <span className="req">*</span></span>}
               </p>
-              <div className="cm-level-picker" role="group" aria-label="Levels used by this skill">
-                <span className="cm-level-picker-label">Levels for this skill</span>
-                {allLevels.map((l) => {
-                  const on = selectedLevelIds.includes(l.id);
+              <div className="cm-level-picker" role="radiogroup" aria-label="Highest level for this skill">
+                <span className="cm-level-picker-label">Highest level for this skill</span>
+                {allLevels.map((l, i) => {
+                  const on = i <= topIndex;
                   return (
                     <button
                       key={l.id}
                       type="button"
-                      className={"cm-level-chip" + (on ? " on" : "")}
-                      aria-pressed={on}
-                      disabled={on && selectedLevelIds.length === 1}
-                      title={on && selectedLevelIds.length === 1 ? "A skill needs at least one level" : on ? `Remove ${l.name}` : `Add ${l.name}`}
-                      onClick={() => toggleLevel(l.id)}
+                      role="radio"
+                      aria-checked={i === topIndex}
+                      className={"cm-level-chip" + (on ? " on" : "") + (i === topIndex ? " top" : "")}
+                      title={i === 0 ? `Use ${l.name} only` : `Use ${allLevels[0].name} to ${l.name}`}
+                      onClick={() => chooseTopLevel(l.id)}
                     >
                       {on ? <Check size={13} /> : <Plus size={13} />} {l.name}
                     </button>
@@ -275,6 +277,7 @@ export function SkillInlineEdit({
                 })}
                 <span className="cm-level-picker-count">{levels.length} of {allLevels.length}</span>
               </div>
+              <p className="cm-level-picker-hint">Levels are added in order. Choosing {allLevels[Math.min(2, allLevels.length - 1)]?.name} includes every level before it.</p>
               {levels.map((l) => {
                 const expanded = expandedLevels.has(l.id);
                 const desc = draft.levels?.[l.id]?.trim() ?? "";

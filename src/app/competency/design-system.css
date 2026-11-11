@@ -2075,3 +2075,5 @@
 .cm-level-picker-count { margin-left: auto; font-size: 14px; color: #526176; }
 .cm-levels-cell span { font-size: 15px; color: #1f2937; }
 .cm-levels-cell small { display: block; font-size: 14px; color: #526176; margin-top: 2px; }
+.cm-level-chip.top { box-shadow: 0 0 0 2px #2463d6 inset; }
+.cm-level-picker-hint { margin: -6px 0 12px; font-size: 14px; color: #526176; }
