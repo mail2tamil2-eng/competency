@@ -93,6 +93,7 @@ export function LibraryBulkUpload({
             <UploadSummary
               items={[count(preview.competencies.length, "New Competency", "New Competencies"), count(preview.skills.length, "New Skill")]}
               attention={errors.length}
+              issues={errors.map((r) => `Row ${r.line}${r.competency ? ` (${r.competency})` : ""}: ${r.errors.join(" ")}`)}
               onDownloadErrors={() =>
                 download("library-import-errors.csv", [
                   ["Row", "Competency", "Skill", "Errors"],
@@ -100,30 +101,6 @@ export function LibraryBulkUpload({
                 ])
               }
             />
-            <div className="cm-table-wrap cm-preview">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Row</th>
-                    <th>Competency</th>
-                    <th>Skill</th>
-                    <th>Result</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview.rows.map((r) => (
-                    <tr key={r.line}>
-                      <td>{r.line}</td>
-                      <td>{r.competency || "Missing name"}</td>
-                      <td>{r.skill || "No skill yet"}</td>
-                      <td className={r.errors.length ? "cm-invalid" : ""}>
-                        {r.errors.join(" ") || r.action}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           </>
         )}
         <div className="cm-dialog-actions">

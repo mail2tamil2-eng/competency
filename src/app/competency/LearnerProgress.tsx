@@ -147,6 +147,7 @@ function BulkLevelUpload({
             <UploadSummary
               items={[`${count(valid.length, "Learner Update")} Ready`]}
               attention={invalid.length}
+              issues={invalid.map((r) => `Row ${r.line}${r.name ? ` (${r.name})` : ""}: ${r.errors.join(" ")}`)}
               onDownloadErrors={() =>
                 download("level-update-errors.csv", [
                   ["Row", "Name", "Skill", "Errors"],
@@ -154,32 +155,6 @@ function BulkLevelUpload({
                 ])
               }
             />
-            <div className="cm-table-wrap cm-preview">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Row</th>
-                    <th>Learner</th>
-                    <th>Skill</th>
-                    <th>New Level</th>
-                    <th>Result</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.line}>
-                      <td>{r.line}</td>
-                      <td>{r.name || <em>Missing</em>}<br /><small>{r.department}</small></td>
-                      <td>{r.skill || <em>Missing</em>}</td>
-                      <td>{r.levelName || <em>Missing</em>}</td>
-                      <td className={r.errors.length ? "cm-invalid" : ""}>
-                        {r.errors.join(" ") || "Ready"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           </>
         )}
 

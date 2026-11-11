@@ -93,6 +93,7 @@ export function SkillBulkUpload({
             <UploadSummary
               items={[count(readySkills, "New Skill"), count(preview.mappings.length, "Course Mapping")]}
               attention={errors.length}
+              issues={errors.map((r) => `Row ${r.line}${r.skill ? ` (${r.skill})` : ""}: ${r.errors.join(" ")}`)}
               onDownloadErrors={() =>
                 download("skill-import-errors.csv", [
                   ["Row", "Skill Name", "Level Name", "Errors"],
@@ -100,24 +101,6 @@ export function SkillBulkUpload({
                 ])
               }
             />
-            <div className="cm-table-wrap cm-preview">
-              <table>
-                <thead>
-                  <tr><th>Row</th><th>Skill</th><th>Level</th><th>Courses</th><th>Result</th></tr>
-                </thead>
-                <tbody>
-                  {preview.rows.map((r) => (
-                    <tr key={r.line}>
-                      <td>{r.line}</td>
-                      <td>{r.skill || "Missing name"}</td>
-                      <td>{r.level || "—"}</td>
-                      <td>{r.courses.join(", ") || "—"}</td>
-                      <td className={r.errors.length ? "cm-invalid" : ""}>{r.errors.join(" ") || "Ready"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           </>
         )}
         <div className="cm-dialog-actions">

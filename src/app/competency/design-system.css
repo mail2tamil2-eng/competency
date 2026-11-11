@@ -2100,3 +2100,7 @@
 .cm-config-dialog > .cm-dialog-actions,
 .cm-progress-dialog > .cm-dialog-actions,
 .cm-manager-proof-dialog .cm-dialog-actions { border-top: 0; }
+.cm-upload-errors-title { margin: 0 0 6px; font-weight: 600; }
+.cm-upload-errors { margin: 0 0 6px; padding-left: 20px; display: grid; gap: 4px; list-style: disc; }
+.cm-upload-errors li { font-size: 14px; line-height: 1.45; }
+.cm-upload-errors-more { margin: 0 0 6px; font-size: 14px; }

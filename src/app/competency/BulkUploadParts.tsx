@@ -88,12 +88,16 @@ export function FileColumnsGuide({
 export function UploadSummary({
   items,
   attention,
+  issues = [],
   onDownloadErrors,
 }: {
   items: string[];
   attention: number;
+  /** One line per problem row, e.g. "Row 3: Level Name is missing." Only the first few are shown. */
+  issues?: string[];
   onDownloadErrors: () => void;
 }) {
+  const shown = issues.slice(0, 3);
   return (
     <>
       <div className="cm-import-summary">
@@ -102,7 +106,13 @@ export function UploadSummary({
       </div>
       {attention > 0 && (
         <div className="cm-error" role="alert">
-          Fix the listed errors and upload again. Nothing has been saved.{" "}
+          <p className="cm-upload-errors-title">Fix these rows and upload again. Nothing has been saved.</p>
+          {shown.length > 0 && (
+            <ul className="cm-upload-errors">
+              {shown.map((t) => <li key={t}>{t}</li>)}
+            </ul>
+          )}
+          {issues.length > shown.length && <p className="cm-upload-errors-more">and {issues.length - shown.length} more.</p>}
           <button className="cm-text-button" onClick={onDownloadErrors}>Download Errors</button>
         </div>
       )}
