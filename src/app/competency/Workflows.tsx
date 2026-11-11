@@ -2,6 +2,7 @@ import { statusText } from "./displayText";
 ﻿import { AssignmentConfiguration } from "./AssignmentConfiguration";
 export { Reports } from "./AdminReports";
 import { AssignmentSkills } from "./AssignmentSkills";
+import { DisclosureIcon } from "./Disclosure";
 import { personKey } from "./managerModel";
 import { Fragment, useEffect, useRef, useState } from "react";
 import {
@@ -1094,7 +1095,7 @@ export function Learning({
                       })
                     }
                   >
-                    <ChevronDown size={18} className={collapsedSkills.has(a.id) ? "" : "cm-rotated"} />
+                    <DisclosureIcon open={!collapsedSkills.has(a.id)} />
                     {data.skills.find((s) => s.id === a.skillId)?.name}
                   </button>
                 </h2>

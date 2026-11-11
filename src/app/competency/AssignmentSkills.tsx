@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Layers, ChevronDown, X } from "lucide-react";
+import { Layers, X } from "lucide-react";
+import { DisclosureIcon } from "./Disclosure";
 import { Data, RecordItem, compIdsOf, inComp, skillLevels } from "./model";
 import { Plan, Course } from "./workflowModel";
 
@@ -222,6 +223,7 @@ function SkillGroup({
             }
           }}
         >
+          {!searching && <DisclosureIcon open={expanded} />}
           <span className="cm-mini-icon">
             <Layers size={20} />
           </span>
@@ -229,7 +231,7 @@ function SkillGroup({
             <small>Competency</small>
             <strong>{competency.name}</strong>
             <span>
-              {total} Skills · {chosen.length} Selected
+              {total} Skill{total === 1 ? "" : "s"} · {chosen.length} Selected
             </span>
           </span>
           {!readOnly && (
@@ -258,7 +260,6 @@ function SkillGroup({
               ))}
             </select>
           )}
-          <ChevronDown size={18} className={expanded ? "cm-rotated" : ""} />
         </div>
         {onRemove && (
           <button

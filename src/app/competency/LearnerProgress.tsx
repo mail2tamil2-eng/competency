@@ -2,6 +2,7 @@ import { Fragment, useState, useEffect } from "react";
 import { Download, Upload, Search, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { Data, Assignment, download, parseCSV, compNames } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
+import { DisclosureIcon } from "./Disclosure";
 import { count, UploadSteps, UploadDropZone, FileColumnsGuide, UploadSummary } from "./BulkUploadParts";
 import {
   Dialog,
@@ -491,7 +492,13 @@ export function LearnerProgress({
               return (
                 <Fragment key={key}>
                   {/* Learner summary row */}
-                  <tr className={`cm-learner-row${isOpen ? " open" : ""}`}>
+                  <tr
+                    className={`cm-learner-row${isOpen ? " open" : ""}`}
+                    onClick={(e) => {
+                      // Whole row toggles; the arrow button handles its own click (and keyboard).
+                      if (!(e.target as HTMLElement).closest("button, a, input, select")) toggleExpand(key);
+                    }}
+                  >
                     <td className="cm-exp-cell">
                       <button
                         className="cm-expand-toggle"
@@ -499,7 +506,7 @@ export function LearnerProgress({
                         aria-label={`${isOpen ? "Collapse" : "Expand"} skills for ${items[0].name}`}
                         onClick={() => toggleExpand(key)}
                       >
-                        {isOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                        <DisclosureIcon open={isOpen} />
                       </button>
                     </td>
                     <td>

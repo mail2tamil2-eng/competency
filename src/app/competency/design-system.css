@@ -2127,3 +2127,13 @@
 .cm-assignment-group-header { position: relative; }
 .cm-remove-competency { flex-shrink: 0; }
 .cm .cm-inline-back { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── One expand/collapse arrow everywhere ── */
+.cm-disclosure { flex-shrink: 0; color: #526176; transition: transform .15s ease; }
+.cm-disclosure.open { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .cm-disclosure { transition: none; } }
+.cm .cm-learner-row { cursor: pointer; }
+/* Arrow comes first now: let the title (not the icon) take the free space */
+.cm .cm-assignment-group-toggle > span:nth-child(2) { flex: 0 0 auto; }
+.cm .cm-assignment-group-toggle > .cm-mini-icon { flex: 0 0 auto; }
+.cm .cm-assignment-group-toggle > span:not(.cm-mini-icon) { flex: 1; min-width: 0; }

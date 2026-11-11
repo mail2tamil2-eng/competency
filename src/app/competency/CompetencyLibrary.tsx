@@ -19,6 +19,7 @@ import {
 import { Data, RecordItem, Kind, used, download, uid, validate, inComp, compIdsOf, withComps, skillLevels } from "./model";
 import { WorkflowData, Course } from "./workflowModel";
 import { LibraryCreate } from "./LibraryCreate";
+import { DisclosureIcon } from "./Disclosure";
 import { LibraryBulkUpload } from "./LibraryBulkUpload";
 import { libraryHeaders, libraryRows } from "./libraryImport";
 import { Editor } from "./Editor";
@@ -285,7 +286,7 @@ export function SkillInlineEdit({
                   <div key={l.id} className={`cm-level-row${expanded ? " expanded" : ""}`}>
                     <button type="button" className="cm-level-row-toggle" aria-expanded={expanded}
                       onClick={() => setExpandedLevels((prev) => { const n = new Set(prev); n.has(l.id) ? n.delete(l.id) : n.add(l.id); return n; })}>
-                      {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                      <DisclosureIcon open={expanded} />
                       <span className="cm-level-row-name">{l.name}</span>
                       <span className="cm-level-row-preview">{desc || <em>No description</em>}</span>
                       <span className="cm-level-row-meta">
@@ -1044,7 +1045,7 @@ export function CompetencyLibrary({
                         setOpenSkill(isOpen ? null : s.id);
                       }}
                     >
-                      <ChevronDown size={16} className={isOpen ? "cm-rotated" : ""} style={{ flexShrink: 0, color: "#526176" }} />
+                      <DisclosureIcon open={isOpen} />
                       <span className="cm-skill-accordion-name">
                         <span className="cm-table-link">{s.name}</span>
                         {s.description && <small>{s.description}</small>}
