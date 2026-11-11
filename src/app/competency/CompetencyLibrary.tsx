@@ -62,6 +62,7 @@ export function SkillInlineEdit({
 }) {
   const [draft, setDraft] = useState<RecordItem>(structuredClone(skill));
   const [errors, setErrors] = useState<string[]>([]);
+  const [triedSave, setTriedSave] = useState(false);
   const levels = data.levels.filter((l) => l.status === "Active");
   const allCourses = work?.courses ?? [];
 
@@ -124,8 +125,11 @@ export function SkillInlineEdit({
     const errs = validate(draft, "skills", data).filter(
       (e) => e !== "Choose an active competency.",
     );
-    if (requireCourse && !Object.values(levelMappings).some((ids) => ids.length > 0))
-      errs.push("Map at least one course to a proficiency level.");
+    setTriedSave(true);
+    // Skill Master: every active proficiency level needs at least one course.
+    const levelsWithoutCourse = requireCourse ? levels.filter((l) => !(levelMappings[l.id]?.length)) : [];
+    if (levelsWithoutCourse.length)
+      errs.push(`Map at least one course to each proficiency level. Missing: ${levelsWithoutCourse.map((l) => l.name).join(", ")}.`);
     if (errs.length) { setErrors(errs); return; }
     const saved = { ...draft, name: draft.name.trim(), description: draft.description.trim() };
     let nextWork: WorkflowData | undefined;
@@ -231,7 +235,7 @@ export function SkillInlineEdit({
             <div className="cm-proficiency-section">
               <p className="cm-proficiency-label">
                 Proficiency levels
-                {requireCourse && <span className="cm-proficiency-req"> · Map at least one course <span className="req">*</span></span>}
+                {requireCourse && <span className="cm-proficiency-req"> · Each level needs at least one course <span className="req">*</span></span>}
               </p>
               {levels.map((l) => {
                 const expanded = expandedLevels.has(l.id);
@@ -244,7 +248,13 @@ export function SkillInlineEdit({
                       {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                       <span className="cm-level-row-name">{l.name}</span>
                       <span className="cm-level-row-preview">{desc || <em>No description</em>}</span>
-                      <span className="cm-level-row-meta">{mapped.length > 0 ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}` : ""}</span>
+                      <span className="cm-level-row-meta">
+                        {mapped.length > 0
+                          ? `${mapped.length} course${mapped.length !== 1 ? "s" : ""}`
+                          : requireCourse && triedSave
+                            ? <span className="cm-level-course-required">Course required</span>
+                            : ""}
+                      </span>
                     </button>
                     {expanded && (
                       <div className="cm-level-row-body">
