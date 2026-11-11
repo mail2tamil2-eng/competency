@@ -2060,3 +2060,6 @@
 .cm .cm-skill-master-view .cm-create-skill-card-body { padding: 0; }
 .cm .cm-skill-master-view > h3 { margin-bottom: 12px; }
 .cm-level-course-required { color: #b91c1c; font-weight: 600; font-size: 14px; }
+.cm-level-form { display: grid; gap: 16px; }
+.cm-level-form label { display: grid; gap: 6px; }
+.cm-level-form .cm-inline-form-actions { display: flex; justify-content: flex-end; gap: 10px; border-top: 0; padding-top: 0; }

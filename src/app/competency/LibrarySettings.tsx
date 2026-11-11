@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Search, Pencil, Trash2, Ban, CheckCircle2, ArrowLeft, Upload } from "lucide-react";
-import { Data, RecordItem, uid, used, compIdsOf } from "./model";
+import { Data, RecordItem, uid, used, compIdsOf, validate } from "./model";
 import { WorkflowData } from "./workflowModel";
-import { Editor } from "./Editor";
 import { SkillInlineEdit } from "./CompetencyLibrary";
 import { SkillBulkUpload } from "./SkillBulkUpload";
 import {
@@ -111,6 +110,62 @@ function CompetencyCell({ comps }: { comps: RecordItem[] }) {
   return <span className={"cm-comp-count" + (comps.length ? "" : " zero")}>{comps.length}</span>;
 }
 
+/** Full-page create/edit form for a proficiency level (order is set automatically). */
+function LevelForm({
+  data,
+  item,
+  onCancel,
+  onSave,
+}: {
+  data: Data;
+  item?: RecordItem;
+  onCancel: () => void;
+  onSave: (item: RecordItem) => void;
+}) {
+  const [draft, setDraft] = useState<RecordItem>(
+    () => (item ? structuredClone(item) : { id: uid(), name: "", description: "", status: "Active" }),
+  );
+  const [errors, setErrors] = useState<string[]>([]);
+  function save() {
+    const next = { ...draft, name: draft.name.trim(), description: draft.description.trim() };
+    const issues = validate(next, "levels", data);
+    setErrors(issues);
+    if (!issues.length) onSave(next);
+  }
+  return (
+    <form className="cm-level-form" onSubmit={(e) => { e.preventDefault(); save(); }}>
+      {errors.length > 0 && (
+        <div className="cm-error" role="alert">
+          {errors.map((e) => <div key={e}>{e}</div>)}
+        </div>
+      )}
+      <label>
+        <span className="cm-req-label">Level Name <span className="req">*</span></span>
+        <input
+          autoFocus
+          maxLength={120}
+          value={draft.name}
+          onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          placeholder="e.g. Proficient"
+        />
+      </label>
+      <label>
+        <span>Description <span className="cm-field-optional">Optional</span></span>
+        <textarea
+          rows={3}
+          value={draft.description}
+          onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          placeholder="What does someone at this level typically do?"
+        />
+      </label>
+      <div className="cm-inline-form-actions">
+        <button type="button" className="cm-button" onClick={onCancel}>Cancel</button>
+        <button type="submit" className="cm-button primary">{item ? "Save Changes" : "Save Level"}</button>
+      </div>
+    </form>
+  );
+}
+
 export function LibrarySettings({
   data,
   initialSection,
@@ -149,6 +204,7 @@ export function LibrarySettings({
     setSection(initialSection);
     setQuery("");
     setSkillView("list");
+    setEditing(null);
   }, [initialSection]);
 
   const records = (section === "skills" ? [] : data.levels)
@@ -172,6 +228,36 @@ export function LibrarySettings({
     : [];
 
   /* ── Skill Master: create/edit view ── */
+  /* ── Proficiency level: create/edit page ── */
+  if (section === "levels" && editing) {
+    return (
+      <section className="cm-card">
+        <div className="cm-section-head">
+          <div>
+            <h2>Library Settings</h2>
+            <p>Manage proficiency levels and skills used across your competency framework.</p>
+          </div>
+        </div>
+        <div className="cm-skill-master-view">
+          <button type="button" className="cm-text-button" onClick={() => setEditing(null)}>
+            <ArrowLeft size={15} /> Back to Proficiency Levels
+          </button>
+          <h3 style={{ marginTop: 16 }}>{editing.item ? `Edit: ${editing.item.name}` : "New Level"}</h3>
+          <LevelForm
+            data={data}
+            item={editing.item}
+            onCancel={() => setEditing(null)}
+            onSave={(item) => {
+              const isNew = !editing.item;
+              const nextData = { ...data, levels: applyLevelOrder(data.levels, item, isNew) };
+              if (commit(nextData, isNew ? `Level "${item.name}" created` : `Level "${item.name}" saved`)) setEditing(null);
+            }}
+          />
+        </div>
+      </section>
+    );
+  }
+
   if (section === "skills" && skillView !== "list") {
     const isCreating = skillView === "create";
     const existing = isCreating ? null : data.skills.find((s) => s.id === skillView) ?? null;
@@ -242,6 +328,7 @@ export function LibrarySettings({
                   setQuery("");
                   setStatus("");
                   setSkillView("list");
+                  setEditing(null);
                 }}
               >
                 {s === "levels" ? "Proficiency Levels" : "Skill Master"}
@@ -448,19 +535,6 @@ export function LibrarySettings({
             </p>
           )}
         </>
-      )}
-      {editing && section !== "skills" && (
-        <Editor
-          kind="levels"
-          data={data}
-          item={editing.item}
-          onClose={() => setEditing(null)}
-          onSave={(item) => {
-            const isNew = !editing.item;
-            const nextData = { ...data, levels: applyLevelOrder(data.levels, item, isNew) };
-            if (commit(nextData, "Saved successfully")) setEditing(null);
-          }}
-        />
       )}
       {inactivating && section !== "skills" && (
         <ConfirmDialog

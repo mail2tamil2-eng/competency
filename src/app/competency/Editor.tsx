@@ -143,23 +143,6 @@ export function Editor({
                 ))}
             </>
           )}
-          {kind === "levels" && (
-            <>
-              <label>
-                <span className="cm-label-row">
-                  Level Order
-                  <span className="cm-readonly-badge">Read only</span>
-                </span>
-                <input
-                  type="number"
-                  readOnly
-                  className="cm-input-readonly"
-                  value={draft.order ?? (item ? data.levels.length : data.levels.length + 1)}
-                />
-                <span className="cm-field-hint">Automatically assigned based on proficiency level sequence.</span>
-              </label>
-            </>
-          )}
           {kind !== "levels" && kind !== "categories" && (
             <label>
               Status
