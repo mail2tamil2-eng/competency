@@ -400,7 +400,8 @@ export function LibraryCreate({
                   const skill = data.skills.find((s) => s.id === id);
                   if (!skill) return null;
                   const activeLevels = data.levels.filter((l) => l.status === "Active");
-                  const levelsWithData = activeLevels.filter((l) => skill.levels?.[l.id]);
+                  // Always list every active level, even when the skill has no description for it.
+                  const levelsWithData = activeLevels;
 
                   return (
                     <div
@@ -460,7 +461,7 @@ export function LibraryCreate({
                                   {/* Level name + description */}
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <strong style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{l.name}</strong>
-                                    <p style={{ margin: "2px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.4 }}>{skill.levels![l.id]}</p>
+                                    <p style={{ margin: "2px 0 0", fontSize: 14, color: "#6b7280", lineHeight: 1.4, fontStyle: skill.levels?.[l.id]?.trim() ? "normal" : "italic" }}>{skill.levels?.[l.id]?.trim() || "No description added"}</p>
                                   </div>
                                   {/* Clickable course count chip */}
                                   {courses.length > 0 && (

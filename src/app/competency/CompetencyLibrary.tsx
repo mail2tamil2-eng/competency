@@ -960,7 +960,8 @@ export function CompetencyLibrary({
             {skills.map((s) => {
               const isOpen = openSkill === s.id;
               const isEditing = editingSkill === s.id;
-              const definedLevels = data.levels.filter((l) => s.levels?.[l.id] && l.status === "Active");
+              // Show every active level, even without a description.
+              const definedLevels = data.levels.filter((l) => l.status === "Active");
 
               return (
                 <div key={s.id} className={"cm-skill-accordion" + (isOpen ? " open" : "")}>
@@ -1061,7 +1062,7 @@ export function CompetencyLibrary({
                                       <div className="cm-level-num-badge">{i + 1}</div>
                                       <div className="cm-level-node-content">
                                         <strong>{l.name}</strong>
-                                        <p>{s.levels?.[l.id]}</p>
+                                        <p style={s.levels?.[l.id]?.trim() ? undefined : { fontStyle: "italic" }}>{s.levels?.[l.id]?.trim() || "No description added"}</p>
                                       </div>
                                       {work && onSaveWork ? (
                                         <button
