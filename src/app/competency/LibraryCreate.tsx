@@ -548,7 +548,7 @@ export function LibraryCreate({
         <button type="button" className="cm-button" onClick={handleClose}>
           Cancel
         </button>
-        {!isEdit && selectedSkillIds.length > 0 && (
+        {!isEdit && (
           <button type="button" className="cm-button" onClick={saveDraft}>
             Save as Draft
           </button>
