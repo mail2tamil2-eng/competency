@@ -544,7 +544,7 @@ export function LibraryCreate({
       </div>
 
       {/* ── Actions ── */}
-      <div className="cm-inline-form-actions" style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>
+      <div className="cm-inline-form-actions">
         <button type="button" className="cm-button" onClick={handleClose}>
           Cancel
         </button>
