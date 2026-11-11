@@ -2169,3 +2169,13 @@
 /* Competency picker sits like the Skills field: full width, chips underneath */
 .cm .cm-assignment-comp-field { margin: 4px 0 14px; }
 .cm .cm-assignment-comp-field .cm-mcd { max-width: none; }
+
+/* ── Review Proof Submission: document link instead of an inline PDF ── */
+.cm .cm-proof-page-body { grid-template-columns: minmax(0, 1fr); }
+.cm-proof-doc-card { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: #fff; border: 1px solid #e0e8ff; border-radius: 12px; color: #2463d6; flex-wrap: wrap; }
+.cm-proof-doc-card-text { flex: 1; min-width: 200px; display: grid; gap: 2px; }
+.cm-proof-doc-card-text strong { font-size: 15px; color: #1f2937; overflow-wrap: anywhere; }
+.cm-proof-doc-card-text small { font-size: 14px; color: #526176; }
+.cm-proof-doc-card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.cm-proof-doc-card-actions .cm-button { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.cm-proof-doc-card-none { font-size: 14px; color: #b91c1c; }

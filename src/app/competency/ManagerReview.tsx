@@ -1,7 +1,8 @@
 import { compNames } from "./model";
 import { statusText } from "./displayText";
 import { useState } from "react";
-import { FileText, Download, ArrowLeft, CheckCircle2, BookOpen } from "lucide-react";
+import { FileText, Download, ArrowLeft, CheckCircle2, BookOpen, ExternalLink } from "lucide-react";
+import { useProofUrl } from "./proofLink";
 import {
   Dialog,
   DialogContent,
@@ -201,7 +202,7 @@ export function ManagerProofDialog({
     /^data:(application\/pdf|image\/png|image\/jpeg);base64,[a-z0-9+/=\s]+$/i.test(
       p.document,
     );
-  const isImage = usable && p.document.startsWith("data:image/");
+  const pOpenUrl = useProofUrl(usable ? p.document : undefined);
   function decide(approved: boolean) {
     try {
       const next = reviewProof(data, work, selected, approved, remarks);
@@ -286,36 +287,20 @@ export function ManagerProofDialog({
                     <strong>{p.fileName}</strong>
                     <small>Submitted {p.submitted}</small>
                   </div>
-                  {usable && (
-                    <a
-                      className="cm-button"
-                      href={p.document}
-                      download={p.fileName}
-                    >
-                      <Download size={16} />
-                      Download proof
-                    </a>
+                  {usable && pOpenUrl && (
+                    <div className="cm-proof-doc-card-actions">
+                      <a className="cm-button primary" href={pOpenUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink size={16} /> Open document
+                      </a>
+                      <a className="cm-button" href={p.document} download={p.fileName}>
+                        <Download size={16} /> Download
+                      </a>
+                    </div>
                   )}
                 </div>
-                {isImage ? (
-                  <img
-                    src={p.document}
-                    alt={`Submitted evidence: ${p.fileName}`}
-                  />
-                ) : usable ? (
-                  <object
-                    data={p.document}
-                    type="application/pdf"
-                    aria-label="Submitted Proof Preview"
-                  >
-                    <p>
-                      PDF preview is unavailable in this browser. Download the
-                      proof to inspect it.
-                    </p>
-                  </object>
-                ) : (
+                {!usable && (
                   <p className="cm-error">
-                    This proof cannot be previewed. Ask the learner to submit a
+                    This proof cannot be opened. Ask the learner to submit a
                     valid PDF, PNG or JPEG.
                   </p>
                 )}
@@ -444,6 +429,7 @@ export function ManagerProofReviewPage({
       proof.document,
     );
   const isImage = usable && proof.document.startsWith("data:image/");
+  const openUrl = useProofUrl(usable ? proof.document : undefined);
 
   function isLevelUnlocked(li: number): boolean {
     if (li === 0) return true;
@@ -555,36 +541,25 @@ export function ManagerProofReviewPage({
       </div>
 
       <div className="cm-proof-page-body">
-        {/* LEFT — document preview */}
-        <div className="cm-proof-left">
-          <div className="cm-proof-doc-header">
-            <div className="cm-proof-doc-meta">
-              <FileText size={18} />
-              <div>
-                <strong>{proof?.fileName || "No document"}</strong>
-                <small>Submitted {proof?.submitted}</small>
-              </div>
-            </div>
-            {usable && (
+        {/* Submitted document: link opens it in a new tab (no inline preview) */}
+        <div className="cm-proof-doc-card">
+          <FileText size={22} />
+          <div className="cm-proof-doc-card-text">
+            <strong>{proof?.fileName || "No document"}</strong>
+            <small>Submitted {proof?.submitted}</small>
+          </div>
+          {usable && openUrl ? (
+            <div className="cm-proof-doc-card-actions">
+              <a className="cm-button primary" href={openUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink size={15} /> Open document
+              </a>
               <a className="cm-button" href={proof.document} download={proof.fileName}>
                 <Download size={15} /> Download
               </a>
-            )}
-          </div>
-          <div className="cm-proof-preview">
-            {isImage ? (
-              <img src={proof.document} alt={proof.fileName} />
-            ) : usable ? (
-              <object data={proof.document} type="application/pdf" aria-label="Proof Preview">
-                <p>PDF preview unavailable. Use the Download button above.</p>
-              </object>
-            ) : (
-              <div className="cm-proof-no-preview">
-                <FileText size={40} />
-                <p>No document to preview.</p>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <span className="cm-proof-doc-card-none">This file can't be opened. Ask the learner to resubmit a PDF, PNG or JPEG.</span>
+          )}
         </div>
 
         {/* RIGHT */}
