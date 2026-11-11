@@ -2093,3 +2093,10 @@
 @media (max-width: 640px) { .cm-courses-empty { flex-wrap: wrap; } .cm-courses-empty .cm-button { width: 100%; justify-content: center; } }
 /* Keep the square header/body backgrounds inside the row's rounded corners */
 .cm .cm-level-row { overflow: hidden; background: #fff; }
+
+/* ── Popups: no divider line above the buttons ── */
+.cm-dialog-actions { border-top: 0; padding-top: 0; margin-top: 4px; }
+.cm-create-dialog .cm-dialog-actions,
+.cm-config-dialog > .cm-dialog-actions,
+.cm-progress-dialog > .cm-dialog-actions,
+.cm-manager-proof-dialog .cm-dialog-actions { border-top: 0; }
