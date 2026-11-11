@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, X, BookOpen, Search, ArrowLeft } from "lucide-react";
+import { DisclosureIcon } from "./Disclosure";
 import { Data, RecordItem, uid, validate, compIdsOf, withComps, skillLevels } from "./model";
 import { WorkflowData } from "./workflowModel";
 import { MultiCheckDropdown } from "./MultiCheckDropdown";
@@ -29,6 +30,10 @@ export function LibraryCreate({
   );
   const [errors, setErrors] = useState<string[]>([]);
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
+  /* Skill cards whose proficiency levels are hidden. Cards start open. */
+  const [collapsedSkills, setCollapsedSkills] = useState<Set<string>>(new Set());
+  const toggleSkillCard = (id: string) =>
+    setCollapsedSkills((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const [mandatoryMap, setMandatoryMap] = useState<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {};
     if (!work) return map;
@@ -213,6 +218,17 @@ export function LibraryCreate({
             {/* ── Selected skill detail cards ── */}
             {selectedSkillIds.length > 0 && (
               <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 20 }}>
+                {selectedSkillIds.length > 1 && (
+                  <div className="cm-skill-expand-bar">
+                    <button
+                      type="button"
+                      className="cm-button"
+                      onClick={() => setCollapsedSkills(collapsedSkills.size ? new Set() : new Set(selectedSkillIds))}
+                    >
+                      {collapsedSkills.size ? "Expand All" : "Collapse All"}
+                    </button>
+                  </div>
+                )}
                 {selectedSkillIds.map((id) => {
                   const skill = data.skills.find((s) => s.id === id);
                   if (!skill) return null;
@@ -233,11 +249,27 @@ export function LibraryCreate({
                     >
                       {/* Card header */}
                       <div style={{ padding: "14px 18px 10px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                        <div>
+                        <div
+                          className="cm-create-skill-toggle"
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={!collapsedSkills.has(id)}
+                          aria-label={`${skill.name} proficiency levels`}
+                          onClick={() => toggleSkillCard(id)}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleSkillCard(id); } }}
+                        >
+                          <DisclosureIcon open={!collapsedSkills.has(id)} />
+                          <div>
                           <strong style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>{skill.name}</strong>
                           {skill.description && (
                             <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280", lineHeight: 1.5 }}>{skill.description}</p>
                           )}
+                          {collapsedSkills.has(id) && (
+                            <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280" }}>
+                              {levelsWithData.length} proficiency level{levelsWithData.length === 1 ? "" : "s"}
+                            </p>
+                          )}
+                          </div>
                         </div>
                         <button
                           type="button"
@@ -250,7 +282,7 @@ export function LibraryCreate({
                       </div>
 
                       {/* Proficiency levels */}
-                      {levelsWithData.length > 0 && (
+                      {levelsWithData.length > 0 && !collapsedSkills.has(id) && (
                         <div style={{ borderTop: "1px solid #f3f4f6" }}>
                           <div style={{ padding: "8px 18px 4px", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9ca3af" }}>
                             Proficiency Levels

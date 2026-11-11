@@ -2184,3 +2184,8 @@
 .cm .cm-skill-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
 .cm .cm-skill-toolbar .cm-view-toggle { margin: 0; }
 .cm .cm-skill-toolbar .cm-skill-expand-bar { margin: 0 0 0 auto; }
+
+/* Create/Edit Competency: skill cards expand and collapse from the header. */
+.cm .cm-create-skill-toggle { display: flex; align-items: flex-start; gap: 8px; flex: 1; cursor: pointer; border-radius: 6px; }
+.cm .cm-create-skill-toggle .cm-disclosure { margin-top: 1px; flex-shrink: 0; }
+.cm .cm-create-skill-toggle:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; }
