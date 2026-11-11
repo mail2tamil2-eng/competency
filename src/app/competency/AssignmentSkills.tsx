@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Layers, ChevronDown, Search } from "lucide-react";
+import { Layers, ChevronDown, X } from "lucide-react";
 import { Data, RecordItem, compIdsOf, inComp, skillLevels } from "./model";
 import { Plan, Course } from "./workflowModel";
 
@@ -26,22 +26,19 @@ export function AssignmentSkills({
   onChange,
   readOnly = false,
 }: Props) {
-  const [query, setQuery] = useState("");
-  const [onlySelected, setOnlySelected] = useState(false);
-  const term = query.trim().toLowerCase();
-  const selectedCompIds = new Set(selected.map((x) => ownerOf(data, x)));
-  const groups = data.competencies
-    .filter(
-      (c) =>
-        (c.status === "Active" || selectedCompIds.has(c.id)),
-    )
-    .sort((a, b) => {
-      const aSelected = selectedCompIds.has(a.id);
-      const bSelected = selectedCompIds.has(b.id);
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return 0;
-    });
+  const selectedCompIds = [...new Set(selected.map((x) => ownerOf(data, x)))];
+  /* Competencies the admin has chosen from the dropdown; ones already used by the assignment always show. */
+  const [added, setAdded] = useState<string[]>(selectedCompIds);
+  const shownIds = [...added, ...selectedCompIds.filter((id) => !added.includes(id))];
+  const groups = shownIds
+    .map((id) => data.competencies.find((c) => c.id === id))
+    .filter((c): c is RecordItem => !!c);
+  const skillsOf = (cId: string) => data.skills.filter((s) => inComp(s, cId) && s.status === "Active");
+  const options = data.competencies.filter((c) => c.status === "Active" && !shownIds.includes(c.id));
+  function removeCompetency(id: string) {
+    setAdded((a) => a.filter((x) => x !== id));
+    onChange(selected.filter((x) => ownerOf(data, x) !== id));
+  }
   const missing = selected.filter((s) => !s.expected).length;
   return (
     <section
@@ -51,29 +48,28 @@ export function AssignmentSkills({
       <p className="cm-assignment-help">
         {readOnly
           ? "Check the expected level for each skill under its competency."
-          : "Open a competency, select its skills, then choose the expected level for each skill."}
+          : "Choose a competency, select its skills, then set the expected level for each skill."}
       </p>
-      <div className="cm-assignment-search">
-        <div className="cm-search">
-          <Search size={16} />
-          <input
-            aria-label="Search Assignment Competencies and Skills"
-            placeholder="Search competencies or skills…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-        {!readOnly && (
-          <label className="cm-assignment-filter">
-            <input
-              type="checkbox"
-              checked={onlySelected}
-              onChange={(e) => setOnlySelected(e.target.checked)}
-            />
-            Selected Only
+      {!readOnly && (
+        <div className="cm-assignment-search">
+          <label className="cm-assignment-comp-select">
+            <span>Competency</span>
+            <select
+              aria-label="Add a competency"
+              value=""
+              disabled={!options.length}
+              onChange={(e) => { const id = e.target.value; if (id) setAdded((a) => [...a, id]); }}
+            >
+              <option value="">{options.length ? "Select a competency…" : "All competencies added"}</option>
+              {options.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({skillsOf(c.id).length} skill{skillsOf(c.id).length === 1 ? "" : "s"})
+                </option>
+              ))}
+            </select>
           </label>
-        )}
-      </div>
+        </div>
+      )}
       <div className="cm-assignment-count" role="status">
         <strong>{selected.length} Skills Selected</strong>
         <span>
@@ -91,15 +87,9 @@ export function AssignmentSkills({
                 selected.some((x) => x.skillId === s.id)),
           );
           const visible = all.filter(
-            (s) =>
-              (!(onlySelected || readOnly) ||
-                selected.some((x) => x.skillId === s.id && ownerOf(data, x) === c.id)) &&
-              (!term ||
-                c.name.toLowerCase().includes(term) ||
-                s.name.toLowerCase().includes(term)),
+            (s) => !readOnly || selected.some((x) => x.skillId === s.id && ownerOf(data, x) === c.id),
           );
-          if (!visible.length && (term || onlySelected || readOnly))
-            return null;
+          if (!visible.length && readOnly) return null;
           return (
             <SkillGroup
               key={c.id}
@@ -112,16 +102,22 @@ export function AssignmentSkills({
               levels={data.levels.filter((l) => l.status === "Active")}
               selected={selected}
               onChange={onChange}
-              filterKey={`${term}:${onlySelected}`}
-              searching={!!term || onlySelected || readOnly}
+              filterKey={c.id}
+              searching={readOnly}
               readOnly={readOnly}
+              onRemove={readOnly ? undefined : () => removeCompetency(c.id)}
             />
           );
         })}
-        <p className="cm-assignment-no-results">
-          No matching competencies or skills. Try another search, or turn off
-          Selected Only.
-        </p>
+        {!groups.length && !readOnly && (
+          <div className="cm-assignment-empty">
+            <Layers size={22} />
+            <p>
+              <strong>No competency chosen yet</strong>
+              <span>Choose a competency above to see its skills.</span>
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -140,6 +136,7 @@ function SkillGroup({
   filterKey,
   searching,
   readOnly,
+  onRemove,
 }: {
   competency: RecordItem;
   data: Data;
@@ -153,12 +150,14 @@ function SkillGroup({
   filterKey: string;
   searching: boolean;
   readOnly: boolean;
+  onRemove?: () => void;
 }) {
   const cId = competency.id;
   /* A skill counts as selected here only when it was picked under this competency. */
   const mine = (x: Selection) => ownerOf(data, x) === cId;
   const elsewhere = (skillId: string) => selected.find((x) => x.skillId === skillId && !mine(x));
-  const [open, setOpen] = useState(() => selected.some((x) => mine(x)));
+  // Chosen competencies open straight away so their skills are visible.
+  const [open, setOpen] = useState(true);
   const [paging, setPaging] = useState({ key: filterKey, page: 0 });
   const page = Math.min(
     paging.key === filterKey ? paging.page : 0,
@@ -261,6 +260,17 @@ function SkillGroup({
           )}
           <ChevronDown size={18} className={expanded ? "cm-rotated" : ""} />
         </div>
+        {onRemove && (
+          <button
+            type="button"
+            className="cm-icon-button cm-remove-competency"
+            aria-label={`Remove ${competency.name}`}
+            title="Remove this competency and its selected skills"
+            onClick={onRemove}
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
       {expanded && (
         <div
