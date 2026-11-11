@@ -2091,3 +2091,5 @@
 @media (max-width: 640px) { .cm .cm-add-courses-btn { width: 100%; justify-content: center; } }
 .cm-level-courses-hd .req { color: #c2410c; }
 @media (max-width: 640px) { .cm-courses-empty { flex-wrap: wrap; } .cm-courses-empty .cm-button { width: 100%; justify-content: center; } }
+/* Keep the square header/body backgrounds inside the row's rounded corners */
+.cm .cm-level-row { overflow: hidden; background: #fff; }
