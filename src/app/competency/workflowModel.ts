@@ -132,6 +132,13 @@ export const workflowSeed: WorkflowData = {
       duration: "50 min",
       mappings: [{ skillId: "speaking", levelId: "l2" }],
     },
+    // Every demo skill has at least one course on every level.
+    { id: "c7", name: "Active Listening Basics", duration: "20 min", mappings: [{ skillId: "listening", levelId: "l0" }] },
+    { id: "c8", name: "Speaking with Executive Presence", duration: "55 min", mappings: [{ skillId: "speaking", levelId: "l3" }] },
+    { id: "c9", name: "Excel Formulas Fundamentals", duration: "30 min", mappings: [{ skillId: "excel", levelId: "l0" }] },
+    { id: "c10", name: "Pivot Tables in Practice", duration: "40 min", mappings: [{ skillId: "excel", levelId: "l1" }] },
+    { id: "c11", name: "Building Excel Dashboards", duration: "50 min", mappings: [{ skillId: "excel", levelId: "l2" }] },
+    { id: "c12", name: "Automating Reports with Excel", duration: "60 min", mappings: [{ skillId: "excel", levelId: "l3" }] },
   ],
   employees: [
     { id: "e1",  email: "ananya.r@example.com",   name: "Ananya R.",    department: "Sales",          role: "Executive",        location: "Chennai",   managerId: "e3", cohort: "Batch 2024-A" },
