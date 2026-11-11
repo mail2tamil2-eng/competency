@@ -193,6 +193,7 @@ export function LibrarySettings({
           <h3 style={{ marginTop: 16 }}>{isCreating ? "New Skill" : `Edit: ${existing?.name}`}</h3>
           <SkillInlineEdit
             showMandatory={false}
+            requireCourse
             skill={draft}
             data={data}
             work={work}

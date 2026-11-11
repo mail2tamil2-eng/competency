@@ -46,6 +46,7 @@ export function SkillInlineEdit({
   work,
   onSaveWork,
   showMandatory = true,
+  requireCourse = false,
 }: {
   skill: RecordItem;
   data: Data;
@@ -56,6 +57,8 @@ export function SkillInlineEdit({
   onSaveWork?: (work: WorkflowData, msg: string) => boolean;
   /** Skill Master hides the per-course Mandatory option; competency screens keep it. */
   showMandatory?: boolean;
+  /** Skill Master: at least one course must be mapped to some level. */
+  requireCourse?: boolean;
 }) {
   const [draft, setDraft] = useState<RecordItem>(structuredClone(skill));
   const [errors, setErrors] = useState<string[]>([]);
@@ -121,6 +124,8 @@ export function SkillInlineEdit({
     const errs = validate(draft, "skills", data).filter(
       (e) => e !== "Choose an active competency.",
     );
+    if (requireCourse && !Object.values(levelMappings).some((ids) => ids.length > 0))
+      errs.push("Map at least one course to a proficiency level.");
     if (errs.length) { setErrors(errs); return; }
     const saved = { ...draft, name: draft.name.trim(), description: draft.description.trim() };
     let nextWork: WorkflowData | undefined;
@@ -224,7 +229,10 @@ export function SkillInlineEdit({
           </label>
           {levels.length > 0 && (
             <div className="cm-proficiency-section">
-              <p className="cm-proficiency-label">Proficiency levels</p>
+              <p className="cm-proficiency-label">
+                Proficiency levels
+                {requireCourse && <span className="cm-proficiency-req"> · Map at least one course <span className="req">*</span></span>}
+              </p>
               {levels.map((l) => {
                 const expanded = expandedLevels.has(l.id);
                 const desc = draft.levels?.[l.id]?.trim() ?? "";

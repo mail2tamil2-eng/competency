@@ -2049,3 +2049,5 @@
 .cm-skill-toggle:focus-visible { outline: 2px solid #2463d6; outline-offset: 3px; border-radius: 4px; }
 .cm-skill-toggle svg { flex-shrink: 0; color: #526176; transition: transform .15s; }
 .cm .cm-learning-card.is-collapsed > .cm-section-head, .cm-learner .cm-learning-card.is-collapsed > .cm-section-head { margin-bottom: 0; border-bottom: 0; padding-bottom: 0; }
+.cm-proficiency-req { font-weight: 400; color: #526176; }
+.cm-proficiency-req .req { color: #c2410c; }
