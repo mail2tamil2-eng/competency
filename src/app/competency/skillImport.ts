@@ -114,6 +114,10 @@ export function prepareSkillImport(text: string, data: Data, courses: Course[]):
     }
   }
 
+  // A skill uploaded with rows for only some levels uses just those levels.
+  for (const g of bySkill.values())
+    if (g.levelIds.size && g.levelIds.size < levels.length)
+      g.skill.levelIds = levels.filter((l) => g.levelIds.has(l.id)).map((l) => l.id);
   for (const r of rows) r.errors = [...new Set(r.errors)];
 
   return { rows, skills: [...bySkill.values()].map((g) => g.skill), mappings };

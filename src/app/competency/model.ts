@@ -11,6 +11,8 @@ export type RecordItem = {
   competencyId?: string;
   /** A skill can belong to many competencies. */
   competencyIds?: string[];
+  /** Proficiency levels this skill uses; undefined means every active level. */
+  levelIds?: string[];
   levels?: Record<string, string>;
   courses?: Record<string, string>;
 };
@@ -177,6 +179,12 @@ export const inComp = (s: RecordItem | undefined | null, cId: string) => compIds
 export function withComps(s: RecordItem, ids: string[]): RecordItem {
   const unique = [...new Set(ids.filter(Boolean))];
   return { ...s, competencyIds: unique, competencyId: unique[0] ?? "" };
+}
+/** Active proficiency levels that apply to a skill, in level order. */
+export function skillLevels(data: Data, s?: RecordItem | null): RecordItem[] {
+  return data.levels
+    .filter((l) => l.status === "Active" && (!s?.levelIds || s.levelIds.includes(l.id)))
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 }
 /** "Communication, Customer Focus" for display. */
 export function compNames(data: Data, s?: RecordItem | null): string {

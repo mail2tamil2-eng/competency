@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import {
+  Check,
   Target,
   Plus,
   Upload,
@@ -15,7 +16,7 @@ import {
   BookOpen,
   X,
 } from "lucide-react";
-import { Data, RecordItem, Kind, used, download, uid, validate, inComp, compIdsOf, withComps } from "./model";
+import { Data, RecordItem, Kind, used, download, uid, validate, inComp, compIdsOf, withComps, skillLevels } from "./model";
 import { WorkflowData, Course } from "./workflowModel";
 import { LibraryCreate } from "./LibraryCreate";
 import { LibraryBulkUpload } from "./LibraryBulkUpload";
@@ -63,7 +64,15 @@ export function SkillInlineEdit({
   const [draft, setDraft] = useState<RecordItem>(structuredClone(skill));
   const [errors, setErrors] = useState<string[]>([]);
   const [triedSave, setTriedSave] = useState(false);
-  const levels = data.levels.filter((l) => l.status === "Active");
+  const allLevels = data.levels.filter((l) => l.status === "Active").sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  // Levels this skill uses (all by default); only these are shown and validated.
+  const selectedLevelIds = draft.levelIds ?? allLevels.map((l) => l.id);
+  const levels = allLevels.filter((l) => selectedLevelIds.includes(l.id));
+  function toggleLevel(id: string) {
+    const next = selectedLevelIds.includes(id) ? selectedLevelIds.filter((x) => x !== id) : [...selectedLevelIds, id];
+    if (!next.length) return; // keep at least one level
+    setDraft((d) => ({ ...d, levelIds: next.length === allLevels.length ? undefined : next }));
+  }
   const allCourses = work?.courses ?? [];
 
   const [levelMappings, setLevelMappings] = useState<Record<string, string[]>>(() => {
@@ -126,19 +135,28 @@ export function SkillInlineEdit({
       (e) => e !== "Choose an active competency.",
     );
     setTriedSave(true);
+    if (!levels.length) errs.push("Choose at least one proficiency level for this skill.");
     // Skill Master: every active proficiency level needs at least one course.
     const levelsWithoutCourse = requireCourse ? levels.filter((l) => !(levelMappings[l.id]?.length)) : [];
     if (levelsWithoutCourse.length)
       errs.push(`Map at least one course to each proficiency level. Missing: ${levelsWithoutCourse.map((l) => l.name).join(", ")}.`);
     if (errs.length) { setErrors(errs); return; }
-    const saved = { ...draft, name: draft.name.trim(), description: draft.description.trim() };
+    const keep = new Set(levels.map((l) => l.id));
+    const saved: RecordItem = {
+      ...draft,
+      name: draft.name.trim(),
+      description: draft.description.trim(),
+      // Drop descriptions for levels the skill no longer uses.
+      levels: Object.fromEntries(Object.entries(draft.levels ?? {}).filter(([id]) => keep.has(id))),
+      levelIds: levels.length === allLevels.length ? undefined : levels.map((l) => l.id),
+    };
     let nextWork: WorkflowData | undefined;
     if (work) {
       const updatedCourses = work.courses.map((course) => {
         const others = course.mappings.filter((m) => m.skillId !== saved.id);
         const newMaps: { skillId: string; levelId: string; mandatory?: boolean }[] = [];
         for (const [levelId, ids] of Object.entries(levelMappings)) {
-          if (ids.includes(course.id))
+          if (keep.has(levelId) && ids.includes(course.id))
             newMaps.push({ skillId: saved.id, levelId, mandatory: levelRequirements[levelId]?.[course.id] });
         }
         const combined = [...others, ...newMaps];
@@ -153,7 +171,7 @@ export function SkillInlineEdit({
 
   // Picker dialog — early return
   if (pickerLevelId) {
-    const levelName = levels.find((l) => l.id === pickerLevelId)?.name ?? pickerLevelId;
+    const levelName = allLevels.find((l) => l.id === pickerLevelId)?.name ?? pickerLevelId;
     const pickerFiltered = allCourses.filter((c) => {
       if (pickerShowSelected && !pickerDraft.includes(c.id)) return false;
       return !pickerSearch || c.name.toLowerCase().includes(pickerSearch.toLowerCase());
@@ -231,12 +249,32 @@ export function SkillInlineEdit({
               onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               placeholder="What will the learner be able to do?" />
           </label>
-          {levels.length > 0 && (
+          {allLevels.length > 0 && (
             <div className="cm-proficiency-section">
               <p className="cm-proficiency-label">
                 Proficiency levels
-                {requireCourse && <span className="cm-proficiency-req"> · Each level needs at least one course <span className="req">*</span></span>}
+                {requireCourse && <span className="cm-proficiency-req"> · Each chosen level needs at least one course <span className="req">*</span></span>}
               </p>
+              <div className="cm-level-picker" role="group" aria-label="Levels used by this skill">
+                <span className="cm-level-picker-label">Levels for this skill</span>
+                {allLevels.map((l) => {
+                  const on = selectedLevelIds.includes(l.id);
+                  return (
+                    <button
+                      key={l.id}
+                      type="button"
+                      className={"cm-level-chip" + (on ? " on" : "")}
+                      aria-pressed={on}
+                      disabled={on && selectedLevelIds.length === 1}
+                      title={on && selectedLevelIds.length === 1 ? "A skill needs at least one level" : on ? `Remove ${l.name}` : `Add ${l.name}`}
+                      onClick={() => toggleLevel(l.id)}
+                    >
+                      {on ? <Check size={13} /> : <Plus size={13} />} {l.name}
+                    </button>
+                  );
+                })}
+                <span className="cm-level-picker-count">{levels.length} of {allLevels.length}</span>
+              </div>
               {levels.map((l) => {
                 const expanded = expandedLevels.has(l.id);
                 const desc = draft.levels?.[l.id]?.trim() ?? "";
@@ -982,7 +1020,7 @@ export function CompetencyLibrary({
               const isOpen = openSkill === s.id;
               const isEditing = editingSkill === s.id;
               // Show every active level, even without a description.
-              const definedLevels = data.levels.filter((l) => l.status === "Active");
+              const definedLevels = skillLevels(data, s);
 
               return (
                 <div key={s.id} className={"cm-skill-accordion" + (isOpen ? " open" : "")}>

@@ -2063,3 +2063,15 @@
 .cm-level-form { display: grid; gap: 16px; }
 .cm-level-form label { display: grid; gap: 6px; }
 .cm-level-form .cm-inline-form-actions { display: flex; justify-content: flex-end; gap: 10px; border-top: 0; padding-top: 0; }
+
+/* ── Skill form: choose which proficiency levels a skill uses ── */
+.cm-level-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 0 12px; }
+.cm-level-picker-label { font-size: 14px; color: #526176; margin-right: 4px; }
+.cm-level-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 16px; border: 1px dashed #c6d2e3; background: #fff; color: #526176; font: inherit; font-size: 14px; cursor: pointer; }
+.cm-level-chip:hover { border-color: #2463d6; color: #2463d6; }
+.cm-level-chip.on { border-style: solid; border-color: #b9cdf6; background: #eef3fd; color: #1d4ed8; font-weight: 600; }
+.cm-level-chip:disabled { cursor: not-allowed; opacity: .7; }
+.cm-level-chip:focus-visible { outline: 2px solid #2463d6; outline-offset: 2px; }
+.cm-level-picker-count { margin-left: auto; font-size: 14px; color: #526176; }
+.cm-levels-cell span { font-size: 15px; color: #1f2937; }
+.cm-levels-cell small { display: block; font-size: 14px; color: #526176; margin-top: 2px; }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, X, BookOpen, Search } from "lucide-react";
-import { Data, RecordItem, uid, validate, compIdsOf, withComps } from "./model";
+import { Data, RecordItem, uid, validate, compIdsOf, withComps, skillLevels } from "./model";
 import { WorkflowData } from "./workflowModel";
 
 export function LibraryCreate({
@@ -399,7 +399,7 @@ export function LibraryCreate({
                 {selectedSkillIds.map((id) => {
                   const skill = data.skills.find((s) => s.id === id);
                   if (!skill) return null;
-                  const activeLevels = data.levels.filter((l) => l.status === "Active");
+                  const activeLevels = skillLevels(data, skill);
                   // Always list every active level, even when the skill has no description for it.
                   const levelsWithData = activeLevels;
 

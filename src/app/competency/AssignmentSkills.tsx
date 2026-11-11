@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Layers, ChevronDown, Search } from "lucide-react";
-import { Data, RecordItem, compIdsOf, inComp } from "./model";
+import { Data, RecordItem, compIdsOf, inComp, skillLevels } from "./model";
 import { Plan, Course } from "./workflowModel";
 
 type Props = {
@@ -245,7 +245,10 @@ function SkillGroup({
                 if (!e.target.value) return;
                 onChange(
                   selected.map((s) =>
-                    allIds.has(s.skillId) && mine(s) ? { ...s, expected: e.target.value } : s,
+                    allIds.has(s.skillId) && mine(s) &&
+                    skillLevels(data, data.skills.find((x) => x.id === s.skillId)).some((l) => l.id === e.target.value)
+                      ? { ...s, expected: e.target.value }
+                      : s,
                   ),
                 );
               }}
@@ -321,7 +324,7 @@ function SkillGroup({
                       <option value="">
                         {selection ? "Choose Level" : other ? "Selected Elsewhere" : "Select Skill First"}
                       </option>
-                      {levels.map((l) => (
+                      {skillLevels(data, s).map((l) => (
                         <option key={l.id} value={l.id}>
                           {l.name}
                         </option>
