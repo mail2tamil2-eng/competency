@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Search, Pencil, Trash2, Ban, CheckCircle2, ArrowLeft, Upload } from "lucide-react";
-import { Data, RecordItem, uid, used, compIdsOf, validate, skillLevels } from "./model";
+import { Data, RecordItem, uid, used, compIdsOf, validate } from "./model";
 import { WorkflowData } from "./workflowModel";
 import { SkillInlineEdit } from "./CompetencyLibrary";
 import { SkillBulkUpload } from "./SkillBulkUpload";
@@ -380,7 +380,6 @@ export function LibrarySettings({
               <thead>
                 <tr>
                   <th>Skill</th>
-                  <th>Levels</th>
                   <th>Competency Count</th>
                   <th>Status</th>
                   <th className="cm-right">Actions</th>
@@ -393,15 +392,6 @@ export function LibrarySettings({
                       <td>
                         <strong>{s.name}</strong>
                         <small>{s.description || "No description added"}</small>
-                      </td>
-                      <td className="cm-levels-cell">
-                        {(() => {
-                          const all = data.levels.filter((l) => l.status === "Active").length;
-                          const mine = skillLevels(data, s);
-                          return mine.length === all
-                            ? <span>All {all}</span>
-                            : <span title={mine.map((l) => l.name).join(", ")}>{mine.length} of {all}<small>{mine.map((l) => l.name).join(", ")}</small></span>;
-                        })()}
                       </td>
                       <td><CompetencyCell comps={skillCompetencies(data, s)} /></td>
                       <td><span className={"cm-badge " + s.status.toLowerCase()}>{s.status}</span></td>

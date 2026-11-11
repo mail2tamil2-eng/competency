@@ -277,7 +277,6 @@ export function SkillInlineEdit({
                 })}
                 <span className="cm-level-picker-count">{levels.length} of {allLevels.length}</span>
               </div>
-              <p className="cm-level-picker-hint">Levels are added in order. Choosing {allLevels[Math.min(2, allLevels.length - 1)]?.name} includes every level before it.</p>
               {levels.map((l) => {
                 const expanded = expandedLevels.has(l.id);
                 const desc = draft.levels?.[l.id]?.trim() ?? "";
