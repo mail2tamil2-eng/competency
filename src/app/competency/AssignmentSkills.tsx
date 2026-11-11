@@ -36,6 +36,14 @@ export function AssignmentSkills({
     .map((id) => data.competencies.find((c) => c.id === id))
     .filter((c): c is RecordItem => !!c);
   const skillsOf = (cId: string) => data.skills.filter((s) => inComp(s, cId) && s.status === "Active");
+  /** Adding a competency selects all its skills that aren't already picked under another competency. */
+  function addCompetency(id: string) {
+    setAdded((a) => [...a, id]);
+    const fresh = skillsOf(id)
+      .filter((sk) => !selected.some((x) => x.skillId === sk.id))
+      .map((sk) => ({ skillId: sk.id, expected: "", competencyId: id }));
+    if (fresh.length) onChange([...selected, ...fresh]);
+  }
   function removeCompetency(id: string) {
     setAdded((a) => a.filter((x) => x !== id));
     onChange(selected.filter((x) => ownerOf(data, x) !== id));
@@ -49,12 +57,10 @@ export function AssignmentSkills({
       <p className="cm-assignment-help">
         {readOnly
           ? "Check the expected level for each skill under its competency."
-          : "Choose competencies, select their skills, then set the expected level for each skill."}
+          : "Choose competencies — all their skills are selected. Untick any you don't need, then set the expected level."}
       </p>
       {!readOnly && (
-        <div className="cm-assignment-search">
-          <div className="cm-assignment-comp-select">
-            <span>Competencies</span>
+        <div className="cm-assignment-comp-field">
             <MultiCheckDropdown
               ariaLabel="Select competencies"
               placeholder="Select competencies…"
@@ -67,9 +73,8 @@ export function AssignmentSkills({
                   return { id: c.id, label: c.name, description: `${n} skill${n === 1 ? "" : "s"}` };
                 })}
               selectedIds={shownIds}
-              onToggle={(id) => (shownIds.includes(id) ? removeCompetency(id) : setAdded((a) => [...a, id]))}
+              onToggle={(id) => (shownIds.includes(id) ? removeCompetency(id) : addCompetency(id))}
             />
-          </div>
         </div>
       )}
       <div className="cm-assignment-count" role="status">
@@ -186,29 +191,7 @@ function SkillGroup({
       aria-label={`${competency.name} competency`}
     >
       <div className="cm-assignment-group-header">
-        {!readOnly && (
-          <input
-            type="checkbox"
-            className="cm-competency-checkbox"
-            ref={(el) => { if (el) el.indeterminate = allIndeterminate; }}
-            checked={allChecked}
-            disabled={!available.length}
-            aria-label={`Select all skills in ${competency.name}`}
-            onChange={(e) => {
-              if (e.target.checked) {
-                // Add only this competency's skills that aren't already picked anywhere.
-                onChange([
-                  ...selected,
-                  ...available
-                    .filter((s) => !selected.some((x) => x.skillId === s.id))
-                    .map((s) => ({ skillId: s.id, expected: "", competencyId: cId })),
-                ]);
-              } else {
-                onChange(selected.filter((s) => !(allIds.has(s.skillId) && mine(s))));
-              }
-            }}
-          />
-        )}
+
         <div
           className="cm-assignment-group-toggle"
           role="button"

@@ -2166,3 +2166,6 @@
 .cm .cm-assignment-comp-select { align-items: flex-start; }
 .cm .cm-assignment-comp-select > span { padding-top: 11px; }
 .cm .cm-assignment-comp-select .cm-mcd { flex: 1; min-width: 0; max-width: 560px; }
+/* Competency picker sits like the Skills field: full width, chips underneath */
+.cm .cm-assignment-comp-field { margin: 4px 0 14px; }
+.cm .cm-assignment-comp-field .cm-mcd { max-width: none; }
