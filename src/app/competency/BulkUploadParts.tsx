@@ -1,4 +1,5 @@
-import { Upload } from "lucide-react";
+import { useRef } from "react";
+import { Upload, X } from "lucide-react";
 
 /* Shared building blocks so every bulk upload dialog has the same layout:
    upload box → results summary → actions. */
@@ -17,21 +18,41 @@ export function UploadDropZone({
   limits: string;
   label?: string;
   disabled?: boolean;
+  /** Called with undefined when the file is removed. */
   onFile: (file?: File) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <label
-      className="cm-drop cm-drop-compact"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => { e.preventDefault(); onFile(e.dataTransfer.files[0]); }}
-    >
-      <Upload size={22} />
-      <span className="cm-drop-text">
-        <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
-        <span>{limits}</span>
-      </span>
-      <input aria-label={label} type="file" accept=".csv,text/csv" disabled={disabled} onChange={(e) => onFile(e.target.files?.[0])} />
-    </label>
+    <div className="cm-drop-wrap">
+      <label
+        className={"cm-drop cm-drop-compact" + (fileName ? " has-file" : "")}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => { e.preventDefault(); onFile(e.dataTransfer.files[0]); }}
+      >
+        <Upload size={22} />
+        <span className="cm-drop-text">
+          <strong>{fileName || "Choose a CSV file or drop it here"}</strong>
+          <span>{fileName ? "Click to choose a different file" : limits}</span>
+        </span>
+        <input ref={inputRef} aria-label={label} type="file" accept=".csv,text/csv" disabled={disabled} onChange={(e) => onFile(e.target.files?.[0])} />
+      </label>
+      {fileName && (
+        <button
+          type="button"
+          className="cm-drop-remove"
+          aria-label={`Remove file ${fileName}`}
+          title="Remove file"
+          disabled={disabled}
+          onClick={() => {
+            // Clear the input so the same file can be chosen again.
+            if (inputRef.current) inputRef.current.value = "";
+            onFile(undefined);
+          }}
+        >
+          <X size={16} /> Remove
+        </button>
+      )}
+    </div>
   );
 }
 

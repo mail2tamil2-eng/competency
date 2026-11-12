@@ -2201,3 +2201,10 @@
 .cm .cm-reorder-card[data-dragging="true"] { opacity: 0.5; }
 .cm .cm-reorder-card[data-drop-target="true"] { box-shadow: 0 0 0 2px #2D74FA !important; }
 .cm .cm-assignment-group-header > .cm-drag-handle { margin: 0 -4px 0 8px; align-self: center; }
+
+/* Bulk upload: remove the chosen file. */
+.cm-dialog .cm-drop-wrap { position: relative; }
+.cm-dialog .cm-drop.cm-drop-compact.has-file { padding-right: 120px; border-style: solid; }
+.cm-dialog .cm-drop-remove { position: absolute; top: 50%; right: 14px; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border: 1px solid #d5dbe5; border-radius: 8px; background: #fff; color: #b42318; font: inherit; font-size: 14px; cursor: pointer; }
+.cm-dialog .cm-drop-remove:hover { background: #fef3f2; border-color: #f3b8b2; }
+.cm-dialog .cm-drop-remove:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; }
