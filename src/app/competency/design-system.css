@@ -1859,9 +1859,14 @@
   overflow-wrap: break-word;
   word-break: break-word;
 }
+/* Level names (e.g. "Intermediate") must never break mid-word. */
+.cm-course-popup-dialog .cm-manager-table td:first-child {
+  word-break: normal;
+  overflow-wrap: normal;
+}
 /* Explicit column widths — total 100% */
-.cm-course-popup-dialog .cm-manager-table th:nth-child(1) { width: 15%; } /* Skill Level   */
-.cm-course-popup-dialog .cm-manager-table th:nth-child(2) { width: 35%; } /* Course Name   */
+.cm-course-popup-dialog .cm-manager-table th:nth-child(1) { width: 19%; } /* Skill Level   */
+.cm-course-popup-dialog .cm-manager-table th:nth-child(2) { width: 31%; } /* Course Name   */
 .cm-course-popup-dialog .cm-manager-table th:nth-child(3) { width: 18%; } /* Mandatory     */
 .cm-course-popup-dialog .cm-manager-table th:nth-child(4) { width: 17%; } /* Course Status */
 .cm-course-popup-dialog .cm-manager-table th:nth-child(5) { width: 15%; } /* Proof Status  */
