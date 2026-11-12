@@ -1,4 +1,4 @@
-import { compNames, assignmentLevels } from "./model";
+import { compNames, updatableLevels } from "./model";
 import { statusText } from "./displayText";
 import { useState } from "react";
 import { FileText, Download, ArrowLeft, CheckCircle2, BookOpen, ExternalLink } from "lucide-react";
@@ -32,8 +32,8 @@ export function ManagerSkillDialog({
   const [level, setLevel] = useState(""),
     [remarks, setRemarks] = useState(""),
     [error, setError] = useState("");
-  // Only the levels this skill's competency requires ("Required up to") are offered.
-  const skillLv = assignmentLevels(data, a);
+  // Only levels up to the learner's target (expected) level are offered.
+  const skillLv = updatableLevels(data, a);
   const currentRank = skillLv.findIndex((l) => l.id === a.current);
   const higherLevels = skillLv.filter(
     (l, i) => l.status === "Active" && i > currentRank,
@@ -118,8 +118,8 @@ export function ManagerSkillDialog({
           </label>
           <p className="cm-hint">
             {higherLevels.length
-              ? "Only levels higher than the current proficiency can be selected."
-              : "This skill is already at the highest available active level. No further update is possible."}
+              ? "Choose a level higher than the current one, up to the target level."
+              : "This learner has already reached the target level. No further update is possible."}
           </p>
           {error && (
             <p role="alert" className="cm-error">

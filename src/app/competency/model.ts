@@ -226,6 +226,12 @@ export function assignmentLevels(data: Data, a: Pick<Assignment, "skillId" | "co
   const reach = Math.max(required.length - 1, all.findIndex((l) => l.id === a.current), all.findIndex((l) => l.id === a.expected));
   return all.slice(0, reach + 1);
 }
+/** Levels an admin or manager may set for a learner's skill: never above the learner's target (expected) level. */
+export function updatableLevels(data: Data, a: Pick<Assignment, "skillId" | "competencyId" | "current" | "expected">): RecordItem[] {
+  const lv = assignmentLevels(data, a);
+  const ei = lv.findIndex((l) => l.id === a.expected);
+  return ei < 0 ? lv : lv.slice(0, ei + 1);
+}
 /** "Communication, Customer Focus" for display. */
 export function compNames(data: Data, s?: RecordItem | null): string {
   return compIdsOf(s)

@@ -290,7 +290,7 @@ export function ManagerProgress({ data, work, save }: ManagerProps) {
                           <td>{formatDate(a.completedDate)}</td>
                           <td>
                             <button
-                              className="cm-button"
+                              className="cm-button primary"
                               aria-label={`Update level for ${skill(a)?.name}`}
                               onClick={() => setEditing(a.id)}
                             >

@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect } from "react";
 import { Download, Upload, Search, CheckCircle2 } from "lucide-react";
-import { Data, Assignment, download, parseCSV, compNames, assignmentLevels } from "./model";
+import { Data, Assignment, download, parseCSV, compNames, updatableLevels } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
 import { DisclosureIcon } from "./Disclosure";
 import { count, listJoin, UploadDropZone, UploadSummary } from "./BulkUploadParts";
@@ -108,9 +108,9 @@ function BulkLevelUpload({
               const presentName = present?.name || "Not assessed";
               if (presentName.toLowerCase() !== currentName.toLowerCase())
                 errors.push(`Current Level is ${presentName}, not ${currentName}.`);
-              const level = assignmentLevels(data, match).find((l) => l.name.toLowerCase() === levelName.toLowerCase());
+              const level = updatableLevels(data, match).find((l) => l.name.toLowerCase() === levelName.toLowerCase());
               if (!level) {
-                errors.push(`"${levelName}" is not a required level for this skill.`);
+                errors.push(`"${levelName}" is above the target level or not used by this skill.`);
               } else {
                 levelId = level.id;
                 const ci = data.levels.findIndex((l) => l.id === match.current);
@@ -588,7 +588,9 @@ export function LearnerProgress({
                                     (max, l, i) => (l.status === "Active" ? i : max),
                                     -1,
                                   );
-                                  const isAtMax = ci >= 0 && ci >= lastActiveIdx;
+                                  // Nothing left to update once the learner reaches their target (or the top level).
+                                  const reachedTarget = ci >= 0 && ei >= 0 && ci >= ei;
+                                  const isAtMax = reachedTarget || (ci >= 0 && ci >= lastActiveIdx);
 
                                   let gapText = "—", gapCls = "";
                                   if (g.status === "below") {
@@ -659,10 +661,10 @@ export function LearnerProgress({
                                       </td>
                                       <td className="cm-sct-td-action">
                                         {isAtMax ? (
-                                          <span className="cm-lp-at-max">Highest Level</span>
+                                          <span className="cm-lp-at-max">{reachedTarget ? "Target Met" : "Highest Level"}</span>
                                         ) : (
                                           <button
-                                            className="cm-button cm-lp-update-btn"
+                                            className="cm-button primary cm-lp-update-btn"
                                             onClick={(e) => openUpdate(e, a)}
                                           >
                                             Update
@@ -765,8 +767,8 @@ export function LearnerProgress({
               >
                 {!a.current && <option value="" disabled>Select a Level</option>}
                 {levels
-                  // Only levels this skill's competency requires ("Required up to").
-                  .filter((l) => (l.status === "Active" && assignmentLevels(data, a).some((x) => x.id === l.id)) || l.id === a.current)
+                  // Only levels up to the learner's target level.
+                  .filter((l) => (l.status === "Active" && updatableLevels(data, a).some((x) => x.id === l.id)) || l.id === a.current)
                   .map((l) => {
                     const li = levels.findIndex((x) => x.id === l.id);
                     const disabled = ci >= 0 && li <= ci;
