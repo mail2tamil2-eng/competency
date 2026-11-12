@@ -2221,13 +2221,19 @@
 .cm .cm-course-link:hover { color: #1a4fb0; text-decoration-thickness: 2px; }
 .cm .cm-course-link:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; border-radius: 2px; }
 
-/* Create Competency: course rows with a labelled Mandatory switch (on by default). */
-.cm .cm-mandatory-switch { display: inline-flex; align-items: center; gap: 8px; padding: 4px 6px; border: 0; border-radius: 8px; background: none; cursor: pointer; font: inherit; }
-.cm .cm-mandatory-switch:hover { background: #eef3fb; }
-.cm .cm-mandatory-switch:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; }
-.cm .cm-mandatory-track { position: relative; width: 36px; height: 20px; border-radius: 10px; background: #c7ced9; transition: background .2s; flex-shrink: 0; }
-.cm .cm-mandatory-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
-.cm .cm-mandatory-switch.on .cm-mandatory-track { background: #2463D6; }
-.cm .cm-mandatory-switch.on .cm-mandatory-thumb { transform: translateX(16px); }
-.cm .cm-mandatory-text { min-width: 72px; text-align: left; font-size: 14px; font-weight: 600; color: #526176; }
-.cm .cm-mandatory-switch.on .cm-mandatory-text { color: #2463D6; }
+/* Create Competency: closed course summary per level, opening to a mandatory checklist. */
+.cm .cm-course-summary { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 6px 10px 6px 12px; border: 1px solid #c9d8f5; border-radius: 999px; background: #f2f6fe; color: #2463D6; font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.cm .cm-course-summary:hover { background: #e6eefc; border-color: #2463D6; }
+.cm .cm-course-summary:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; }
+.cm .cm-course-summary .cm-disclosure { width: 16px; height: 16px; }
+.cm .cm-course-checklist { margin: 0 18px 12px 60px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; overflow: hidden; }
+.cm .cm-course-checklist-hint { margin: 0; padding: 8px 14px; font-size: 14px; color: #526176; border-bottom: 1px solid #e5e7eb; }
+.cm .cm-course-checklist ul { list-style: none; margin: 0; padding: 0; max-height: 264px; overflow-y: auto; }
+.cm .cm-course-checklist li + li { border-top: 1px solid #e5e7eb; }
+.cm .cm-course-checklist label { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; }
+.cm .cm-course-checklist label:hover { background: #f2f6fe; }
+.cm .cm-course-checklist input { width: 16px; height: 16px; accent-color: #2463D6; flex-shrink: 0; }
+.cm .cm-course-checklist-name { font-size: 14px; font-weight: 600; color: #111827; }
+.cm .cm-course-checklist small { font-size: 14px; color: #6b7280; }
+.cm .cm-course-checklist em { margin-left: auto; font-style: normal; font-size: 14px; font-weight: 600; color: #6b7280; }
+.cm .cm-course-checklist em.on { color: #2463D6; }

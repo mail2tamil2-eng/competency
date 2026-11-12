@@ -30,6 +30,10 @@ export function LibraryCreate({
     initial ? initial.skills.map((s) => s.id) : [],
   );
   const [errors, setErrors] = useState<string[]>([]);
+  /* Levels whose course list is open ("skillId:levelId"). Course lists start closed. */
+  const [openCourses, setOpenCourses] = useState<Set<string>>(new Set());
+  const toggleCourses = (key: string) =>
+    setOpenCourses((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
   /* Skill cards whose proficiency levels are hidden. Cards start open. */
   const [collapsedSkills, setCollapsedSkills] = useState<Set<string>>(new Set());
   const toggleSkillCard = (id: string) =>
@@ -337,50 +341,55 @@ export function LibraryCreate({
                                     <strong style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{l.name}</strong>
                                     <p style={{ margin: "2px 0 0", fontSize: 14, color: "#6b7280", lineHeight: 1.4, fontStyle: skill.levels?.[l.id]?.trim() ? "normal" : "italic" }}>{skill.levels?.[l.id]?.trim() || "No description added"}</p>
                                   </div>
+                                  {courses.length > 0 && (() => {
+                                    const key = `${skill.id}:${l.id}`;
+                                    const mand = courses.filter((c) => mandatoryMap[`${c.id}:${skill.id}:${l.id}`] ?? true).length;
+                                    return (
+                                      <button
+                                        type="button"
+                                        className={"cm-course-summary" + (openCourses.has(key) ? " open" : "")}
+                                        aria-expanded={openCourses.has(key)}
+                                        aria-controls={`courses-${key}`}
+                                        onClick={() => toggleCourses(key)}
+                                      >
+                                        <BookOpen size={14} />
+                                        <span>
+                                          {courses.length} course{courses.length === 1 ? "" : "s"} · {mand} mandatory
+                                        </span>
+                                        <DisclosureIcon open={openCourses.has(key)} />
+                                      </button>
+                                    );
+                                  })()}
                                   {courses.length === 0 && (
                                     <span className="cm-no-courses-chip">
                                       <BookOpen size={11} /> No courses mapped
                                     </span>
                                   )}
                                 </div>
-                                {/* Mapped courses are always listed, each with a clear Mandatory switch (on by default). */}
-                                {courses.length > 0 && (
-                                  <div style={{ margin: "0 18px 12px 60px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f9fafb", overflow: "hidden" }}>
-                                    {courses.map((c, ci) => (
-                                      <div
-                                        key={c.id}
-                                        style={{
-                                          display: "flex", alignItems: "center", justifyContent: "space-between",
-                                          padding: "10px 14px",
-                                          borderTop: ci > 0 ? "1px solid #e5e7eb" : "none",
-                                        }}
-                                      >
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                          <BookOpen size={13} color="#6b7280" />
-                                          <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{c.name}</span>
-                                          {c.duration && (
-                                            <span style={{ fontSize: 12, color: "#9ca3af" }}>{c.duration}</span>
-                                          )}
-                                        </div>
-                                        {/* Mandatory switch: courses are mandatory unless switched off */}
-                                        {(() => {
-                                          const on = mandatoryMap[`${c.id}:${skill.id}:${l.id}`] ?? true;
-                                          return (
-                                            <button
-                                              type="button"
-                                              role="switch"
-                                              aria-checked={on}
-                                              aria-label={`Mandatory: ${c.name} (${l.name})`}
-                                              className={"cm-mandatory-switch" + (on ? " on" : "")}
-                                              onClick={() => toggleMandatory(c.id, skill.id, l.id)}
-                                            >
-                                              <span className="cm-mandatory-track"><span className="cm-mandatory-thumb" /></span>
-                                              <span className="cm-mandatory-text">{on ? "Mandatory" : "Optional"}</span>
-                                            </button>
-                                          );
-                                        })()}
-                                      </div>
-                                    ))}
+                                {/* Course checklist: tick = mandatory (all are mandatory by default). */}
+                                {courses.length > 0 && openCourses.has(`${skill.id}:${l.id}`) && (
+                                  <div className="cm-course-checklist" id={`courses-${skill.id}:${l.id}`}>
+                                    <p className="cm-course-checklist-hint">Tick the courses learners must complete. Unticked courses are optional.</p>
+                                    <ul>
+                                      {courses.map((c) => {
+                                        const on = mandatoryMap[`${c.id}:${skill.id}:${l.id}`] ?? true;
+                                        return (
+                                          <li key={c.id}>
+                                            <label>
+                                              <input
+                                                type="checkbox"
+                                                checked={on}
+                                                aria-label={`Mandatory: ${c.name} (${l.name})`}
+                                                onChange={() => toggleMandatory(c.id, skill.id, l.id)}
+                                              />
+                                              <span className="cm-course-checklist-name">{c.name}</span>
+                                              {c.duration && <small>{c.duration}</small>}
+                                              <em className={on ? "on" : ""}>{on ? "Mandatory" : "Optional"}</em>
+                                            </label>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
                                   </div>
                                 )}
                               </div>
