@@ -1119,7 +1119,7 @@ export function Learning({
                   if (progress(data, a) === "Completed") return null;
                   return (
                     <button
-                      className="cm-button cm-button-sm"
+                      className="cm-button primary cm-button-sm"
                       disabled={skillProof?.status === "Under Review"}
                       title={skillProof?.status === "Under Review" ? "Proof Already Submitted — Awaiting Review" : ""}
                       onClick={() => {
@@ -1257,7 +1257,18 @@ export function Learning({
                           <td>
                             <div className="cm-ct-course">
                               <BookOpen size={14} />
-                              {c.name}
+                              {/* Prototype: the LMS course player would open here. */}
+                              <a
+                                href={`#course-${c.id}`}
+                                className="cm-course-link"
+                                title={`Open ${c.name}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  toast.info(`Opening "${c.name}" — the course player opens here in the LMS.`);
+                                }}
+                              >
+                                {c.name}
+                              </a>
                             </div>
                           </td>
                           <td><span className="cm-level-badge">{c.level.name}</span></td>

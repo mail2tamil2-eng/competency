@@ -2214,3 +2214,9 @@
 .cm .cm-required-upto select { min-width: 140px; height: 36px; padding: 0 10px; border: 1px solid #d5dbe5; border-radius: 8px; background: #fff; font: inherit; font-size: 14px; color: #172033; }
 .cm .cm-not-required { margin: 0; padding: 10px 18px 12px; border-top: 1px solid #f3f4f6; font-size: 14px; color: #6b7280; font-style: italic; }
 @media (max-width: 720px) { .cm .cm-required-upto span { display: none; } }
+
+/* Learner: space between the progress summary and the view tabs; course names are links. */
+.cm .cm-skill-toolbar { margin: 20px 0 16px; }
+.cm .cm-course-link { color: #2463D6; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.cm .cm-course-link:hover { color: #1a4fb0; text-decoration-thickness: 2px; }
+.cm .cm-course-link:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; border-radius: 2px; }
