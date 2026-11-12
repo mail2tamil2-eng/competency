@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, X, BookOpen, Search, ArrowLeft } from "lucide-react";
+import { X, BookOpen, Search, ArrowLeft } from "lucide-react";
 import { DisclosureIcon } from "./Disclosure";
 import { useDragReorder, DragHandle } from "./Reorder";
 import { Data, RecordItem, uid, validate, compIdsOf, withComps, skillLevels } from "./model";
@@ -30,7 +30,6 @@ export function LibraryCreate({
     initial ? initial.skills.map((s) => s.id) : [],
   );
   const [errors, setErrors] = useState<string[]>([]);
-  const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
   /* Skill cards whose proficiency levels are hidden. Cards start open. */
   const [collapsedSkills, setCollapsedSkills] = useState<Set<string>>(new Set());
   const toggleSkillCard = (id: string) =>
@@ -40,7 +39,7 @@ export function LibraryCreate({
     if (!work) return map;
     for (const course of work.courses) {
       for (const m of course.mappings) {
-        map[`${course.id}:${m.skillId}:${m.levelId}`] = m.mandatory ?? false;
+        map[`${course.id}:${m.skillId}:${m.levelId}`] = m.mandatory ?? true;
       }
     }
     return map;
@@ -137,18 +136,9 @@ export function LibraryCreate({
     );
   }
 
-  function toggleLevelExpand(skillId: string, levelId: string) {
-    const key = `${skillId}:${levelId}`;
-    setExpandedLevels((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
-  }
-
   function toggleMandatory(courseId: string, skillId: string, levelId: string) {
     const key = `${courseId}:${skillId}:${levelId}`;
-    const newVal = !(mandatoryMap[key] ?? false);
+    const newVal = !(mandatoryMap[key] ?? true);
     setMandatoryMap((prev) => ({ ...prev, [key]: newVal }));
     if (work && onSaveWork) {
       const updatedCourses = work.courses.map((c) =>
@@ -347,32 +337,14 @@ export function LibraryCreate({
                                     <strong style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{l.name}</strong>
                                     <p style={{ margin: "2px 0 0", fontSize: 14, color: "#6b7280", lineHeight: 1.4, fontStyle: skill.levels?.[l.id]?.trim() ? "normal" : "italic" }}>{skill.levels?.[l.id]?.trim() || "No description added"}</p>
                                   </div>
-                                  {/* Clickable course count chip */}
-                                  {courses.length > 0 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleLevelExpand(skill.id, l.id)}
-                                      style={{
-                                        display: "inline-flex", alignItems: "center", gap: 5,
-                                        padding: "3px 10px", borderRadius: 20,
-                                        border: "1px solid #e5e7eb", background: "#f9fafb",
-                                        color: "#6b7280", fontSize: 12, fontWeight: 500,
-                                        whiteSpace: "nowrap", flexShrink: 0, cursor: "pointer",
-                                      }}
-                                    >
-                                      <BookOpen size={11} />
-                                      {courses.length} course{courses.length > 1 ? "s" : ""}
-                                      <ChevronDown size={11} style={{ transform: expandedLevels.has(`${skill.id}:${l.id}`) ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-                                    </button>
-                                  )}
                                   {courses.length === 0 && (
                                     <span className="cm-no-courses-chip">
                                       <BookOpen size={11} /> No courses mapped
                                     </span>
                                   )}
                                 </div>
-                                {/* Expanded course panel */}
-                                {expandedLevels.has(`${skill.id}:${l.id}`) && (
+                                {/* Mapped courses are always listed, each with a clear Mandatory switch (on by default). */}
+                                {courses.length > 0 && (
                                   <div style={{ margin: "0 18px 12px 60px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f9fafb", overflow: "hidden" }}>
                                     {courses.map((c, ci) => (
                                       <div
@@ -390,25 +362,23 @@ export function LibraryCreate({
                                             <span style={{ fontSize: 12, color: "#9ca3af" }}>{c.duration}</span>
                                           )}
                                         </div>
-                                        {/* Mandatory toggle */}
-                                        <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", userSelect: "none" }}>
-                                          <span style={{ fontSize: 12, color: "#6b7280" }}>Mandatory</span>
-                                          <span
-                                            onClick={() => toggleMandatory(c.id, skill.id, l.id)}
-                                            style={{
-                                              width: 36, height: 20, borderRadius: 10, display: "inline-flex", alignItems: "center",
-                                              background: mandatoryMap[`${c.id}:${skill.id}:${l.id}`] ? "#2463d6" : "#d1d5db",
-                                              transition: "background 0.2s", cursor: "pointer", flexShrink: 0, padding: "0 2px",
-                                            }}
-                                          >
-                                            <span style={{
-                                              width: 16, height: 16, borderRadius: "50%", background: "#fff",
-                                              transform: mandatoryMap[`${c.id}:${skill.id}:${l.id}`] ? "translateX(16px)" : "translateX(0)",
-                                              transition: "transform 0.2s", display: "block",
-                                              boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                                            }} />
-                                          </span>
-                                        </label>
+                                        {/* Mandatory switch: courses are mandatory unless switched off */}
+                                        {(() => {
+                                          const on = mandatoryMap[`${c.id}:${skill.id}:${l.id}`] ?? true;
+                                          return (
+                                            <button
+                                              type="button"
+                                              role="switch"
+                                              aria-checked={on}
+                                              aria-label={`Mandatory: ${c.name} (${l.name})`}
+                                              className={"cm-mandatory-switch" + (on ? " on" : "")}
+                                              onClick={() => toggleMandatory(c.id, skill.id, l.id)}
+                                            >
+                                              <span className="cm-mandatory-track"><span className="cm-mandatory-thumb" /></span>
+                                              <span className="cm-mandatory-text">{on ? "Mandatory" : "Optional"}</span>
+                                            </button>
+                                          );
+                                        })()}
                                       </div>
                                     ))}
                                   </div>

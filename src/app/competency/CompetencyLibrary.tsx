@@ -128,7 +128,7 @@ export function SkillInlineEdit({
     setLevelMappings((prev) => ({ ...prev, [pickerLevelId]: pickerDraft }));
     setLevelRequirements((prev) => ({
       ...prev,
-      [pickerLevelId]: Object.fromEntries(pickerDraft.map((id) => [id, pickerRequirements[id] ?? false])),
+      [pickerLevelId]: Object.fromEntries(pickerDraft.map((id) => [id, pickerRequirements[id] ?? true])),
     }));
     setPickerLevelId(null);
   }
@@ -183,7 +183,7 @@ export function SkillInlineEdit({
       pickerDraft.length !== pickerOriginal.length ||
       pickerDraft.some((id) => !pickerOriginal.includes(id)) ||
       pickerOriginal.some((id) => !pickerDraft.includes(id)) ||
-      pickerDraft.some((id) => (pickerRequirements[id] ?? false) !== (levelRequirements[pickerLevelId]?.[id] ?? false));
+      pickerDraft.some((id) => (pickerRequirements[id] ?? true) !== (levelRequirements[pickerLevelId]?.[id] ?? true));
     return (
       <Dialog open onOpenChange={(open) => { if (!open) setPickerLevelId(null); }}>
         <DialogContent className="cm-dialog cm-picker-dialog">
@@ -216,7 +216,7 @@ export function SkillInlineEdit({
                     else setPickerDraft((d) => d.filter((id) => id !== course.id));
                   }} />
                   <span className="cm-picker-name">{course.name}</span>
-                  {showMandatory && <label className="cm-course-mandatory"><input type="checkbox" disabled={!checked} checked={checked && (pickerRequirements[course.id] ?? false)} aria-label={`Mandatory for ${course.name}`} onChange={(e) => setPickerRequirements((prev) => ({ ...prev, [course.id]: e.target.checked }))} /><span>Mandatory</span></label>}
+                  {showMandatory && <label className="cm-course-mandatory"><input type="checkbox" disabled={!checked} checked={checked && (pickerRequirements[course.id] ?? true)} aria-label={`Mandatory for ${course.name}`} onChange={(e) => setPickerRequirements((prev) => ({ ...prev, [course.id]: e.target.checked }))} /><span>Mandatory</span></label>}
                 </div>
               );
             })}
@@ -330,7 +330,7 @@ export function SkillInlineEdit({
                                   return (
                                     <div key={c.id} className="cm-course-row">
                                       <span className="cm-course-row-name">{c.name}</span>
-                                      {showMandatory && <label className="cm-course-mandatory"><input type="checkbox" checked={w ?? false} aria-label={`Mandatory for ${c.name}`} onChange={(e) => setLevelRequirements((prev) => ({ ...prev, [l.id]: { ...prev[l.id], [c.id]: e.target.checked } }))} /><span>Mandatory</span></label>}
+                                      {showMandatory && <label className="cm-course-mandatory"><input type="checkbox" checked={w ?? true} aria-label={`Mandatory for ${c.name}`} onChange={(e) => setLevelRequirements((prev) => ({ ...prev, [l.id]: { ...prev[l.id], [c.id]: e.target.checked } }))} /><span>Mandatory</span></label>}
                                       <button type="button" aria-label={`Remove ${c.name}`} className="cm-course-row-remove"
                                         onClick={() => setLevelMappings((prev) => ({ ...prev, [l.id]: (prev[l.id] ?? []).filter((id) => id !== c.id) }))}>
                                         <X size={12} />
@@ -382,7 +382,7 @@ function CourseListPopup({
     courses.map(({ course, mapping }) => ({
       courseId: course.id,
       levelId: mapping.levelId,
-      mandatory: mapping.mandatory ?? false,
+      mandatory: mapping.mandatory ?? true,
     })),
   );
 
@@ -562,7 +562,7 @@ export function CompetencyLibrary({
       if (lPickerDraft.includes(course.id)) {
         return {
           ...course,
-          mappings: [...others, { skillId, levelId, mandatory: lPickerRequirements[course.id] ?? false }],
+          mappings: [...others, { skillId, levelId, mandatory: lPickerRequirements[course.id] ?? true }],
         };
       }
       return others.length !== course.mappings.length ? { ...course, mappings: others } : course;
@@ -892,7 +892,7 @@ export function CompetencyLibrary({
         const hasChanged =
           lPickerDraft.length !== lPickerOriginal.length ||
           lPickerDraft.some((id) => !lPickerOriginal.includes(id)) ||
-          lPickerOriginal.some((id) => !lPickerDraft.includes(id)) || lPickerDraft.some((id) => (lPickerRequirements[id] ?? false) !== (work.courses.find((c) => c.id === id)?.mappings.find((m) => m.skillId === levelPicker.skillId && m.levelId === levelPicker.levelId)?.mandatory ?? false));
+          lPickerOriginal.some((id) => !lPickerDraft.includes(id)) || lPickerDraft.some((id) => (lPickerRequirements[id] ?? true) !== (work.courses.find((c) => c.id === id)?.mappings.find((m) => m.skillId === levelPicker.skillId && m.levelId === levelPicker.levelId)?.mandatory ?? true));
         const pickerFiltered = allCourses.filter((c) => {
           if (lPickerShowSelected && !lPickerDraft.includes(c.id)) return false;
           return !lPickerSearch || c.name.toLowerCase().includes(lPickerSearch.toLowerCase());
@@ -945,7 +945,7 @@ export function CompetencyLibrary({
                         }}
                       />
                       <span className="cm-picker-name">{course.name}</span>
-                      <label className="cm-course-mandatory"><input type="checkbox" disabled={!checked} checked={checked && (lPickerRequirements[course.id] ?? false)} aria-label={`Mandatory for ${course.name}`} onChange={(e) => setLPickerRequirements((prev) => ({ ...prev, [course.id]: e.target.checked }))} /><span>Mandatory</span></label>
+                      <label className="cm-course-mandatory"><input type="checkbox" disabled={!checked} checked={checked && (lPickerRequirements[course.id] ?? true)} aria-label={`Mandatory for ${course.name}`} onChange={(e) => setLPickerRequirements((prev) => ({ ...prev, [course.id]: e.target.checked }))} /><span>Mandatory</span></label>
                     </div>
                   );
                 })}

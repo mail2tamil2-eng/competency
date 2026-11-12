@@ -115,7 +115,7 @@ function DetailView({
           const mapping = c.mappings.find((m) => m.skillId === a.skillId && m.levelId === l.id);
           const proof = work.proofs.filter((p) => p.assignmentId === a.id && p.courseId === c.id).at(-1);
           const courseStatus = done.includes(c.id) ? "Completed" : c.id === firstRequired ? "In Progress" : "Not Started";
-          return { level: l, course: c, mandatory: mapping?.mandatory ?? false, courseStatus, proofStatus: proof?.status || "—" };
+          return { level: l, course: c, mandatory: mapping?.mandatory ?? true, courseStatus, proofStatus: proof?.status || "—" };
         }),
     );
   }

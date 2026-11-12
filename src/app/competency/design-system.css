@@ -2220,3 +2220,14 @@
 .cm .cm-course-link { color: #2463D6; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .cm .cm-course-link:hover { color: #1a4fb0; text-decoration-thickness: 2px; }
 .cm .cm-course-link:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; border-radius: 2px; }
+
+/* Create Competency: course rows with a labelled Mandatory switch (on by default). */
+.cm .cm-mandatory-switch { display: inline-flex; align-items: center; gap: 8px; padding: 4px 6px; border: 0; border-radius: 8px; background: none; cursor: pointer; font: inherit; }
+.cm .cm-mandatory-switch:hover { background: #eef3fb; }
+.cm .cm-mandatory-switch:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; }
+.cm .cm-mandatory-track { position: relative; width: 36px; height: 20px; border-radius: 10px; background: #c7ced9; transition: background .2s; flex-shrink: 0; }
+.cm .cm-mandatory-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
+.cm .cm-mandatory-switch.on .cm-mandatory-track { background: #2463D6; }
+.cm .cm-mandatory-switch.on .cm-mandatory-thumb { transform: translateX(16px); }
+.cm .cm-mandatory-text { min-width: 72px; text-align: left; font-size: 14px; font-weight: 600; color: #526176; }
+.cm .cm-mandatory-switch.on .cm-mandatory-text { color: #2463D6; }
