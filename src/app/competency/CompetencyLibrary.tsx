@@ -16,7 +16,7 @@ import {
   BookOpen,
   X,
 } from "lucide-react";
-import { Data, RecordItem, Kind, used, download, uid, validate, inComp, compIdsOf, withComps, skillLevels, compSkills } from "./model";
+import { Data, RecordItem, Kind, used, download, uid, validate, inComp, compIdsOf, withComps, compSkills, compSkillLevels } from "./model";
 import { WorkflowData, Course } from "./workflowModel";
 import { LibraryCreate } from "./LibraryCreate";
 import { DisclosureIcon } from "./Disclosure";
@@ -1031,7 +1031,7 @@ export function CompetencyLibrary({
               const isOpen = openSkill === s.id;
               const isEditing = editingSkill === s.id;
               // Show every active level, even without a description.
-              const definedLevels = skillLevels(data, s);
+              const definedLevels = compSkillLevels(data, comp.id, s);
 
               return (
                 <div key={s.id} className={"cm-skill-accordion" + (isOpen ? " open" : "")}>

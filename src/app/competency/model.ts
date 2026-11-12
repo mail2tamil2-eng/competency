@@ -17,6 +17,8 @@ export type RecordItem = {
   courses?: Record<string, string>;
   /** Competency only: the order its skills are shown in (set by drag and drop). */
   skillOrder?: string[];
+  /** Competency only: skillId → highest level this competency requires ("Required up to"). Unset means all the skill's levels. */
+  skillTargets?: Record<string, string>;
 };
 export type Assignment = {
   id: string;
@@ -201,6 +203,13 @@ export function compSkills(data: Data, compId: string): RecordItem[] {
     .filter(({ s }) => inComp(s, compId))
     .sort((a, b) => rank(a.s.id) - rank(b.s.id) || a.i - b.i)
     .map(({ s }) => s);
+}
+/** A skill's levels as required by one competency: from the first level up to its "Required up to" level. */
+export function compSkillLevels(data: Data, compId: string | undefined, s?: RecordItem | null): RecordItem[] {
+  const levels = skillLevels(data, s);
+  const target = compId && s ? data.competencies.find((c) => c.id === compId)?.skillTargets?.[s.id] : undefined;
+  const i = target ? levels.findIndex((l) => l.id === target) : -1;
+  return i < 0 ? levels : levels.slice(0, i + 1);
 }
 /** "Communication, Customer Focus" for display. */
 export function compNames(data: Data, s?: RecordItem | null): string {

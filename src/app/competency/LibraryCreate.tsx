@@ -67,7 +67,17 @@ export function LibraryCreate({
     description: competency.description.trim(),
     // Skills keep the order the admin dragged them into.
     skillOrder: selectedSkillIds,
+    // Keep "Required up to" only for selected skills where it is below the skill's highest level.
+    skillTargets: Object.fromEntries(
+      Object.entries(competency.skillTargets ?? {}).filter(([sid, lid]) => {
+        const lv = skillLevels(data, data.skills.find((x) => x.id === sid));
+        return selectedSkillIds.includes(sid) && lv.some((l) => l.id === lid) && lv[lv.length - 1]?.id !== lid;
+      }),
+    ),
   };
+  function setTarget(skillId: string, levelId: string) {
+    setCompetency((c) => ({ ...c, skillTargets: { ...(c.skillTargets ?? {}), [skillId]: levelId } }));
+  }
   const reorder = useDragReorder(selectedSkillIds, setSelectedSkillIds);
 
   function getLinkedSkills() {
@@ -237,8 +247,11 @@ export function LibraryCreate({
                   const skill = data.skills.find((s) => s.id === id);
                   if (!skill) return null;
                   const activeLevels = skillLevels(data, skill);
-                  // Always list every active level, even when the skill has no description for it.
-                  const levelsWithData = activeLevels;
+                  // "Required up to": this competency may need only the first few of the skill's levels.
+                  const targetId = competency.skillTargets?.[id];
+                  const targetIdx = activeLevels.findIndex((l) => l.id === targetId);
+                  const levelsWithData = targetIdx < 0 ? activeLevels : activeLevels.slice(0, targetIdx + 1);
+                  const notRequired = targetIdx < 0 ? [] : activeLevels.slice(targetIdx + 1);
 
                   return (
                     <div
@@ -274,11 +287,25 @@ export function LibraryCreate({
                           )}
                           {collapsedSkills.has(id) && (
                             <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6b7280" }}>
-                              {levelsWithData.length} proficiency level{levelsWithData.length === 1 ? "" : "s"}
+                              {levelsWithData.length} of {activeLevels.length} proficiency level{activeLevels.length === 1 ? "" : "s"} required
                             </p>
                           )}
                           </div>
                         </div>
+                        {activeLevels.length > 1 && (
+                          <label className="cm-required-upto">
+                            <span>Required up to</span>
+                            <select
+                              aria-label={`Required up to level for ${skill.name}`}
+                              value={levelsWithData[levelsWithData.length - 1]?.id ?? ""}
+                              onChange={(e) => setTarget(id, e.target.value)}
+                            >
+                              {activeLevels.map((l) => (
+                                <option key={l.id} value={l.id}>{l.name}</option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
                         <button
                           type="button"
                           aria-label={`Remove ${skill.name}`}
@@ -389,6 +416,11 @@ export function LibraryCreate({
                               </div>
                             );
                           })}
+                          {notRequired.length > 0 && (
+                            <p className="cm-not-required">
+                              Not required in this competency: {notRequired.map((l) => l.name).join(", ")}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>

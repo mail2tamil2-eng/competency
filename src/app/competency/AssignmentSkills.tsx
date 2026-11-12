@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Layers, X } from "lucide-react";
 import { DisclosureIcon } from "./Disclosure";
 import { MultiCheckDropdown } from "./MultiCheckDropdown";
-import { Data, RecordItem, compIdsOf, compSkills, skillLevels } from "./model";
+import { Data, RecordItem, compIdsOf, compSkills, compSkillLevels } from "./model";
 import { useDragReorder, DragHandle } from "./Reorder";
 import { Plan, Course } from "./workflowModel";
 
@@ -245,7 +245,7 @@ function SkillGroup({
                 onChange(
                   selected.map((s) =>
                     allIds.has(s.skillId) && mine(s) &&
-                    skillLevels(data, data.skills.find((x) => x.id === s.skillId)).some((l) => l.id === e.target.value)
+                    compSkillLevels(data, cId, data.skills.find((x) => x.id === s.skillId)).some((l) => l.id === e.target.value)
                       ? { ...s, expected: e.target.value }
                       : s,
                   ),
@@ -333,7 +333,7 @@ function SkillGroup({
                       <option value="">
                         {selection ? "Choose Level" : other ? "Selected Elsewhere" : "Select Skill First"}
                       </option>
-                      {skillLevels(data, s).map((l) => (
+                      {compSkillLevels(data, cId, s).map((l) => (
                         <option key={l.id} value={l.id}>
                           {l.name}
                         </option>

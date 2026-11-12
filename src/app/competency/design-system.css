@@ -2208,3 +2208,9 @@
 .cm-dialog .cm-drop-remove { position: absolute; top: 50%; right: 14px; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border: 1px solid #d5dbe5; border-radius: 8px; background: #fff; color: #b42318; font: inherit; font-size: 14px; cursor: pointer; }
 .cm-dialog .cm-drop-remove:hover { background: #fef3f2; border-color: #f3b8b2; }
 .cm-dialog .cm-drop-remove:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; }
+
+/* Create Competency: "Required up to" level per skill. */
+.cm .cm-required-upto { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; font-size: 14px; color: #526176; white-space: nowrap; }
+.cm .cm-required-upto select { min-width: 140px; height: 36px; padding: 0 10px; border: 1px solid #d5dbe5; border-radius: 8px; background: #fff; font: inherit; font-size: 14px; color: #172033; }
+.cm .cm-not-required { margin: 0; padding: 10px 18px 12px; border-top: 1px solid #f3f4f6; font-size: 14px; color: #6b7280; font-style: italic; }
+@media (max-width: 720px) { .cm .cm-required-upto span { display: none; } }
