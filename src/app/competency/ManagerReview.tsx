@@ -1,4 +1,4 @@
-import { compNames } from "./model";
+import { compNames, assignmentLevels } from "./model";
 import { statusText } from "./displayText";
 import { useState } from "react";
 import { FileText, Download, ArrowLeft, CheckCircle2, BookOpen, ExternalLink } from "lucide-react";
@@ -32,8 +32,10 @@ export function ManagerSkillDialog({
   const [level, setLevel] = useState(""),
     [remarks, setRemarks] = useState(""),
     [error, setError] = useState("");
-  const currentRank = data.levels.findIndex((l) => l.id === a.current);
-  const higherLevels = data.levels.filter(
+  // Only the levels this skill's competency requires ("Required up to") are offered.
+  const skillLv = assignmentLevels(data, a);
+  const currentRank = skillLv.findIndex((l) => l.id === a.current);
+  const higherLevels = skillLv.filter(
     (l, i) => l.status === "Active" && i > currentRank,
   );
   function submit() {
@@ -98,7 +100,7 @@ export function ManagerSkillDialog({
                   ? "Choose a Higher Level"
                   : "No Higher Level Available"}
               </option>
-              {data.levels.map((l, index) => (
+              {skillLv.map((l, index) => (
                 <option
                   key={l.id}
                   value={l.id}

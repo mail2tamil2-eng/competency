@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect } from "react";
 import { Download, Upload, Search, CheckCircle2 } from "lucide-react";
-import { Data, Assignment, download, parseCSV, compNames, skillLevels } from "./model";
+import { Data, Assignment, download, parseCSV, compNames, assignmentLevels } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
 import { DisclosureIcon } from "./Disclosure";
 import { count, listJoin, UploadDropZone, UploadSummary } from "./BulkUploadParts";
@@ -108,9 +108,9 @@ function BulkLevelUpload({
               const presentName = present?.name || "Not assessed";
               if (presentName.toLowerCase() !== currentName.toLowerCase())
                 errors.push(`Current Level is ${presentName}, not ${currentName}.`);
-              const level = skillLevels(data, skillRec).find((l) => l.name.toLowerCase() === levelName.toLowerCase());
+              const level = assignmentLevels(data, match).find((l) => l.name.toLowerCase() === levelName.toLowerCase());
               if (!level) {
-                errors.push(`"${levelName}" is not an active level for this skill.`);
+                errors.push(`"${levelName}" is not a required level for this skill.`);
               } else {
                 levelId = level.id;
                 const ci = data.levels.findIndex((l) => l.id === match.current);
@@ -765,7 +765,8 @@ export function LearnerProgress({
               >
                 {!a.current && <option value="" disabled>Select a Level</option>}
                 {levels
-                  .filter((l) => l.status === "Active" || l.id === a.current)
+                  // Only levels this skill's competency requires ("Required up to").
+                  .filter((l) => (l.status === "Active" && assignmentLevels(data, a).some((x) => x.id === l.id)) || l.id === a.current)
                   .map((l) => {
                     const li = levels.findIndex((x) => x.id === l.id);
                     const disabled = ci >= 0 && li <= ci;

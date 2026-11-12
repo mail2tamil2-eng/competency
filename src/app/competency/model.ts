@@ -29,6 +29,8 @@ export type Assignment = {
   department: string;
   updatedBy?: "Admin" | "Manager";
   employeeId?: string;
+  /** Competency the skill was assigned under (from Role Mapping); decides its "Required up to" levels. */
+  competencyId?: string;
   assignedDate?: string;
   completedDate?: string;
   levelHistory?: {
@@ -210,6 +212,19 @@ export function compSkillLevels(data: Data, compId: string | undefined, s?: Reco
   const target = compId && s ? data.competencies.find((c) => c.id === compId)?.skillTargets?.[s.id] : undefined;
   const i = target ? levels.findIndex((l) => l.id === target) : -1;
   return i < 0 ? levels : levels.slice(0, i + 1);
+}
+/**
+ * Levels a learner works through for one assigned skill: the skill's levels up to the
+ * competency's "Required up to" level, always reaching the learner's current and expected levels.
+ */
+export function assignmentLevels(data: Data, a: Pick<Assignment, "skillId" | "competencyId" | "current" | "expected">): RecordItem[] {
+  const skill = data.skills.find((x) => x.id === a.skillId);
+  const comps = compIdsOf(skill);
+  const cId = a.competencyId && comps.includes(a.competencyId) ? a.competencyId : comps[0];
+  const all = skillLevels(data, skill);
+  const required = compSkillLevels(data, cId, skill);
+  const reach = Math.max(required.length - 1, all.findIndex((l) => l.id === a.current), all.findIndex((l) => l.id === a.expected));
+  return all.slice(0, reach + 1);
 }
 /** "Communication, Customer Focus" for display. */
 export function compNames(data: Data, s?: RecordItem | null): string {

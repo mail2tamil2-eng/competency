@@ -261,6 +261,7 @@ export function applyPlans(data: Data, work: WorkflowData, today: string) {
             assignments[assignments.indexOf(existing)] = {
               ...existing,
               expected: s.expected,
+              competencyId: s.competencyId ?? existing.competencyId,
               completedDate: undefined,
             };
         } else
@@ -272,6 +273,7 @@ export function applyPlans(data: Data, work: WorkflowData, today: string) {
             department: e.department,
             skillId: s.skillId,
             expected: s.expected,
+            competencyId: s.competencyId,
             current: "",
           });
       }

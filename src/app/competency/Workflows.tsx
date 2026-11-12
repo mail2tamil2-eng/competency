@@ -22,7 +22,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Data, uid, progress, contentMissing, download, compIdsOf, inComp, compNames } from "./model";
+import { Data, uid, progress, contentMissing, download, compIdsOf, inComp, compNames, assignmentLevels } from "./model";
 import {
   WorkflowData,
   Course,
@@ -506,6 +506,7 @@ export function RoleMapping({
               assignments[assignments.indexOf(existing)] = {
                 ...existing,
                 expected: s.expected,
+                competencyId: s.competencyId ?? existing.competencyId,
                 completedDate: undefined,
               };
           } else
@@ -517,6 +518,7 @@ export function RoleMapping({
               department: e.department,
               skillId: s.skillId,
               expected: s.expected,
+              competencyId: s.competencyId,
               current: "",
             });
         }
@@ -1077,8 +1079,10 @@ export function Learning({
       {(manager || skillView === "skill") && assignments.map((a) => {
         const courses = requiredCourses(data, work, a);
         const done = work.completed[a.id] || [];
-        const currentIndex = data.levels.findIndex((l) => l.id === a.current);
-        const expectedIndex = data.levels.findIndex((l) => l.id === a.expected);
+        // Only the levels this competency requires ("Required up to") are shown.
+        const lv = assignmentLevels(data, a);
+        const currentIndex = lv.findIndex((l) => l.id === a.current);
+        const expectedIndex = lv.findIndex((l) => l.id === a.expected);
         return (
           <article className={"cm-learning-card" + (collapsedSkills.has(a.id) ? " is-collapsed" : "")} key={a.id}>
             <div className="cm-section-head">
@@ -1142,7 +1146,7 @@ export function Learning({
             {!collapsedSkills.has(a.id) && (
             <div id={`skill-body-${a.id}`}>
             <div className="cm-level-track">
-              {data.levels.map((l, i) => (
+              {lv.map((l, i) => (
                 <div
                   key={l.id}
                   className={
@@ -1196,7 +1200,7 @@ export function Learning({
                   }}
                 >
                   <option value="">Not Recorded</option>
-                  {data.levels.slice(0, expectedIndex + 1).map((l) => (
+                  {lv.slice(0, expectedIndex + 1).map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.name}
                     </option>
@@ -1211,7 +1215,7 @@ export function Learning({
             )}
             {a.current &&
               currentIndex < expectedIndex && (() => {
-                const missingLevels = data.levels
+                const missingLevels = lv
                   .slice(currentIndex + 1, expectedIndex + 1)
                   .filter((l) => !work.courses.some((c) => c.mappings.some((m) => m.skillId === a.skillId && m.levelId === l.id)));
                 if (!missingLevels.length) return null;

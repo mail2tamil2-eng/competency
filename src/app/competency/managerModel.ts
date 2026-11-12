@@ -1,4 +1,4 @@
-import { Assignment, Data, progress, compNames } from "./model";
+import { Assignment, Data, progress, compNames, assignmentLevels } from "./model";
 import { Proof, WorkflowData } from "./workflowModel";
 
 export const personKey = (a: Assignment) =>
@@ -49,6 +49,8 @@ export function managerLevel(
 ) {
   if (!data.levels.some((l) => l.id === level && l.status === "Active"))
     throw Error("Choose an active proficiency level.");
+  if (!assignmentLevels(data, a).some((l) => l.id === level))
+    throw Error("This level is not required for this skill.");
   if (
     data.levels.findIndex((l) => l.id === level) <=
     data.levels.findIndex((l) => l.id === a.current)
