@@ -2189,3 +2189,6 @@
 .cm .cm-create-skill-toggle { display: flex; align-items: flex-start; gap: 8px; flex: 1; cursor: pointer; border-radius: 6px; }
 .cm .cm-create-skill-toggle .cm-disclosure { margin-top: 1px; flex-shrink: 0; }
 .cm .cm-create-skill-toggle:focus-visible { outline: 2px solid #2463D6; outline-offset: 2px; }
+
+/* Bulk uploads: template links sit right under the upload box. */
+.cm-dialog .cm-drop.cm-drop-compact { margin-bottom: 0; }

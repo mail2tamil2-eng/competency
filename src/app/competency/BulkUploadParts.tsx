@@ -1,20 +1,10 @@
-import { Upload, Download } from "lucide-react";
+import { Upload } from "lucide-react";
 
 /* Shared building blocks so every bulk upload dialog has the same layout:
-   steps → upload box → file columns guide → results summary → preview → actions. */
+   upload box → results summary → actions. */
 
 /** "1 Skill", "3 Skills" */
 export const count = (n: number, one: string, many = one + "s") => `${n} ${n === 1 ? one : many}`;
-
-export function UploadSteps({ reviewed }: { reviewed: boolean }) {
-  return (
-    <div className="cm-steps">
-      <span className="active">1 · Prepare File</span>
-      <span className={reviewed ? "active" : ""}>2 · Review</span>
-      <span>3 · Import</span>
-    </div>
-  );
-}
 
 export function UploadDropZone({
   fileName,
@@ -45,45 +35,8 @@ export function UploadDropZone({
   );
 }
 
-export type GuideColumn = { name: string; required?: boolean; auto?: boolean };
-
-export function FileColumnsGuide({
-  columns,
-  links,
-  hint,
-}: {
-  columns: GuideColumn[];
-  links: { label: string; onClick: () => void }[];
-  hint: string;
-}) {
-  return (
-    <div className="cm-upload-guide">
-      <div className="cm-upload-guide-head">
-        <strong>File Columns</strong>
-        <div className="cm-upload-guide-links">
-          {links.map((l) => (
-            <button key={l.label} type="button" className="cm-text-button" onClick={l.onClick}>
-              <Download size={15} /> {l.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <ul className="cm-column-chips" aria-label="File columns">
-        {columns.map((c) => (
-          <li key={c.name} className={c.required ? "required" : ""}>
-            {c.name}
-            {c.required && <span aria-label="required"> *</span>}
-            {c.auto && <em> · auto</em>}
-          </li>
-        ))}
-      </ul>
-      <p className="cm-upload-hint">
-        {columns.some((c) => c.required) && <><span className="cm-req-mark">*</span> Required. </>}
-        {hint}
-      </p>
-    </div>
-  );
-}
+/** "Skill Name, Level Name and Course ID" */
+export const listJoin = (xs: string[]) => xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
 
 export function UploadSummary({
   items,

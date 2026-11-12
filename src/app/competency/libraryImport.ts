@@ -46,7 +46,7 @@ export function prepareLibraryImport(text: string, data: Data): LibraryImport {
     throw Error("Remove duplicate column headings.");
   // Only Competency is required; missing optional columns are read as blank.
   if (!columns.includes("competency"))
-    throw Error("Add a Competency column. Download the template to get the right format.");
+    throw Error("The Competency column is mandatory.");
   const competencies: RecordItem[] = [],
     skills: RecordItem[] = [],
     rows: LibraryImportRow[] = [];

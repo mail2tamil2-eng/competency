@@ -1,5 +1,8 @@
 import { Data, RecordItem, parseCSV, uid } from "./model";
 import { Course } from "./workflowModel";
+import { listJoin } from "./BulkUploadParts";
+
+export const requiredSkillColumns = ["Skill Name", "Level Name", "Course ID"];
 
 /* Skill Master bulk upload: one row per skill per proficiency level. */
 export const skillHeaders = [
@@ -51,9 +54,10 @@ export function prepareSkillImport(text: string, data: Data, courses: Course[]):
   if (parsed.length > 5001) throw Error("Upload up to 5,000 rows at a time.");
   const columns = parsed[0].map((h) => h.trim().toLowerCase());
   if (new Set(columns).size !== columns.length) throw Error("Remove duplicate column headings.");
-  // Only required columns must be present; missing optional columns are read as blank.
-  if (!columns.includes("skill name"))
-    throw Error("Add a Skill Name column. Download the template to get the right format.");
+  // Skill Name, Level Name and Course ID are mandatory; descriptions are optional.
+  const missingCols = requiredSkillColumns.filter((h) => !columns.includes(h.toLowerCase()));
+  if (missingCols.length)
+    throw Error(`${listJoin(requiredSkillColumns)} columns are mandatory. Missing: ${missingCols.join(", ")}.`);
 
   const levels = activeLevels(data);
   const existing = new Set(data.skills.map((s) => s.name.trim().toLowerCase()));
@@ -75,11 +79,9 @@ export function prepareSkillImport(text: string, data: Data, courses: Course[]):
     if (name && existing.has(name.toLowerCase()))
       errors.push("This skill already exists in Skill Master. Bulk upload only adds new skills.");
     const level = levels.find((l) => l.name.toLowerCase() === levelName.toLowerCase());
-    // Level Description is optional; a Level Name is only needed when the row has a description or course.
-    if (!levelName) {
-      if (levelDesc || courseIds.length)
-        errors.push("Level Name is missing. Keep the level names from the template.");
-    } else if (!level) errors.push(`"${levelName}" is not an active proficiency level.`);
+    if (!levelName) errors.push("Level Name is required.");
+    else if (!level) errors.push(`"${levelName}" is not an active proficiency level.`);
+    if (!courseIds.length) errors.push("Course ID is required.");
     for (const id of courseIds)
       if (!courses.some((c) => c.id.toLowerCase() === id.toLowerCase()))
         errors.push(`Course ID "${id}" was not found.`);

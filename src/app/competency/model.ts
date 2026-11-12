@@ -310,7 +310,7 @@ export function parseCSV(text: string): string[][] {
         quoted = !quoted;
       } else
         throw Error(
-          "Unexpected quote in CSV. Use the template and save as CSV.",
+          "Unexpected quote in CSV. Check the file and save it as CSV.",
         );
     } else if (c === "," && !quoted) {
       row.push(cell.trim());

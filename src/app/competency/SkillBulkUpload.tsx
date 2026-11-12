@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
 import { Data, download } from "./model";
 import { Course } from "./workflowModel";
-import { count, UploadSteps, UploadDropZone, FileColumnsGuide, UploadSummary } from "./BulkUploadParts";
-import { SkillImport, prepareSkillImport, skillTemplate, courseList } from "./skillImport";
+import { count, UploadDropZone, UploadSummary } from "./BulkUploadParts";
+import { SkillImport, prepareSkillImport } from "./skillImport";
 import {
   Dialog,
   DialogContent,
@@ -10,14 +10,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "../components/ui/dialog";
-
-const FIELDS: [string, "Required" | "Optional" | "Auto"][] = [
-  ["Skill Name", "Required"],
-  ["Skill Description", "Optional"],
-  ["Level Name", "Auto"],
-  ["Level Description", "Optional"],
-  ["Course ID", "Optional"],
-];
 
 export function SkillBulkUpload({
   data,
@@ -48,7 +40,7 @@ export function SkillBulkUpload({
     setBusy(false);
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".csv")) {
-      setError("Choose a CSV file. Download the template below to get started.");
+      setError("Choose a CSV file.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -76,18 +68,8 @@ export function SkillBulkUpload({
             Add many skills at once. Use one row for each skill and proficiency level.
           </DialogDescription>
         </DialogHeader>
-        <UploadSteps reviewed={!!preview} />
         <UploadDropZone fileName={fileName} limits="CSV · Up to 5,000 Rows · 2 MB" label="Skill CSV File" onFile={(f) => void load(f)} />
-        <FileColumnsGuide
-          columns={FIELDS.map(([name, note]) => ({ name, required: note === "Required", auto: note === "Auto" }))}
-          links={[
-            { label: "Download Template", onClick: () => download("skill-master-template.csv", skillTemplate(data)) },
-            { label: "Course IDs", onClick: () => download("course-ids.csv", courseList(courses)) },
-          ]}
-          hint="Level names are pre-filled in the template. Use Course ID only to map courses; separate several with a semicolon (c1;c2)."
-        />
         {error && <p role="alert" className="cm-error">{error}</p>}
-        {busy && <p role="status">Checking your file…</p>}
         {preview && (
           <>
             <UploadSummary

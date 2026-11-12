@@ -1,9 +1,9 @@
 import { Fragment, useState, useEffect } from "react";
-import { Download, Upload, Search, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
-import { Data, Assignment, download, parseCSV, compNames } from "./model";
+import { Download, Upload, Search, CheckCircle2 } from "lucide-react";
+import { Data, Assignment, download, parseCSV, compNames, skillLevels } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
 import { DisclosureIcon } from "./Disclosure";
-import { count, UploadSteps, UploadDropZone, FileColumnsGuide, UploadSummary } from "./BulkUploadParts";
+import { count, listJoin, UploadDropZone, UploadSummary } from "./BulkUploadParts";
 import {
   Dialog,
   DialogContent,
@@ -15,12 +15,12 @@ import {
 const personKey = (a: Assignment) => JSON.stringify([a.name, a.department]);
 
 /* ── Bulk level upload ─────────────────────────────────────────────────── */
-const BULK_HEADERS = ["Name", "Department", "Skill", "Current Level"];
+const BULK_HEADERS = ["Name", "Email", "Skill", "Current Level", "Next Level"];
 
 type BulkRow = {
   line: number;
   name: string;
-  department: string;
+  email: string;
   skill: string;
   levelName: string;
   assignmentId: string | null;
@@ -30,10 +30,12 @@ type BulkRow = {
 
 function BulkLevelUpload({
   data,
+  work,
   onClose,
   onImport,
 }: {
   data: Data;
+  work: WorkflowData;
   onClose: () => void;
   onImport: (rows: BulkRow[]) => void;
 }) {
@@ -51,7 +53,7 @@ function BulkLevelUpload({
     setFileName(file?.name || "");
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".csv")) {
-      setError("Please upload a CSV file. Download the template to get started.");
+      setError("Choose a CSV file.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -65,54 +67,60 @@ function BulkLevelUpload({
       if (parsed.length > 1001) throw Error("Upload up to 1,000 rows at a time.");
       const cols = parsed[0].map((x) => x.toLowerCase().trim());
       const missing = BULK_HEADERS.filter((h) => !cols.includes(h.toLowerCase()));
-      if (missing.length) throw Error("Missing columns: " + missing.join(", "));
+      if (missing.length)
+        throw Error(`${listJoin(BULK_HEADERS)} columns are mandatory. Missing: ${missing.join(", ")}.`);
       const get = (cells: string[], col: string) =>
         (cells[cols.indexOf(col.toLowerCase())] || "").trim();
 
       setRows(
         parsed.slice(1).map((cells, i) => {
           const name = get(cells, "Name");
-          const department = get(cells, "Department");
+          const email = get(cells, "Email");
           const skill = get(cells, "Skill");
-          const levelName = get(cells, "Current Level");
+          const currentName = get(cells, "Current Level");
+          const levelName = get(cells, "Next Level");
           const errors: string[] = [];
 
           if (!name) errors.push("Name is required.");
-          if (!department) errors.push("Department is required.");
+          if (!email) errors.push("Email is required.");
           if (!skill) errors.push("Skill is required.");
-          if (!levelName) errors.push("Current Level is required.");
+          if (!currentName) errors.push("Current Level is required (use Not assessed if none).");
+          if (!levelName) errors.push("Next Level is required.");
 
           let assignmentId: string | null = null;
           let levelId: string | null = null;
 
-          if (name && department && skill && levelName) {
-            const match = data.assignments.find(
+          if (name && email && skill && currentName && levelName) {
+            const emp = work.employees.find((e) => (e.email || "").toLowerCase() === email.toLowerCase());
+            const skillRec = data.skills.find((s) => s.name.toLowerCase() === skill.toLowerCase());
+            const match = emp && skillRec && data.assignments.find(
               (a) =>
-                a.name.toLowerCase() === name.toLowerCase() &&
-                a.department.toLowerCase() === department.toLowerCase() &&
-                (data.skills.find((s) => s.id === a.skillId)?.name || "").toLowerCase() === skill.toLowerCase(),
+                a.skillId === skillRec.id &&
+                (a.employeeId === emp.id || (a.name === emp.name && a.department === emp.department)),
             );
-            if (!match) {
-              errors.push(`No assignment found for "${name}" (${department}) — "${skill}".`);
-            } else {
+            if (!emp) errors.push(`No learner found with email "${email}".`);
+            else if (emp.name.toLowerCase() !== name.toLowerCase()) errors.push(`Name does not match the email (${emp.name}).`);
+            if (!skillRec) errors.push(`Skill "${skill}" was not found.`);
+            else if (emp && !match) errors.push(`"${skill}" is not mapped to ${emp.name}.`);
+            if (match) {
               assignmentId = match.id;
-              const level = data.levels.find(
-                (l) => l.name.toLowerCase() === levelName.toLowerCase() && l.status === "Active",
-              );
+              const present = data.levels.find((l) => l.id === match.current);
+              const presentName = present?.name || "Not assessed";
+              if (presentName.toLowerCase() !== currentName.toLowerCase())
+                errors.push(`Current Level is ${presentName}, not ${currentName}.`);
+              const level = skillLevels(data, skillRec).find((l) => l.name.toLowerCase() === levelName.toLowerCase());
               if (!level) {
-                errors.push(`"${levelName}" is not a valid active level.`);
+                errors.push(`"${levelName}" is not an active level for this skill.`);
               } else {
                 levelId = level.id;
                 const ci = data.levels.findIndex((l) => l.id === match.current);
                 const ni = data.levels.findIndex((l) => l.id === level.id);
-                if (ci >= 0 && ni <= ci) {
-                  errors.push(`New level must be higher than current (${data.levels[ci]?.name}).`);
-                }
+                if (ci >= 0 && ni <= ci) errors.push(`Next Level must be higher than ${presentName}.`);
               }
             }
           }
 
-          return { line: i + 2, name, department, skill, levelName, assignmentId, levelId, errors };
+          return { line: i + 2, name, email, skill, levelName, assignmentId, levelId, errors };
         }),
       );
     } catch (e) {
@@ -132,16 +140,9 @@ function BulkLevelUpload({
           </DialogDescription>
         </DialogHeader>
 
-        <UploadSteps reviewed={rows.length > 0} />
         <UploadDropZone fileName={fileName} limits="CSV · Up to 1,000 Rows · 2 MB" disabled={busy} onFile={(f) => void load(f)} />
-        <FileColumnsGuide
-          columns={BULK_HEADERS.map((name) => ({ name, required: true }))}
-          links={[{ label: "Download Template", onClick: () => download("level-update-template.csv", [BULK_HEADERS]) }]}
-          hint="Current Level must be an active level higher than the learner's present level."
-        />
 
         {error && <p className="cm-error" role="alert">{error}</p>}
-        {busy && <p role="status">Checking your file…</p>}
 
         {rows.length > 0 && (
           <>
@@ -725,6 +726,7 @@ export function LearnerProgress({
       {showBulkUpload && (
         <BulkLevelUpload
           data={data}
+          work={work}
           onClose={() => setShowBulkUpload(false)}
           onImport={handleBulkImport}
         />

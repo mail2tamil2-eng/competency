@@ -1,9 +1,8 @@
 import { useState, useRef } from "react";
-import { count, UploadSteps, UploadDropZone, FileColumnsGuide, UploadSummary } from "./BulkUploadParts";
+import { count, UploadDropZone, UploadSummary } from "./BulkUploadParts";
 import { Data, download } from "./model";
 import {
   LibraryImport,
-  libraryHeaders,
   prepareLibraryImport,
 } from "./libraryImport";
 import {
@@ -36,7 +35,7 @@ export function LibraryBulkUpload({
     setBusy(false);
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".csv")) {
-      setError("Choose a CSV file. Use the template below to get started.");
+      setError("Choose a CSV file.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -69,25 +68,12 @@ export function LibraryBulkUpload({
             Add many competencies and skills at once. Use one row for each skill.
           </DialogDescription>
         </DialogHeader>
-        <UploadSteps reviewed={!!preview} />
         <UploadDropZone fileName={fileName} limits="CSV · Up to 1,000 Rows · 2 MB" onFile={(f) => void load(f)} />
-        <FileColumnsGuide
-          columns={[
-            { name: "Competency", required: true },
-            { name: "Competency Description" },
-            { name: "Skill" },
-            { name: "Skill Description" },
-            ...data.levels.filter((l) => l.status === "Active").map((l) => ({ name: `${l.name} Description` })),
-          ]}
-          links={[{ label: "Download Template", onClick: () => download("competencies-and-skills-template.csv", [libraryHeaders(data)]) }]}
-          hint="One row per skill. Repeat a competency name to add several skills to it; leave Skill blank to create an empty competency."
-        />
         {error && (
           <p role="alert" className="cm-error">
             {error}
           </p>
         )}
-        {busy && <p role="status">Checking your file…</p>}
         {preview && (
           <>
             <UploadSummary
