@@ -2192,3 +2192,12 @@
 
 /* Bulk uploads: template links sit right under the upload box. */
 .cm-dialog .cm-drop.cm-drop-compact { margin-bottom: 0; }
+
+/* Drag to reorder (Create Competency skills, Role Mapping competencies). */
+.cm .cm-drag-handle { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 28px; height: 32px; margin: -4px 4px 0 -8px; padding: 0; border: 0; border-radius: 6px; background: none; color: #8a94a6; cursor: grab; }
+.cm .cm-drag-handle:hover { background: #eef3fb; color: #2463D6; }
+.cm .cm-drag-handle:active { cursor: grabbing; }
+.cm .cm-drag-handle:focus-visible { outline: 2px solid #2463D6; outline-offset: 1px; }
+.cm .cm-reorder-card[data-dragging="true"] { opacity: 0.5; }
+.cm .cm-reorder-card[data-drop-target="true"] { box-shadow: 0 0 0 2px #2D74FA !important; }
+.cm .cm-assignment-group-header > .cm-drag-handle { margin: 0 -4px 0 8px; align-self: center; }

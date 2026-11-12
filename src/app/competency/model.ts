@@ -15,6 +15,8 @@ export type RecordItem = {
   levelIds?: string[];
   levels?: Record<string, string>;
   courses?: Record<string, string>;
+  /** Competency only: the order its skills are shown in (set by drag and drop). */
+  skillOrder?: string[];
 };
 export type Assignment = {
   id: string;
@@ -189,6 +191,16 @@ export function skillLevels(data: Data, s?: RecordItem | null): RecordItem[] {
   // Levels run in order from the first level up to the highest one the skill uses.
   const top = Math.max(0, ...active.map((l, i) => (s.levelIds!.includes(l.id) ? i : -1)));
   return active.slice(0, top + 1);
+}
+/** Skills in a competency, in the order set on Create/Edit Competency. Unordered skills follow. */
+export function compSkills(data: Data, compId: string): RecordItem[] {
+  const order = data.competencies.find((c) => c.id === compId)?.skillOrder ?? [];
+  const rank = (id: string) => { const i = order.indexOf(id); return i < 0 ? order.length : i; };
+  return data.skills
+    .map((s, i) => ({ s, i }))
+    .filter(({ s }) => inComp(s, compId))
+    .sort((a, b) => rank(a.s.id) - rank(b.s.id) || a.i - b.i)
+    .map(({ s }) => s);
 }
 /** "Communication, Customer Focus" for display. */
 export function compNames(data: Data, s?: RecordItem | null): string {

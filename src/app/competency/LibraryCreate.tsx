@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, X, BookOpen, Search, ArrowLeft } from "lucide-react";
 import { DisclosureIcon } from "./Disclosure";
+import { useDragReorder, DragHandle } from "./Reorder";
 import { Data, RecordItem, uid, validate, compIdsOf, withComps, skillLevels } from "./model";
 import { WorkflowData } from "./workflowModel";
 import { MultiCheckDropdown } from "./MultiCheckDropdown";
@@ -64,7 +65,10 @@ export function LibraryCreate({
     ...competency,
     name: competency.name.trim(),
     description: competency.description.trim(),
+    // Skills keep the order the admin dragged them into.
+    skillOrder: selectedSkillIds,
   };
+  const reorder = useDragReorder(selectedSkillIds, setSelectedSkillIds);
 
   function getLinkedSkills() {
     return selectedSkillIds
@@ -239,6 +243,9 @@ export function LibraryCreate({
                   return (
                     <div
                       key={id}
+                      data-reorder-item
+                      className="cm-reorder-card"
+                      {...reorder.itemProps(id)}
                       style={{
                         border: "1px solid #e5e7eb",
                         borderRadius: 12,
@@ -249,6 +256,7 @@ export function LibraryCreate({
                     >
                       {/* Card header */}
                       <div style={{ padding: "14px 18px 10px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                        {selectedSkillIds.length > 1 && <DragHandle {...reorder.handleProps(id, skill.name)} />}
                         <div
                           className="cm-create-skill-toggle"
                           role="button"

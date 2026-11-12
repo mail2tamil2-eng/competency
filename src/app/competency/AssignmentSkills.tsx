@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Layers, X } from "lucide-react";
 import { DisclosureIcon } from "./Disclosure";
 import { MultiCheckDropdown } from "./MultiCheckDropdown";
-import { Data, RecordItem, compIdsOf, inComp, skillLevels } from "./model";
+import { Data, RecordItem, compIdsOf, compSkills, skillLevels } from "./model";
+import { useDragReorder, DragHandle } from "./Reorder";
 import { Plan, Course } from "./workflowModel";
 
 type Props = {
@@ -35,7 +36,7 @@ export function AssignmentSkills({
   const groups = shownIds
     .map((id) => data.competencies.find((c) => c.id === id))
     .filter((c): c is RecordItem => !!c);
-  const skillsOf = (cId: string) => data.skills.filter((s) => inComp(s, cId) && s.status === "Active");
+  const skillsOf = (cId: string) => compSkills(data, cId).filter((s) => s.status === "Active");
   /** Adding a competency selects all its skills that aren't already picked under another competency. */
   function addCompetency(id: string) {
     setAdded((a) => [...a, id]);
@@ -48,6 +49,12 @@ export function AssignmentSkills({
     setAdded((a) => a.filter((x) => x !== id));
     onChange(selected.filter((x) => ownerOf(data, x) !== id));
   }
+  /* Dragging a competency card changes its order; the saved selections follow that order. */
+  const reorder = useDragReorder(shownIds, (next) => {
+    setAdded(next);
+    const rank = (x: Selection) => next.indexOf(ownerOf(data, x));
+    onChange(selected.map((x, i) => ({ x, i })).sort((a, b) => rank(a.x) - rank(b.x) || a.i - b.i).map(({ x }) => x));
+  });
   const missing = selected.filter((s) => !s.expected).length;
   return (
     <section
@@ -87,9 +94,8 @@ export function AssignmentSkills({
       </div>
       <div className="cm-assignment-groups">
         {groups.map((c) => {
-          const all = data.skills.filter(
+          const all = compSkills(data, c.id).filter(
             (s) =>
-              inComp(s, c.id) &&
               (s.status === "Active" ||
                 selected.some((x) => x.skillId === s.id)),
           );
@@ -113,6 +119,8 @@ export function AssignmentSkills({
               searching={readOnly}
               readOnly={readOnly}
               onRemove={readOnly ? undefined : () => removeCompetency(c.id)}
+              dragItem={readOnly || groups.length < 2 ? undefined : reorder.itemProps(c.id)}
+              dragHandle={readOnly || groups.length < 2 ? undefined : reorder.handleProps(c.id, c.name)}
             />
           );
         })}
@@ -144,6 +152,8 @@ function SkillGroup({
   searching,
   readOnly,
   onRemove,
+  dragItem,
+  dragHandle,
 }: {
   competency: RecordItem;
   data: Data;
@@ -158,6 +168,8 @@ function SkillGroup({
   searching: boolean;
   readOnly: boolean;
   onRemove?: () => void;
+  dragItem?: ReturnType<ReturnType<typeof useDragReorder>["itemProps"]>;
+  dragHandle?: ReturnType<ReturnType<typeof useDragReorder>["handleProps"]>;
 }) {
   const cId = competency.id;
   /* A skill counts as selected here only when it was picked under this competency. */
@@ -187,11 +199,13 @@ function SkillGroup({
     onChange(selected.map((s) => (s.skillId === id && mine(s) ? { ...s, expected } : s)));
   return (
     <section
-      className="cm-assignment-group"
+      className="cm-assignment-group cm-reorder-card"
       aria-label={`${competency.name} competency`}
+      data-reorder-item
+      {...dragItem}
     >
       <div className="cm-assignment-group-header">
-
+        {dragHandle && <DragHandle {...dragHandle} />}
         <div
           className="cm-assignment-group-toggle"
           role="button"

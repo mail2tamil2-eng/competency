@@ -16,7 +16,7 @@ import {
   BookOpen,
   X,
 } from "lucide-react";
-import { Data, RecordItem, Kind, used, download, uid, validate, inComp, compIdsOf, withComps, skillLevels } from "./model";
+import { Data, RecordItem, Kind, used, download, uid, validate, inComp, compIdsOf, withComps, skillLevels, compSkills } from "./model";
 import { WorkflowData, Course } from "./workflowModel";
 import { LibraryCreate } from "./LibraryCreate";
 import { DisclosureIcon } from "./Disclosure";
@@ -584,7 +584,7 @@ export function CompetencyLibrary({
 
   /* Early return: inline edit form */
   if (editingCompInline) {
-    const existingSkills = data.skills.filter((s) => inComp(s, editingCompInline.id));
+    const existingSkills = compSkills(data, editingCompInline.id);
     return (
       <LibraryCreate
         data={data}
@@ -968,7 +968,7 @@ export function CompetencyLibrary({
   if (view.kind === "skills") {
     const comp = data.competencies.find((c) => c.id === view.cId);
     if (!comp) { setView({ kind: "list" }); return null; }
-    const skills = data.skills.filter((s) => inComp(s, comp.id));
+    const skills = compSkills(data, comp.id);
 
     return (
       <section className="cm-card cm-unified-library">
