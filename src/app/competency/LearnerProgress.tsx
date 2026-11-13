@@ -3,7 +3,7 @@ import { Download, Upload, Search, CheckCircle2 } from "lucide-react";
 import { Data, Assignment, download, parseCSV, compNames, updatableLevels } from "./model";
 import { WorkflowData, updateCurrent } from "./workflowModel";
 import { DisclosureIcon } from "./Disclosure";
-import { count, listJoin, UploadDropZone, UploadSummary } from "./BulkUploadParts";
+import { count, listJoin, SampleDownload, UploadDropZone, UploadSummary } from "./BulkUploadParts";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +46,22 @@ function BulkLevelUpload({
 
   const invalid = rows.filter((r) => r.errors.length);
   const valid = rows.filter((r) => !r.errors.length);
+
+  /** Sample rows taken from real learners, so the sample can be uploaded as it is. */
+  function sampleRows(): string[][] {
+    const out: string[][] = [];
+    for (const a of data.assignments) {
+      if (out.length >= 3) break;
+      const emp = work.employees.find((e) => e.id === a.employeeId || (e.name === a.name && e.department === a.department));
+      const skill = data.skills.find((s) => s.id === a.skillId);
+      if (!emp?.email || !skill) continue;
+      const ci = data.levels.findIndex((l) => l.id === a.current);
+      const next = updatableLevels(data, a).find((l) => data.levels.findIndex((x) => x.id === l.id) > ci);
+      if (!next) continue;
+      out.push([emp.name, emp.email, skill.name, data.levels[ci]?.name || "Not assessed", next.name]);
+    }
+    return [BULK_HEADERS, ...out];
+  }
 
   async function load(file?: File) {
     setRows([]);
@@ -140,6 +156,7 @@ function BulkLevelUpload({
           </DialogDescription>
         </DialogHeader>
 
+        <SampleDownload onDownload={() => download("level-upload-sample.csv", sampleRows())} />
         <UploadDropZone fileName={fileName} limits="CSV · Up to 1,000 Rows · 2 MB" disabled={busy} onFile={(f) => void load(f)} />
 
         {error && <p className="cm-error" role="alert">{error}</p>}

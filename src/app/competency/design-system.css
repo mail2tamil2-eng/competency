@@ -2242,3 +2242,8 @@
 .cm .cm-course-checklist small { font-size: 14px; color: #6b7280; }
 .cm .cm-course-checklist em { margin-left: auto; font-style: normal; font-size: 14px; font-weight: 600; color: #6b7280; }
 .cm .cm-course-checklist em.on { color: #2463D6; }
+
+/* Bulk upload: sample file download above the upload box. */
+.cm-upload-sample { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid #e3e8ef; border-radius: 10px; background: #f7f9fc; }
+.cm-upload-sample > span { font-size: 14px; color: #526176; }
+.cm-upload-sample .cm-button { display: inline-flex; align-items: center; gap: 6px; }

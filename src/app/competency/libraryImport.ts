@@ -36,6 +36,18 @@ export function libraryRows(data: Data, competencies: RecordItem[]) {
     ]);
   });
 }
+/** Filled-in sample: one new competency with two skills. */
+export function librarySample(data: Data): string[][] {
+  const levels = data.levels.filter((l) => l.status === "Active");
+  const row = (comp: string, compDesc: string, skill: string, skillDesc: string) => [
+    comp, compDesc, skill, skillDesc, ...levels.map((l) => `${skill} at ${l.name} level.`),
+  ];
+  return [
+    libraryHeaders(data),
+    row("Customer Focus", "Understand and meet customer needs.", "Handling Complaints", "Resolve complaints calmly and quickly."),
+    row("Customer Focus", "", "Customer Empathy", "See problems from the customer's side."),
+  ];
+}
 export function prepareLibraryImport(text: string, data: Data): LibraryImport {
   const parsed = parseCSV(text);
   if (parsed.length < 2)

@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
 import { Data, download } from "./model";
 import { Course } from "./workflowModel";
-import { count, UploadDropZone, UploadSummary } from "./BulkUploadParts";
-import { SkillImport, prepareSkillImport } from "./skillImport";
+import { count, SampleDownload, UploadDropZone, UploadSummary } from "./BulkUploadParts";
+import { SkillImport, prepareSkillImport, skillSample } from "./skillImport";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +68,7 @@ export function SkillBulkUpload({
             Add many skills at once. Use one row for each skill and proficiency level.
           </DialogDescription>
         </DialogHeader>
+        <SampleDownload onDownload={() => download("skill-upload-sample.csv", skillSample(data, courses))} />
         <UploadDropZone fileName={fileName} limits="CSV · Up to 5,000 Rows · 2 MB" label="Skill CSV File" onFile={(f) => void load(f)} />
         {error && <p role="alert" className="cm-error">{error}</p>}
         {preview && (

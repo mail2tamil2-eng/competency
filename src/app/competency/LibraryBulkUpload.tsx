@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
-import { count, UploadDropZone, UploadSummary } from "./BulkUploadParts";
+import { count, SampleDownload, UploadDropZone, UploadSummary } from "./BulkUploadParts";
 import { Data, download } from "./model";
 import {
   LibraryImport,
+  librarySample,
   prepareLibraryImport,
 } from "./libraryImport";
 import {
@@ -68,6 +69,7 @@ export function LibraryBulkUpload({
             Add many competencies and skills at once. Use one row for each skill.
           </DialogDescription>
         </DialogHeader>
+        <SampleDownload onDownload={() => download("competency-upload-sample.csv", librarySample(data))} />
         <UploadDropZone fileName={fileName} limits="CSV · Up to 1,000 Rows · 2 MB" onFile={(f) => void load(f)} />
         {error && (
           <p role="alert" className="cm-error">

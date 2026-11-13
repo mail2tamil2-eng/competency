@@ -40,6 +40,27 @@ export function skillTemplate(data: Data): string[][] {
   return [skillHeaders, ...example("Example Skill", "Optional skill description")];
 }
 
+/** Filled-in sample: two example skills, one row per active level, with real Course IDs. */
+export function skillSample(data: Data, courses: Course[]): string[][] {
+  const levels = activeLevels(data);
+  const ids = courses.map((c) => c.id);
+  const course = (i: number) => (ids.length ? ids[i % ids.length] : "");
+  const example = (name: string, desc: string, offset: number) =>
+    levels.map((l, i) => [
+      name,
+      i === 0 ? desc : "",
+      l.name,
+      `${name} at ${l.name} level.`,
+      // Several courses can go on one level, separated by ;
+      i === 0 && ids.length > 1 ? `${course(offset)};${course(offset + 1)}` : course(offset + i),
+    ]);
+  return [
+    skillHeaders,
+    ...example("Negotiation", "Reach agreements that work for both sides.", 0),
+    ...example("Time Management", "Plan and prioritise work to meet deadlines.", 2),
+  ];
+}
+
 export function courseList(courses: Course[]): string[][] {
   return [["Course ID", "Course Name", "Duration"], ...courses.map((c) => [c.id, c.name, c.duration])];
 }

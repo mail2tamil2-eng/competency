@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Upload, X } from "lucide-react";
+import { Download, Upload, X } from "lucide-react";
 
 /* Shared building blocks so every bulk upload dialog has the same layout:
    upload box → results summary → actions. */
@@ -52,6 +52,22 @@ export function UploadDropZone({
           <X size={16} /> Remove
         </button>
       )}
+    </div>
+  );
+}
+
+/** Sits above the upload box: lets people download a filled-in example CSV
+    so they can see the columns before preparing their own file. */
+export function SampleDownload({ onDownload, note = "Download the sample file to see the columns and example rows." }: {
+  onDownload: () => void;
+  note?: string;
+}) {
+  return (
+    <div className="cm-upload-sample">
+      <span>{note}</span>
+      <button type="button" className="cm-button" onClick={onDownload}>
+        <Download size={16} /> Download Sample CSV
+      </button>
     </div>
   );
 }
